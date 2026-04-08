@@ -34,6 +34,57 @@ def init(brief: str, output: str) -> None:
         build_site(site_yaml, content_dir, dist_dir)
 
 
+@main.command()
+@click.option("--output", type=click.Path(), default="brief.yaml", help="Output file path")
+@click.option("--minimal", is_flag=True, help="AI fills in details from name + industry")
+@click.option("--auto", "auto_mode", is_flag=True, help="AI invents everything from industry")
+@click.option("--name", "company_name", default="", help="Company name (for --minimal)")
+@click.option(
+    "--industry", default="",
+    help="Industry ID (e.g. event_management, cloud_services, managed_it)",
+)
+@click.option("--location", default="Perth, Western Australia", help="Company location")
+@click.option("--scenario", default="growth", help="Scenario type")
+def scaffold(
+    output: str,
+    minimal: bool,
+    auto_mode: bool,
+    company_name: str,
+    industry: str,
+    location: str,
+    scenario: str,
+) -> None:
+    """Scaffold a new brief.yaml — interactive, minimal (AI), or auto (AI)."""
+    from ensayo.scaffold import scaffold_auto, scaffold_interactive, scaffold_minimal
+
+    output_path = Path(output)
+
+    if auto_mode:
+        if not industry:
+            from ensayo.templates_data import list_industries
+
+            click.echo(f"Available industries: {', '.join(list_industries())}")
+            industry = click.prompt("Industry")
+        scaffold_auto(industry=industry, output=output_path)
+    elif minimal:
+        if not company_name:
+            company_name = click.prompt("Company name")
+        if not industry:
+            from ensayo.templates_data import list_industries
+
+            click.echo(f"Available industries: {', '.join(list_industries())}")
+            industry = click.prompt("Industry")
+        scaffold_minimal(
+            company_name=company_name,
+            industry=industry,
+            location=location,
+            scenario_type=scenario,
+            output=output_path,
+        )
+    else:
+        scaffold_interactive(output=output_path)
+
+
 @main.group()
 def content() -> None:
     """Content generation commands."""

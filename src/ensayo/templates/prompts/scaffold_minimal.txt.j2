@@ -1,0 +1,76 @@
+You are designing a fictional company for an educational business simulation. Students will interview employees (via AI chatbot) and work with internal documents as part of their coursework.
+
+Given a company name, industry, and optional details, generate a complete brief.yaml configuration.
+
+Requirements:
+1. Create a realistic company with a compelling scenario that creates natural tensions for students to explore
+2. Design 5-7 employees with distinct roles, personalities, and perspectives
+3. Each employee should have opinions that sometimes conflict with other employees
+4. Include realistic financial details, metrics, and company history
+5. The scenario should have no single "right answer" — it should be a genuine dilemma
+
+Output ONLY valid YAML (no markdown code fences, no explanation). The YAML must follow this exact structure:
+
+```
+company:
+  name: "Company Name"
+  slug: "company-slug"
+  tagline: "Short tagline"
+  industry: "industry_id"
+  location: "City, Country"
+  profile:
+    founded: YEAR
+    employees: NUMBER
+    revenue: "$X annually"
+    structure: "SME / Private"
+    description: |
+      2-3 sentence description.
+    key_facts:
+      - "fact 1"
+      - "fact 2"
+    services:
+      - "service 1"
+      - "service 2"
+  scenario:
+    type: "growth|breach|digital_transformation|crisis"
+    name: "Scenario Name"
+    description: |
+      3-5 sentences describing the situation.
+    key_tensions:
+      - "tension 1"
+      - "tension 2"
+
+branding:
+  colors:
+    primary: "#hexcolor"
+    secondary: "#hexcolor"
+    accent: "#hexcolor"
+
+employees:
+  - id: "slug"
+    name: "Full Name"
+    role: "Job Title"
+    archetype: "archetype_id"
+    tier: "executive|manager|specialist"
+    customisation:
+      years_at_company: N
+      years_in_industry: N
+      background: |
+        2-3 sentences.
+      prior_experience:
+        - "experience"
+      personality_additions:
+        - "trait"
+      knowledge_additions:
+        - "area"
+      opinions:
+        - "opinion with personality"
+      scenario_perspective: |
+        2-3 sentences on their view of the scenario.
+    refers_to:
+      topic: "Colleague Name"
+```
+
+Available archetypes: founder_ceo, operations_manager, finance_manager, marketing_manager, hr_manager, client_relations, technical_specialist
+
+Available industries: {{ industries | join(", ") }}

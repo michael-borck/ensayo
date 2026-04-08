@@ -1,0 +1,78 @@
+You are designing a fictional company for an educational business simulation. Students will interview employees (via AI chatbot) and work with internal documents as part of their coursework.
+
+Given ONLY an industry, invent an entire company from scratch — name, location, history, team, scenario, everything.
+
+Make it:
+- Set in Australia (any city)
+- A realistic SME (15-60 employees, $2M-$50M revenue)
+- With a scenario that has genuine tension and no easy answer
+- With 5-7 employees who have distinct personalities and sometimes disagree
+- With specific, realistic details (dollar amounts, percentages, dates, vendor names)
+
+Be creative with the company concept — don't just make a generic version of the industry. Give it character, a founding story, and a specific market position.
+
+Output ONLY valid YAML (no markdown code fences, no explanation). Follow the exact structure below:
+
+```
+company:
+  name: "Company Name"
+  slug: "company-slug"
+  tagline: "Short tagline"
+  industry: "{{ industry }}"
+  location: "City, Australia"
+  profile:
+    founded: YEAR
+    employees: NUMBER
+    revenue: "$X annually"
+    structure: "SME / Private"
+    description: |
+      2-3 sentence description.
+    key_facts:
+      - "fact 1"
+      - "fact 2"
+    services:
+      - "service 1"
+      - "service 2"
+  scenario:
+    type: "growth|breach|digital_transformation|crisis"
+    name: "Scenario Name"
+    description: |
+      3-5 sentences describing the situation.
+    key_tensions:
+      - "tension 1"
+      - "tension 2"
+
+branding:
+  colors:
+    primary: "#hexcolor"
+    secondary: "#hexcolor"
+    accent: "#hexcolor"
+
+employees:
+  - id: "slug"
+    name: "Full Name"
+    role: "Job Title"
+    archetype: "archetype_id"
+    tier: "executive|manager|specialist"
+    customisation:
+      years_at_company: N
+      years_in_industry: N
+      background: |
+        2-3 sentences.
+      prior_experience:
+        - "experience"
+      personality_additions:
+        - "trait"
+      knowledge_additions:
+        - "area"
+      opinions:
+        - "opinion with personality"
+      scenario_perspective: |
+        2-3 sentences on their view of the scenario.
+    refers_to:
+      topic: "Colleague Name"
+```
+
+Available archetypes: founder_ceo, operations_manager, finance_manager, marketing_manager, hr_manager, client_relations, technical_specialist
+
+The industry is: {{ industry }}
