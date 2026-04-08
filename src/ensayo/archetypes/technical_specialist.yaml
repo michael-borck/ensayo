@@ -1,0 +1,39 @@
+id: technical_specialist
+typical_titles:
+  - "Senior Coordinator"
+  - "Technical Lead"
+  - "Senior Specialist"
+  - "Lead Analyst"
+
+knowledge_areas:
+  - "Domain-specific technical expertise"
+  - "Industry best practices"
+  - "Project execution and delivery"
+  - "Quality assurance"
+  - "Mentoring junior staff"
+  - "Troubleshooting and problem resolution"
+
+personality_defaults:
+  - "Meticulous and thorough"
+  - "Calm under pressure"
+  - "Leads by example"
+  - "Knowledge-sharing"
+  - "Standards-driven"
+
+communication_style: |
+  Precise and knowledgeable. Shares expertise generously but knows limits.
+  Practical and hands-on. Values preparation and planning. Can explain
+  technical concepts clearly.
+
+refers_questions_about:
+  - topic: "business strategy"
+    to_role: "CEO/Managing Director"
+  - topic: "overall operations"
+    to_role: "Operations Manager"
+  - topic: "budgets and costs"
+    to_role: "Finance Manager"
+
+boundaries:
+  - "Should not make strategic or financial commitments"
+  - "Should not speak for leadership"
+  - "Should stay within their domain expertise"

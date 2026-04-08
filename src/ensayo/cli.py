@@ -32,28 +32,45 @@ def content() -> None:
 @click.option("--output", type=click.Path(), required=True, help="Output content directory")
 def content_generate(brief: str, output: str) -> None:
     """Generate all content from a brief using AI."""
-    click.echo(f"Generating content from {brief} → {output}")
-    click.echo("Not yet implemented.")
+    from ensayo.generator import generate_all
+
+    generate_all(Path(brief), Path(output))
 
 
 @content.command("add-employee")
+@click.option("--brief", type=click.Path(exists=True), default="brief.yaml", help="Brief file")
+@click.option(
+    "--content-dir", type=click.Path(), default="content",
+    help="Content directory",
+)
 @click.option("--name", required=True, help="Employee name")
 @click.option("--role", required=True, help="Employee role/title")
 @click.option("--archetype", required=True, help="Role archetype (e.g. founder_ceo)")
-def content_add_employee(name: str, role: str, archetype: str) -> None:
+def content_add_employee(
+    brief: str, content_dir: str, name: str, role: str, archetype: str,
+) -> None:
     """Add an employee to an existing simulation."""
-    click.echo(f"Adding employee: {name} ({role}) using archetype {archetype}")
-    click.echo("Not yet implemented.")
+    from ensayo.generator import generate_single_employee
+
+    generate_single_employee(Path(brief), Path(content_dir), name, role, archetype)
 
 
 @content.command("add-doc")
 @click.option("--type", "doc_type", required=True, type=click.Choice(["support", "policy"]))
 @click.option("--title", required=True, help="Document title")
 @click.option("--instructions", default="", help="Instructions for content generation")
-def content_add_doc(doc_type: str, title: str, instructions: str) -> None:
+@click.option("--brief", type=click.Path(exists=True), default="brief.yaml", help="Brief file")
+@click.option(
+    "--content-dir", type=click.Path(), default="content",
+    help="Content directory",
+)
+def content_add_doc(
+    doc_type: str, title: str, instructions: str, brief: str, content_dir: str,
+) -> None:
     """Add a document to an existing simulation."""
-    click.echo(f"Adding {doc_type} document: {title}")
-    click.echo("Not yet implemented.")
+    from ensayo.generator import generate_single_document
+
+    generate_single_document(Path(brief), Path(content_dir), doc_type, title, instructions)
 
 
 @content.command("prompts")
@@ -61,10 +78,12 @@ def content_add_doc(doc_type: str, title: str, instructions: str) -> None:
     "--content-dir", type=click.Path(exists=True), default="content",
     help="Content directory",
 )
-def content_prompts(content_dir: str) -> None:
+@click.option("--brief", type=click.Path(exists=True), default="brief.yaml", help="Brief file")
+def content_prompts(content_dir: str, brief: str) -> None:
     """Regenerate chatbot prompts from backstories."""
-    click.echo(f"Regenerating prompts from {content_dir}")
-    click.echo("Not yet implemented.")
+    from ensayo.generator import regenerate_prompts
+
+    regenerate_prompts(Path(brief), Path(content_dir))
 
 
 @main.command()

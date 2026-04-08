@@ -1,0 +1,75 @@
+company:
+  name: "Pinnacle Events"
+  slug: "pinnacle-events"
+  tagline: "Creating Unforgettable Moments"
+  industry: "event_management"
+  location: "Perth, Western Australia"
+
+  profile:
+    founded: 2018
+    employees: 25
+    revenue: "$4.5M annually"
+    structure: "SME / Private"
+    description: |
+      A boutique event management company specialising in corporate
+      events, weddings, and private functions.
+    key_facts:
+      - "150-200 events per year"
+      - "40% repeat client rate"
+    services:
+      - "Corporate conferences and seminars"
+      - "Weddings and private celebrations"
+
+  scenario:
+    type: "growth"
+    name: "Scaling for Success"
+    description: |
+      After 8 years of steady growth, exploring interstate expansion
+      while maintaining service quality.
+    key_tensions:
+      - "Growth vs. maintaining service quality"
+      - "Seasonal cash flow vs. growth investment"
+
+branding:
+  colors:
+    primary: "#8B4513"
+    secondary: "#D2691E"
+    accent: "#F5DEB3"
+
+employees:
+  - id: "sophie-anderson"
+    name: "Sophie Anderson"
+    role: "Managing Director"
+    archetype: "founder_ceo"
+    tier: "executive"
+    customisation:
+      years_at_company: 8
+      years_in_industry: 15
+      background: |
+        Founded Pinnacle Events after a successful career in corporate
+        event management.
+      personality_additions:
+        - "Warm but professional"
+      knowledge_additions:
+        - "Perth venue and vendor networks"
+      opinions:
+        - "Growth should never compromise quality"
+      scenario_perspective: |
+        Excited about growth but worried about losing personal touch.
+    refers_to:
+      operations: "Rachel Martinez"
+      finance: "David Park"
+
+  - id: "rachel-martinez"
+    name: "Rachel Martinez"
+    role: "Operations Director"
+    archetype: "operations_manager"
+    tier: "manager"
+    customisation:
+      years_at_company: 7
+      years_in_industry: 12
+      background: |
+        First hire at Pinnacle Events. Built operations from scratch.
+    refers_to:
+      strategy: "Sophie Anderson"
+      finance: "David Park"

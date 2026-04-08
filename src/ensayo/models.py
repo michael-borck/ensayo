@@ -90,3 +90,87 @@ class SiteContent:
     policy_docs: list[Document] = field(default_factory=list)
     page_overrides: dict[str, PageOverride] = field(default_factory=dict)
     data_files: list[Path] = field(default_factory=list)
+
+
+# --- Brief / Content Generation models ---
+
+
+@dataclass
+class Scenario:
+    """Scenario narrative for content generation."""
+
+    type: str = "growth"
+    name: str = ""
+    description: str = ""
+    key_tensions: list[str] = field(default_factory=list)
+
+
+@dataclass
+class CompanyProfile:
+    """Extended company profile for content generation briefs."""
+
+    name: str = ""
+    slug: str = ""
+    tagline: str = ""
+    industry: str = ""
+    location: str = ""
+    founded: int = 2020
+    employees: int = 25
+    revenue: str = ""
+    structure: str = "SME / Private"
+    description: str = ""
+    key_facts: list[str] = field(default_factory=list)
+    services: list[str] = field(default_factory=list)
+
+
+@dataclass
+class EmployeeCustomisation:
+    """Per-employee customisation in a brief."""
+
+    years_at_company: int = 1
+    years_in_industry: int = 5
+    background: str = ""
+    prior_experience: list[str] = field(default_factory=list)
+    personality_additions: list[str] = field(default_factory=list)
+    knowledge_additions: list[str] = field(default_factory=list)
+    opinions: list[str] = field(default_factory=list)
+    scenario_perspective: str = ""
+
+
+@dataclass
+class EmployeeSpec:
+    """Employee specification in a brief — input for content generation."""
+
+    name: str
+    role: str
+    archetype: str = ""
+    slug: str = ""
+    tier: Literal["executive", "manager", "specialist"] = "specialist"
+    customisation: EmployeeCustomisation = field(default_factory=EmployeeCustomisation)
+    refers_to: dict[str, str] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if not self.slug:
+            self.slug = self.name.lower().replace(" ", "-")
+
+
+@dataclass
+class DocumentSpec:
+    """Document request in a brief."""
+
+    type: Literal["support", "policy"] = "support"
+    title: str = ""
+    brief: str = ""
+
+
+@dataclass
+class BriefConfig:
+    """Full brief for content generation."""
+
+    company: CompanyProfile = field(default_factory=CompanyProfile)
+    scenario: Scenario = field(default_factory=Scenario)
+    branding: BrandingConfig = field(default_factory=BrandingConfig)
+    chatbot: ChatbotConfig = field(default_factory=ChatbotConfig)
+    employees: list[EmployeeSpec] = field(default_factory=list)
+    documents: list[DocumentSpec] = field(default_factory=list)
+    disciplines: dict[str, list[str]] = field(default_factory=dict)

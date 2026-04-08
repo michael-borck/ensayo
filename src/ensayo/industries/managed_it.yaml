@@ -1,0 +1,73 @@
+id: managed_it
+name: Managed IT Services
+
+description: |
+  Companies providing outsourced IT management, helpdesk support,
+  cybersecurity services, and technology consulting to SMEs.
+
+service_categories:
+  - name: IT Support
+    examples:
+      - "Helpdesk and break-fix support"
+      - "Remote and on-site technical support"
+      - "Hardware procurement and lifecycle management"
+  - name: Cybersecurity
+    examples:
+      - "Endpoint protection"
+      - "Email security and filtering"
+      - "Security awareness training"
+      - "Vulnerability assessments"
+  - name: Managed Infrastructure
+    examples:
+      - "Server management"
+      - "Network monitoring"
+      - "Backup and disaster recovery"
+      - "Cloud migration"
+
+metrics:
+  - name: Client satisfaction
+    typical_range: "4.0-4.7 out of 5"
+  - name: First call resolution
+    typical_range: "65-80%"
+  - name: Average response time
+    typical_range: "15-60 minutes"
+
+seasonality:
+  peak: ["Q1 (new year IT budgets)", "Back-to-school (education clients)"]
+  quiet: ["December-January (holiday period)"]
+
+challenges:
+  - "Evolving cybersecurity threats"
+  - "Client resistance to security best practices"
+  - "Talent shortage in cybersecurity"
+  - "Balancing reactive and proactive work"
+  - "Phishing and social engineering attacks on clients"
+  - "Managing diverse client environments"
+
+standard_documents:
+  support:
+    - title: Service Level Agreements
+      brief: "Response times, resolution targets, escalation procedures by tier"
+    - title: Security Incident Playbook
+      brief: "Incident classification, containment, investigation, remediation steps"
+    - title: Client Environment Standards
+      brief: "Minimum security baselines, approved software, patch management"
+    - title: Onboarding and Offboarding Guide
+      brief: "New client setup, access provisioning, decommissioning procedures"
+  policies:
+    - title: Acceptable Use Policy
+      brief: "Employee and client expectations for IT resource usage"
+    - title: Data Breach Notification Policy
+      brief: "Notification timelines, reporting obligations, communication templates"
+
+recommended_roles:
+  essential:
+    - archetype: founder_ceo
+      typical_title: CEO
+    - archetype: operations_manager
+      typical_title: Service Delivery Manager
+  common:
+    - archetype: technical_specialist
+      typical_title: Senior IT Analyst
+    - archetype: finance_manager
+      typical_title: Finance Manager

@@ -1,0 +1,79 @@
+Create a backstory for the following employee:
+
+COMPANY: {{ company.name }}
+INDUSTRY: {{ company.industry }}
+LOCATION: {{ company.location }}
+COMPANY DESCRIPTION: {{ company.description }}
+FOUNDED: {{ company.founded }}
+EMPLOYEES: {{ company.employees }}
+REVENUE: {{ company.revenue }}
+KEY FACTS:
+{% for fact in company.key_facts %}
+- {{ fact }}
+{% endfor %}
+
+SCENARIO: {{ scenario.name }}
+{{ scenario.description }}
+KEY TENSIONS:
+{% for tension in scenario.key_tensions %}
+- {{ tension }}
+{% endfor %}
+
+EMPLOYEE: {{ employee.name }}
+ROLE: {{ employee.role }}
+TIER: {{ employee.tier }}
+ARCHETYPE: {{ archetype.id }}
+
+ARCHETYPE KNOWLEDGE AREAS:
+{% for area in archetype.knowledge_areas %}
+- {{ area }}
+{% endfor %}
+
+ARCHETYPE PERSONALITY:
+{% for trait in archetype.personality_defaults %}
+- {{ trait }}
+{% endfor %}
+
+CUSTOMISATION:
+Years at company: {{ employee.customisation.years_at_company }}
+Years in industry: {{ employee.customisation.years_in_industry }}
+Background: {{ employee.customisation.background }}
+{% if employee.customisation.prior_experience %}
+Prior experience:
+{% for exp in employee.customisation.prior_experience %}
+- {{ exp }}
+{% endfor %}
+{% endif %}
+{% if employee.customisation.personality_additions %}
+Additional personality traits:
+{% for trait in employee.customisation.personality_additions %}
+- {{ trait }}
+{% endfor %}
+{% endif %}
+{% if employee.customisation.knowledge_additions %}
+Additional knowledge:
+{% for area in employee.customisation.knowledge_additions %}
+- {{ area }}
+{% endfor %}
+{% endif %}
+{% if employee.customisation.opinions %}
+Opinions to incorporate:
+{% for opinion in employee.customisation.opinions %}
+- {{ opinion }}
+{% endfor %}
+{% endif %}
+{% if employee.customisation.scenario_perspective %}
+Scenario perspective: {{ employee.customisation.scenario_perspective }}
+{% endif %}
+
+REFERS TO:
+{% for topic, person in employee.refers_to.items() %}
+- {{ topic }}: {{ person }}
+{% endfor %}
+
+OTHER EMPLOYEES (for cross-references):
+{% for other in other_employees %}
+- {{ other.name }} — {{ other.role }}
+{% endfor %}
+
+Generate the complete markdown file with frontmatter now.

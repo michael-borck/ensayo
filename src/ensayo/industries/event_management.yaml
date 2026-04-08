@@ -1,0 +1,94 @@
+id: event_management
+name: Event Management
+
+description: |
+  Companies that plan, coordinate, and execute events including corporate
+  functions, weddings, conferences, and private celebrations.
+
+service_categories:
+  - name: Corporate Events
+    examples:
+      - "Conferences and seminars"
+      - "Product launches"
+      - "AGMs and shareholder meetings"
+      - "Team building events"
+      - "Awards nights and gala dinners"
+  - name: Social Events
+    examples:
+      - "Weddings"
+      - "Engagement parties"
+      - "Milestone birthdays"
+      - "Anniversary celebrations"
+  - name: Government/Institutional
+    examples:
+      - "Government functions"
+      - "University events"
+      - "Charity galas"
+      - "Association conferences"
+
+metrics:
+  - name: Events per year
+    typical_range: "50-300 depending on company size"
+  - name: Repeat client rate
+    typical_range: "30-50%"
+  - name: Client satisfaction
+    typical_range: "4.2-4.8 out of 5"
+
+seasonality:
+  peak: ["March-May (autumn corporate season)", "September-December (spring events, Christmas)"]
+  quiet: ["January (summer holidays)", "June-August (winter)"]
+
+challenges:
+  - "Seasonal demand fluctuations"
+  - "Last-minute client changes"
+  - "Vendor reliability"
+  - "Staff scheduling in peak periods"
+  - "Cash flow management"
+  - "Rising costs vs client budgets"
+  - "Competition from DIY platforms"
+
+standard_documents:
+  support:
+    - title: Event Types and Services
+      brief: "Corporate, social, government events with service levels and pricing overview"
+    - title: Event Project Management
+      brief: "Full event lifecycle from initiation to closure, WBS, risk management"
+    - title: Client Journey
+      brief: "5-stage client experience from enquiry to post-event follow-up"
+    - title: Vendor Management
+      brief: "Preferred vendor network, selection process, quality standards, backup planning"
+    - title: Quality Standards
+      brief: "Service standards, quality metrics, problem resolution, continuous improvement"
+    - title: Seasonal Cash Flow
+      brief: "Revenue distribution, stress points, payment structures, cash management"
+    - title: Casual Workforce Management
+      brief: "Seasonal staffing recruitment, training, scheduling, retention"
+    - title: Marketing and Lead Generation
+      brief: "Lead generation strategies, conversion metrics, digital marketing"
+    - title: Stakeholder Communication
+      brief: "Internal and external communication frameworks"
+    - title: Event Planning Timeline
+      brief: "Recommended lead times, planning milestones, rush event planning"
+  policies:
+    - title: Cancellation and Postponement Policy
+      brief: "Deposit structure, cancellation tiers, postponement terms, force majeure"
+    - title: Sustainability Policy
+      brief: "Environmental commitments, waste reduction, sustainable vendor selection"
+
+recommended_roles:
+  essential:
+    - archetype: founder_ceo
+      typical_title: Managing Director
+    - archetype: operations_manager
+      typical_title: Operations Director
+  common:
+    - archetype: technical_specialist
+      typical_title: Senior Event Coordinator
+    - archetype: marketing_manager
+      typical_title: Marketing & Sales Manager
+    - archetype: finance_manager
+      typical_title: Finance Manager
+    - archetype: client_relations
+      typical_title: Client Relations Manager
+    - archetype: hr_manager
+      typical_title: HR Manager

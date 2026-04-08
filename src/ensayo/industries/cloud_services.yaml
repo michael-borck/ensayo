@@ -1,0 +1,79 @@
+id: cloud_services
+name: Cloud Services & IT
+
+description: |
+  Companies providing cloud infrastructure, managed services, security,
+  and IT consulting to business clients.
+
+service_categories:
+  - name: Cloud Hosting
+    examples:
+      - "Infrastructure as a Service (IaaS)"
+      - "Platform hosting"
+      - "Managed cloud environments"
+  - name: Managed Services
+    examples:
+      - "24/7 monitoring and support"
+      - "Backup and disaster recovery"
+      - "Security operations"
+  - name: Consulting
+    examples:
+      - "Cloud migration"
+      - "Security audits"
+      - "Compliance consulting"
+
+metrics:
+  - name: Uptime SLA
+    typical_range: "99.9-99.99%"
+  - name: Client retention
+    typical_range: "85-95%"
+  - name: Mean time to resolution
+    typical_range: "2-8 hours"
+
+seasonality:
+  peak: ["Q4 (budget spending)", "Q1 (new financial year projects)"]
+  quiet: ["Mid-year (budget reviews, slower spending)"]
+
+challenges:
+  - "Security threats and breach risk"
+  - "Maintaining uptime SLAs"
+  - "Rapid technology change"
+  - "Talent acquisition and retention"
+  - "Compliance with multiple regulatory frameworks"
+  - "Pricing pressure from hyperscalers"
+
+standard_documents:
+  support:
+    - title: Service Catalogue
+      brief: "Full listing of services, SLAs, and pricing tiers"
+    - title: Incident Response Procedures
+      brief: "Severity levels, escalation paths, communication protocols"
+    - title: Security Architecture Overview
+      brief: "Network topology, security layers, access controls"
+    - title: Business Continuity Plan
+      brief: "DR procedures, RTO/RPO targets, failover processes"
+    - title: Client Onboarding Guide
+      brief: "Onboarding process, environment setup, handover procedures"
+  policies:
+    - title: Information Security Policy
+      brief: "Access controls, data classification, acceptable use"
+    - title: Privacy Policy
+      brief: "Data collection, storage, retention, and deletion practices"
+    - title: Change Management Policy
+      brief: "Change request process, approval workflow, rollback procedures"
+
+recommended_roles:
+  essential:
+    - archetype: founder_ceo
+      typical_title: CEO
+    - archetype: operations_manager
+      typical_title: Head of Operations
+  common:
+    - archetype: technical_specialist
+      typical_title: Chief Technology Officer
+    - archetype: finance_manager
+      typical_title: CFO
+    - archetype: marketing_manager
+      typical_title: Head of Sales & Marketing
+    - archetype: hr_manager
+      typical_title: People & Culture Manager

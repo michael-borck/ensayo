@@ -1,0 +1,33 @@
+Create the following document for {{ company.name }}:
+
+DOCUMENT TITLE: {{ doc_title }}
+DOCUMENT TYPE: {{ doc_type }}
+{% if doc_brief %}
+BRIEF: {{ doc_brief }}
+{% endif %}
+
+COMPANY CONTEXT:
+- Name: {{ company.name }}
+- Industry: {{ company.industry }}
+- Location: {{ company.location }}
+- Founded: {{ company.founded }}
+- Employees: {{ company.employees }}
+- Revenue: {{ company.revenue }}
+- Description: {{ company.description }}
+
+SCENARIO: {{ scenario.name }}
+{{ scenario.description }}
+
+{% if industry_context %}
+INDUSTRY CONTEXT:
+{% for challenge in industry_context.challenges %}
+- {{ challenge }}
+{% endfor %}
+{% endif %}
+
+EMPLOYEES (reference these people where appropriate):
+{% for emp in employees %}
+- {{ emp.name }} — {{ emp.role }}
+{% endfor %}
+
+Generate the complete markdown file with frontmatter now.
