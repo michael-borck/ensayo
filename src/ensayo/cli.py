@@ -18,8 +18,20 @@ def main() -> None:
 @click.option("--output", type=click.Path(), required=True, help="Output directory")
 def init(brief: str, output: str) -> None:
     """Generate content and build a simulation site from a brief."""
-    click.echo(f"Initialising simulation from {brief} → {output}")
-    click.echo("Not yet implemented.")
+    from ensayo.builder import build_site
+    from ensayo.generator import generate_all
+
+    output_path = Path(output)
+    content_dir = output_path / "content"
+    dist_dir = output_path / "dist"
+
+    # Step 1: Generate content
+    generate_all(Path(brief), content_dir)
+
+    # Step 2: Build site (site.yaml is written by generate_all next to content/)
+    site_yaml = output_path / "site.yaml"
+    if site_yaml.is_file():
+        build_site(site_yaml, content_dir, dist_dir)
 
 
 @main.group()
@@ -109,10 +121,16 @@ def build(config: str, content_dir: str, output: str) -> None:
     help="Content directory",
 )
 @click.option(
+    "--config", type=click.Path(), default="site.yaml",
+    help="Site config file (for simulation metadata)",
+)
+@click.option(
     "--output", type=click.Path(), default="booking-employees.json",
     help="Output JSON file",
 )
-def export_booking_config(content_dir: str, output: str) -> None:
+def export_booking_config(content_dir: str, config: str, output: str) -> None:
     """Export employee config for the booking API."""
-    click.echo(f"Exporting booking config from {content_dir} → {output}")
-    click.echo("Not yet implemented.")
+    from ensayo.booking import export_booking_config as do_export
+
+    config_path = Path(config) if Path(config).is_file() else None
+    do_export(Path(content_dir), config_path, Path(output))
