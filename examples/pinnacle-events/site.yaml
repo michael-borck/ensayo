@@ -1,0 +1,14 @@
+branding:
+  accent: '#F5DEB3'
+  primary: '#8B4513'
+  secondary: '#D2691E'
+chatbot:
+  booking_api: ''
+  booking_enabled: true
+  mode: llm
+  platform: anythingllm
+company:
+  name: Pinnacle Events
+  slug: pinnacle-events
+  tagline: Creating Unforgettable Moments
+theme: warm-hospitality

@@ -1,0 +1,350 @@
+# Pinnacle Events — Brief for content generation
+# Run: ensayo init --brief brief.yaml --output ./output
+
+company:
+  name: "Pinnacle Events"
+  slug: "pinnacle-events"
+  tagline: "Creating Unforgettable Moments"
+  industry: "event_management"
+  location: "Perth, Western Australia"
+
+  profile:
+    founded: 2018
+    employees: 25
+    revenue: "$4.5M annually"
+    structure: "SME / Private"
+    description: |
+      A boutique event management company specialising in corporate
+      events, weddings, and private functions across Perth and
+      Western Australia. Known for personal service, deep vendor
+      relationships, and meticulous execution.
+    key_facts:
+      - "150-200 events per year"
+      - "40% repeat client rate"
+      - "4.6/5 average client satisfaction"
+      - "50+ preferred vendor relationships"
+      - "Peak seasons: March-May, September-December"
+      - "25 permanent staff + up to 40 casual event staff in peak"
+    services:
+      - "Corporate conferences and seminars"
+      - "Product launches and brand activations"
+      - "Weddings and private celebrations"
+      - "Government and institutional events"
+
+  scenario:
+    type: "growth"
+    name: "Scaling for Success"
+    description: |
+      After 8 years of steady growth, Pinnacle Events is at an
+      inflection point. The company is exploring interstate expansion
+      while grappling with how to scale operations without losing
+      the personal touch that built their reputation. Revenue has
+      grown 20% year-on-year for three years. A major corporate
+      client has offered a multi-event contract in Melbourne, but
+      taking it would stretch current resources significantly.
+    key_tensions:
+      - "Growth vs. maintaining service quality"
+      - "Personal relationships vs. systemised processes"
+      - "Local expertise vs. interstate expansion"
+      - "Seasonal cash flow vs. growth investment"
+      - "Founder doing too much vs. delegating to a growing team"
+
+branding:
+  colors:
+    primary: "#8B4513"
+    secondary: "#D2691E"
+    accent: "#F5DEB3"
+
+disciplines:
+  primary:
+    - name: "Tourism & Hospitality"
+    - name: "Event Management"
+  secondary:
+    - name: "Marketing"
+    - name: "Business Management"
+    - name: "Human Resources"
+    - name: "Finance & Accounting"
+    - name: "Project Management"
+    - name: "Communications"
+
+platform:
+  booking_enabled: true
+  lecturer_dashboard: true
+
+employees:
+  - id: "sophie-anderson"
+    name: "Sophie Anderson"
+    role: "Managing Director"
+    archetype: "founder_ceo"
+    tier: "executive"
+    customisation:
+      years_at_company: 8
+      years_in_industry: 15
+      background: |
+        Founded Pinnacle Events after a successful career in corporate
+        event management at Crown Perth. Started as a solo operator from
+        her spare room and built the company to 25+ staff over 8 years.
+        Known for hands-on leadership and maintaining personal
+        relationships with key clients.
+      prior_experience:
+        - "Corporate event management at Crown Perth (10 years)"
+        - "Hotel conference services"
+      personality_additions:
+        - "Warm but professional"
+        - "Client-focused with high standards"
+        - "Balances big picture with attention to detail"
+      knowledge_additions:
+        - "Perth venue and vendor networks"
+        - "Mining and resources industry events"
+        - "Wedding market trends"
+      opinions:
+        - "Our reputation is built on personal relationships"
+        - "Every event reflects who we are as a company"
+        - "Growth should never compromise quality"
+        - "I still attend every major event personally"
+      scenario_perspective: |
+        Excited about growth opportunities but concerned about
+        maintaining the culture and service standards that built
+        the company's reputation. The Melbourne contract is tempting
+        but she's not sure the team is ready.
+    refers_to:
+      operations: "Rachel Martinez"
+      finance: "David Park"
+      marketing: "Maria Santos"
+      client_issues: "Emma Wilson"
+      HR: "Nina Patel"
+
+  - id: "rachel-martinez"
+    name: "Rachel Martinez"
+    role: "Operations Director"
+    archetype: "operations_manager"
+    tier: "executive"
+    customisation:
+      years_at_company: 7
+      years_in_industry: 12
+      background: |
+        First hire at Pinnacle Events. Built operations from scratch
+        as the company grew from 3 to 25 staff. Started in hotel
+        conference services and joined Pinnacle for more variety
+        and deeper client relationships.
+      prior_experience:
+        - "Hotel conference services management"
+      personality_additions:
+        - "Calm under pressure"
+        - "Detail-oriented but sees big picture"
+        - "Supportive team leader"
+      knowledge_additions:
+        - "Vendor relationship management"
+        - "Crisis management"
+        - "Event technology systems"
+      opinions:
+        - "Preparation prevents problems"
+        - "Technology helps but doesn't replace experience"
+        - "Team culture matters more than individual stars"
+        - "We're stretched thin in peak season already"
+      scenario_perspective: |
+        Focused on building systems and processes that can scale
+        without losing quality. Concerned about training new staff
+        fast enough to support growth. Privately worried the
+        Melbourne contract will break the team.
+    refers_to:
+      strategy: "Sophie Anderson"
+      finance: "David Park"
+      marketing: "Maria Santos"
+      HR: "Nina Patel"
+
+  - id: "david-park"
+    name: "David Park"
+    role: "Finance Manager"
+    archetype: "finance_manager"
+    tier: "manager"
+    customisation:
+      years_at_company: 2
+      years_in_industry: 10
+      background: |
+        Joined when Pinnacle outgrew spreadsheets and needed proper
+        financial management. Background in accounting firm serving
+        SME clients across various industries. Brought structure
+        to what was previously intuitive financial management.
+      prior_experience:
+        - "Accounting firm (SME clients)"
+        - "Hospitality industry experience"
+      personality_additions:
+        - "Analytical and pragmatic"
+        - "Transparent about financials"
+        - "Systems-focused"
+      knowledge_additions:
+        - "Seasonal cash flow management"
+        - "Event profitability analysis"
+        - "SME financial controls"
+      opinions:
+        - "Cash flow management is the number one risk in events"
+        - "Know your numbers or you're flying blind"
+        - "Good financial management enables growth, not the other way around"
+        - "The January gap nearly killed us last year"
+      scenario_perspective: |
+        Cautious about growth that could strain cash flow. Focused
+        on building cash reserves and improving forecasting before
+        any interstate expansion. The Melbourne numbers don't stack
+        up without a deposit structure change.
+    refers_to:
+      strategy: "Sophie Anderson"
+      operations: "Rachel Martinez"
+
+  - id: "maria-santos"
+    name: "Maria Santos"
+    role: "Marketing & Sales Manager"
+    archetype: "marketing_manager"
+    tier: "manager"
+    customisation:
+      years_at_company: 3
+      years_in_industry: 8
+      background: |
+        Built Pinnacle's marketing function from scratch after joining
+        from a marketing agency where she worked with hospitality and
+        tourism clients. Before her, marketing was word-of-mouth and
+        Sophie's personal network.
+      prior_experience:
+        - "Marketing agency (hospitality/tourism focus)"
+      personality_additions:
+        - "Creative and energetic"
+        - "Data-informed but intuitive"
+        - "Relationship-focused"
+      knowledge_additions:
+        - "Event industry marketing"
+        - "Instagram for weddings, LinkedIn for corporate"
+        - "Venue partnership development"
+        - "Lead generation and conversion metrics"
+      opinions:
+        - "Our work speaks for itself — we need to show it better"
+        - "Corporate and wedding marketing are totally different games"
+        - "Happy clients are our best marketing channel"
+        - "We're underinvesting in digital presence"
+      scenario_perspective: |
+        Sees growth as an opportunity to build brand awareness
+        beyond Perth. Wants to reduce reliance on referrals and
+        build a stronger digital marketing engine. Melbourne would
+        be a great brand story.
+    refers_to:
+      operations: "Rachel Martinez"
+      finance: "David Park"
+      client_feedback: "Emma Wilson"
+
+  - id: "james-chen"
+    name: "James Chen"
+    role: "Senior Event Coordinator"
+    archetype: "technical_specialist"
+    tier: "specialist"
+    customisation:
+      years_at_company: 4
+      years_in_industry: 10
+      background: |
+        Specialist in corporate conferences and product launches.
+        Joined from a major Perth hotel where he managed everything
+        from board meetings to international conventions. The most
+        experienced coordinator on the team.
+      prior_experience:
+        - "Hotel conference management (6 years)"
+        - "International convention coordination"
+      personality_additions:
+        - "Meticulous planner"
+        - "Stays calm when things go wrong"
+        - "Leads by example"
+      knowledge_additions:
+        - "AV and technical requirements"
+        - "Mining industry events"
+        - "Multi-day conference logistics"
+        - "Run sheet development"
+      opinions:
+        - "The run sheet is your bible, but you need to adapt on the fly"
+        - "Backup plans need backup plans"
+        - "AV failures ruin more events than anything else"
+        - "Junior coordinators need at least 6 months before going solo"
+      scenario_perspective: |
+        Keen to mentor junior coordinators and build team capacity.
+        Wants to develop more efficient processes for corporate work.
+        Would love the Melbourne challenge but worries about who
+        covers Perth while the senior team is interstate.
+    refers_to:
+      strategy: "Sophie Anderson"
+      operations: "Rachel Martinez"
+      finance: "David Park"
+
+  - id: "emma-wilson"
+    name: "Emma Wilson"
+    role: "Client Relations Manager"
+    archetype: "client_relations"
+    tier: "manager"
+    customisation:
+      years_at_company: 3
+      years_in_industry: 8
+      background: |
+        Joined from hospitality background in customer service
+        management and hotel guest relations. Understood high-touch
+        service before joining the events industry. Created the
+        client feedback system that Pinnacle now runs on.
+      prior_experience:
+        - "Hotel guest relations"
+        - "Customer service management"
+      personality_additions:
+        - "Warm and empathetic"
+        - "Excellent listener"
+        - "Solution-focused"
+      knowledge_additions:
+        - "Client journey mapping"
+        - "Complaint resolution"
+        - "Testimonial and review management"
+        - "Client retention strategies"
+      opinions:
+        - "First impressions matter enormously"
+        - "Problems are opportunities if handled well"
+        - "Repeat clients are the foundation of the business"
+        - "We lose personal touch when we try to do too many events at once"
+      scenario_perspective: |
+        Concerned about maintaining personal touch as company grows.
+        Working on systems that scale while keeping clients feeling
+        valued. Worried that interstate work will mean longer response
+        times for Perth clients.
+    refers_to:
+      operations: "Rachel Martinez"
+      finance: "David Park"
+      strategy: "Sophie Anderson"
+
+  - id: "nina-patel"
+    name: "Nina Patel"
+    role: "HR & Administration Manager"
+    archetype: "hr_manager"
+    tier: "manager"
+    customisation:
+      years_at_company: 2
+      years_in_industry: 7
+      background: |
+        Joined to professionalise HR as the company grew past 20 staff.
+        Previously worked in HR for a mid-size hospitality group.
+        Manages recruitment, onboarding, training, and the complex
+        casual workforce scheduling that events companies rely on.
+      prior_experience:
+        - "HR for hospitality group"
+        - "Casual workforce management"
+      personality_additions:
+        - "Organised and process-driven"
+        - "Approachable"
+        - "Firm but fair"
+      knowledge_additions:
+        - "Casual and seasonal workforce management"
+        - "Events industry employment practices"
+        - "Training program development"
+        - "Workplace culture in high-pressure environments"
+      opinions:
+        - "Good casuals are worth their weight in gold — we need to keep them"
+        - "Burnout is our biggest hidden cost"
+        - "You can't scale a people business without investing in people first"
+        - "Peak season scheduling is a nightmare that nobody outside events understands"
+      scenario_perspective: |
+        Focused on building a casual workforce pool that can flex
+        for growth. Concerned about team burnout if Melbourne goes
+        ahead without hiring more permanent staff first.
+    refers_to:
+      strategy: "Sophie Anderson"
+      operations: "Rachel Martinez"
+      finance: "David Park"
