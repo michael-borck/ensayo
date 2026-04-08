@@ -1,0 +1,18 @@
+{% extends "base.html.j2" %}
+{% block title %}{{ doc.title }} — {{ site.company.name }}{% endblock %}
+
+{% block content %}
+<section class="section">
+    <nav class="breadcrumb">
+        <a href="{{ base_url }}docs/{{ doc.category }}/index.html">
+            {{ "Support Documents" if doc.category == "support" else "Policies" }}
+        </a> &rsaquo; {{ doc.title }}
+    </nav>
+
+    <h1>{{ doc.title }}</h1>
+
+    <div class="doc-content">
+        {{ doc_body }}
+    </div>
+</section>
+{% endblock %}

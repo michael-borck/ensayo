@@ -1,0 +1,23 @@
+/* Ensayo Theme: Warm Hospitality — Pinnacle Events style */
+
+:root {
+    --sim-primary: #8B4513;
+    --sim-primary-dark: #6B3410;
+    --sim-secondary: #D2691E;
+    --sim-accent: #F5DEB3;
+    --sim-bg: #FFF8F0;
+    --sim-text: #333333;
+    --sim-muted: #6B5B4F;
+    --sim-white: #FFFFFF;
+    --sim-border: #E8DDD0;
+    --sim-shadow: rgba(139, 69, 19, 0.1);
+    --sim-ok: #2D6A4F;
+    --sim-warn: #B08400;
+    --sim-danger: #C62828;
+    --sim-font-heading: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    --sim-font-body: 'Open Sans', system-ui, -apple-system, sans-serif;
+    --sim-radius: 6px;
+}
+
+.hero { border-bottom-color: var(--sim-accent); }
+.tag { background: #FFF3E0; border-color: var(--sim-accent); color: var(--sim-secondary); }

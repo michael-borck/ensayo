@@ -1,0 +1,14 @@
+company:
+  name: "Test Company"
+  slug: "test-company"
+  tagline: "Testing simulations"
+
+theme: base
+branding:
+  primary: "#ff0000"
+  secondary: "#00ff00"
+  accent: "#0000ff"
+
+chatbot:
+  mode: keyword
+  booking_enabled: false

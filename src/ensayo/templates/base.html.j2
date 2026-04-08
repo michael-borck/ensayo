@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ site.company.name }}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ base_url }}assets/css/style.css">
+    {% block head %}{% endblock %}
+</head>
+<body class="sim-site" data-theme="{{ site.theme }}">
+    <header class="header">
+        <div class="wrap">
+            {% include "components/nav.html.j2" %}
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="wrap">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="wrap">
+            {% include "components/footer.html.j2" %}
+        </div>
+    </footer>
+
+    {% if site.chatbot.booking_enabled %}
+    <script src="{{ base_url }}assets/js/booking-api.js"></script>
+    <script src="{{ base_url }}assets/js/booking-gate.js"></script>
+    {% endif %}
+    {% block scripts %}{% endblock %}
+</body>
+</html>

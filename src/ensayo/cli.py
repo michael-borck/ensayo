@@ -1,5 +1,7 @@
 """CLI entry point for ensayo."""
 
+from pathlib import Path
+
 import click
 
 from ensayo import __version__
@@ -77,8 +79,9 @@ def content_prompts(content_dir: str) -> None:
 @click.option("--output", type=click.Path(), default="dist", help="Output directory")
 def build(config: str, content_dir: str, output: str) -> None:
     """Build a vanilla HTML site from content and config."""
-    click.echo(f"Building site: {config} + {content_dir} → {output}")
-    click.echo("Not yet implemented.")
+    from ensayo.builder import build_site
+
+    build_site(Path(config), Path(content_dir), Path(output))
 
 
 @main.command("export-booking-config")

@@ -1,0 +1,16 @@
+<div class="footer-content">
+    <div class="footer-brand">
+        <strong>{{ site.company.name }}</strong>
+        {% if site.company.tagline %}
+        <p>{{ site.company.tagline }}</p>
+        {% endif %}
+    </div>
+    <div class="footer-links">
+        <a href="{{ base_url }}about.html">About</a>
+        <a href="{{ base_url }}contact.html">Contact</a>
+        <a href="{{ base_url }}docs/policies/index.html">Policies</a>
+    </div>
+    <div class="footer-note">
+        <p>This is an educational simulation. {{ site.company.name }} is a fictional company created for teaching purposes.</p>
+    </div>
+</div>

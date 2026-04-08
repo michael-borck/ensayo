@@ -1,0 +1,25 @@
+{% extends "base.html.j2" %}
+{% block title %}Staff Directory — {{ site.company.name }}{% endblock %}
+
+{% block content %}
+<section class="section">
+    <h1>Staff Directory</h1>
+    <p>Meet the team at {{ site.company.name }}. Click on a staff member to start a conversation.</p>
+
+    {% if content.employees %}
+    <div class="card-grid">
+        {% for emp in content.employees %}
+        <a href="{{ base_url }}chatbots/{{ emp.slug }}/index.html" class="card card-link">
+            <h3>{{ emp.name }}</h3>
+            <p class="card-role">{{ emp.role }}</p>
+            {% if emp.personality %}
+            <p class="card-desc">{{ emp.personality | join(", ") }}</p>
+            {% endif %}
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>No staff members available.</p>
+    {% endif %}
+</section>
+{% endblock %}

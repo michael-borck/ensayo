@@ -1,0 +1,17 @@
+<nav class="nav">
+    <a href="{{ base_url }}index.html" class="nav-brand">{{ site.company.name }}</a>
+    <ul class="nav-links">
+        <li><a href="{{ base_url }}index.html"{% if active_page == "index" %} class="active"{% endif %}>Home</a></li>
+        <li><a href="{{ base_url }}services.html"{% if active_page == "services" %} class="active"{% endif %}>Services</a></li>
+        <li><a href="{{ base_url }}about.html"{% if active_page == "about" %} class="active"{% endif %}>About</a></li>
+        <li><a href="{{ base_url }}chatbots/index.html"{% if active_page == "team" %} class="active"{% endif %}>Staff</a></li>
+        <li class="nav-dropdown">
+            <a href="#"{% if active_page == "docs" %} class="active"{% endif %}>Documents</a>
+            <ul class="nav-dropdown-menu">
+                <li><a href="{{ base_url }}docs/support/index.html">Support Documents</a></li>
+                <li><a href="{{ base_url }}docs/policies/index.html">Policies</a></li>
+            </ul>
+        </li>
+        <li><a href="{{ base_url }}contact.html"{% if active_page == "contact" %} class="active"{% endif %}>Contact</a></li>
+    </ul>
+</nav>

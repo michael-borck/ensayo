@@ -1,0 +1,27 @@
+{% extends "base.html.j2" %}
+{% block title %}About — {{ site.company.name }}{% endblock %}
+
+{% block content %}
+<section class="section">
+    <h1>About {{ site.company.name }}</h1>
+    {% if page_body %}
+    {{ page_body }}
+    {% else %}
+    <p>{{ site.company.tagline }}</p>
+    {% endif %}
+</section>
+
+{% if content.employees %}
+<section class="section">
+    <h2>Leadership Team</h2>
+    <div class="card-grid">
+        {% for emp in content.employees %}
+        <a href="{{ base_url }}chatbots/{{ emp.slug }}/index.html" class="card card-link">
+            <h3>{{ emp.name }}</h3>
+            <p class="card-role">{{ emp.role }}</p>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+{% endblock %}

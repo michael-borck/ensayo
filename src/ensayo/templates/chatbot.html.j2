@@ -1,0 +1,46 @@
+{% extends "base.html.j2" %}
+{% block title %}{{ employee.name }} — {{ site.company.name }}{% endblock %}
+
+{% block content %}
+<section class="section">
+    <div class="employee-header">
+        <h1>{{ employee.name }}</h1>
+        <p class="employee-role">{{ employee.role }}</p>
+    </div>
+
+    {% if employee.personality %}
+    <div class="employee-traits">
+        {% for trait in employee.personality %}
+        <span class="tag">{{ trait }}</span>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if employee.knowledge %}
+    <div class="employee-section">
+        <h3>Areas of Expertise</h3>
+        <ul>
+            {% for area in employee.knowledge %}
+            <li>{{ area }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if employee.refers_to %}
+    <div class="employee-section">
+        <h3>For Other Topics</h3>
+        <ul>
+            {% for topic, person in employee.refers_to.items() %}
+            <li><strong>{{ topic | capitalize }}</strong>: speak with {{ person }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</section>
+
+<section class="section chatbot-section">
+    {% include "components/booking-gate.html.j2" %}
+    {% include "components/chatbot-widget.html.j2" %}
+</section>
+{% endblock %}

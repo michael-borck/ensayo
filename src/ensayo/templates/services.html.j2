@@ -1,0 +1,13 @@
+{% extends "base.html.j2" %}
+{% block title %}Services — {{ site.company.name }}{% endblock %}
+
+{% block content %}
+<section class="section">
+    <h1>Our Services</h1>
+    {% if page_body %}
+    {{ page_body }}
+    {% else %}
+    <p>Learn more about what {{ site.company.name }} offers.</p>
+    {% endif %}
+</section>
+{% endblock %}

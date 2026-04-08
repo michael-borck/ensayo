@@ -1,0 +1,12 @@
+{% if site.chatbot.booking_enabled %}
+<div class="booking-gate" id="booking-gate"
+     data-employee-id="{{ employee.slug }}"
+     data-booking-api="{{ site.chatbot.booking_api }}">
+    <div class="booking-gate-message">
+        <h3>Schedule an Interview</h3>
+        <p>You need to book an appointment before speaking with {{ employee.name }}.</p>
+        <button class="btn btn-primary" id="booking-schedule-btn">Schedule Interview</button>
+        <button class="btn btn-secondary" id="booking-attend-btn">I Have an Appointment</button>
+    </div>
+</div>
+{% endif %}

@@ -1,0 +1,16 @@
+{% extends "base.html.j2" %}
+{% block title %}Contact — {{ site.company.name }}{% endblock %}
+
+{% block content %}
+<section class="section">
+    <h1>Contact Us</h1>
+    {% if page_body %}
+    {{ page_body }}
+    {% else %}
+    <p>Get in touch with {{ site.company.name }}.</p>
+    <div class="alert alert-info">
+        <p>This is an educational simulation. For real enquiries, please contact your instructor.</p>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% if site.chatbot.mode == "llm" %}
+{# AnythingLLM embed — the workspace-specific embed ID is set per-employee #}
+<div class="chatbot-container" id="chatbot-container"
+     data-employee-slug="{{ employee.slug }}"
+     data-employee-name="{{ employee.name }}">
+    <p class="chatbot-placeholder">Chat widget loading... If the chat does not appear, the LLM backend may be unavailable.</p>
+</div>
+{% elif site.chatbot.mode == "keyword" %}
+{# Keyword chatbot — loads responses from keywords.json #}
+<script src="{{ base_url }}assets/js/chatbot-keyword.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        initKeywordChatbot({
+            slug: "{{ employee.slug }}",
+            name: "{{ employee.name }}",
+            role: "{{ employee.role }}",
+            keywordsUrl: "keywords.json"
+        });
+    });
+</script>
+{% endif %}

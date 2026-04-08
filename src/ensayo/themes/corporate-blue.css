@@ -1,0 +1,20 @@
+/* Ensayo Theme: Corporate Blue — CloudCore style */
+
+:root {
+    --sim-primary: #1a365d;
+    --sim-primary-dark: #0f2340;
+    --sim-secondary: #2b6cb0;
+    --sim-accent: #63b3ed;
+    --sim-bg: #f7fafc;
+    --sim-text: #2d3748;
+    --sim-muted: #718096;
+    --sim-white: #ffffff;
+    --sim-border: #e2e8f0;
+    --sim-shadow: rgba(26, 54, 93, 0.1);
+    --sim-ok: #38a169;
+    --sim-warn: #d69e2e;
+    --sim-danger: #e53e3e;
+    --sim-font-heading: 'Inter', system-ui, -apple-system, sans-serif;
+    --sim-font-body: 'Inter', system-ui, -apple-system, sans-serif;
+    --sim-radius: 6px;
+}
