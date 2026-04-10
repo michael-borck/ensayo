@@ -252,6 +252,8 @@ def export_jobs(
                 brief_meta[title] = {
                     "reports_to": j.get("reports_to", ""),
                     "interview_pipeline": j.get("interview_pipeline"),
+                    "additional_postings": j.get("additional_postings", []),
+                    "blocking_override": j.get("blocking_override"),
                 }
 
     postings = load_job_postings(Path(content_dir))
@@ -274,6 +276,10 @@ def export_jobs(
         }
         if meta.get("interview_pipeline"):
             entry["interview_pipeline"] = meta["interview_pipeline"]
+        if meta.get("additional_postings"):
+            entry["additional_postings"] = meta["additional_postings"]
+        if meta.get("blocking_override"):
+            entry["blocking_override"] = meta["blocking_override"]
         jobs_list.append(entry)
 
     jobs_data = {
