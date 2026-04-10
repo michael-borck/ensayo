@@ -261,9 +261,34 @@ def export_jobs(
     company_name = site.company.name if site else ""
     company_slug = site.company.slug if site else ""
 
+    # Helper to convert "Marcus Webb" → "marcus-webb" matching ensayo's
+    # employee filename convention. Strips honorifics and punctuation.
+    def _name_to_slug(name: str) -> str:
+        import re
+        n = name.strip()
+        # Strip honorifics (Dr., Mr., Mrs., Ms., Prof.)
+        n = re.sub(r"^(Dr|Mr|Mrs|Ms|Prof)\.?\s+", "", n, flags=re.IGNORECASE)
+        # Lowercase, remove punctuation, collapse whitespace to single dash
+        n = re.sub(r"[^\w\s-]", "", n.lower())
+        n = re.sub(r"\s+", "-", n).strip("-")
+        return n
+
+    employees_dir = Path(content_dir) / "employees"
+
+    def _load_persona(person_name: str) -> str:
+        """Load the chatbot prompt for an employee. Returns empty string if missing."""
+        if not person_name:
+            return ""
+        slug = _name_to_slug(person_name)
+        prompt_path = employees_dir / f"{slug}-prompt.txt"
+        if prompt_path.is_file():
+            return prompt_path.read_text(encoding="utf-8").strip()
+        return ""
+
     jobs_list = []
     for job in postings:
         meta = brief_meta.get(job.title.strip().lower(), {})
+        reports_to = meta.get("reports_to", "")
         entry = {
             "title": job.title,
             "slug": job.slug,
@@ -272,7 +297,8 @@ def export_jobs(
             "employment_type": job.employment_type,
             "url": f"{base_url}/careers/{job.slug}.html" if base_url else "",
             "description": job.body,
-            "reports_to": meta.get("reports_to", ""),
+            "reports_to": reports_to,
+            "manager_persona": _load_persona(reports_to),
         }
         if meta.get("interview_pipeline"):
             entry["interview_pipeline"] = meta["interview_pipeline"]
