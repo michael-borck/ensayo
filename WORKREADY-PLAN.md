@@ -600,12 +600,123 @@ The **cohort** concept (future) handles lecturer dashboards:
 
 ## Stream E — Stages 3-6 (detailed design)
 
-### Stage 3: Interview (NEXT BUILD)
+### Stage 3: Interview — Built (2026-04-10), polish in progress
 
 **What:** Guided AI conversation with the hiring manager character (the
 employee named in `reports_to` on the job posting). The student talks to
 a real character — Marcus Webb at NexusPoint, Karen Whitfield at IronVale,
 etc. — using the chatbot prompt that ensayo already generated for them.
+
+#### Polish layer: appointments and timing realism
+
+After the initial interview build, a polish layer adds time-based realism:
+
+**Booking system (preference-based, not slot-picker):**
+- Once invited to interview, the student must book an appointment time
+- Two-step booking UX: set day/time-of-day preferences → see 3-4 matching
+  slots → pick one
+- Slots generated per-student (no shared scarcity), so the system scales
+- Booked time is stored in `interview_bookings` with status pending
+- Confirmation message appears immediately in personal inbox
+
+**Business hours enforcement:**
+- Interviews can only happen 9-5 weekdays Perth time (configurable)
+- Slot generation respects these boundaries
+- All datetimes stored in UTC, displayed in Perth time
+
+**Late arrival = forfeit:**
+- Student must start the interview within 5 minutes of the booked time
+- Late → slot marked `missed`, missed_interviews counter incremented
+- Student returns to booking flow
+
+**Auto-rejection after repeated misses:**
+- After `MAX_MISSED_INTERVIEWS` (default 3) missed appointments, the
+  application is automatically rejected (company off-board)
+- Mirrors real-world consequences for ghosting interviews
+
+**Configurable feedback delays:**
+- Resume submission no longer gives instant feedback by default
+- `RESUME_FEEDBACK_DELAY_MINUTES` (default 0 for testing, ~30+ for realism)
+- Optional `_JITTER_MINUTES` randomises within a range
+- Implementation: uses existing `messages.deliver_at` column with
+  current `get_inbox` query that filters by `deliver_at <= now`
+- Pure lazy evaluation — no cron, no background jobs
+
+**Configuration knobs (env vars):**
+```
+INTERVIEW_BOOKING_ENABLED=false      # default off so dev/testing isn't blocked
+BUSINESS_HOURS_START=9
+BUSINESS_HOURS_END=17
+BUSINESS_DAYS=1,2,3,4,5              # Mon-Fri (1-7)
+TIMEZONE=Australia/Perth
+SLOT_DURATION_MINUTES=30
+SLOTS_OFFERED=4                      # how many to show per preference query
+LATE_GRACE_MINUTES=5
+MAX_MISSED_INTERVIEWS=3
+
+RESUME_FEEDBACK_DELAY_MINUTES=0
+RESUME_FEEDBACK_DELAY_JITTER_MINUTES=0
+INTERVIEW_INVITATION_DELAY_MINUTES=0
+```
+
+**Schema additions:**
+```sql
+ALTER TABLE applications ADD COLUMN missed_interviews INTEGER DEFAULT 0;
+
+CREATE TABLE interview_bookings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    application_id INTEGER NOT NULL REFERENCES applications(id),
+    scheduled_at TEXT NOT NULL,           -- UTC ISO string
+    status TEXT NOT NULL DEFAULT 'pending',  -- pending|completed|missed|cancelled
+    created_at TEXT NOT NULL
+);
+```
+
+**API endpoints:**
+```
+GET  /api/v1/interview/{application_id}/booking
+GET  /api/v1/interview/{application_id}/slots?days=1,2,3&time_of_day=morning
+POST /api/v1/interview/{application_id}/book {scheduled_at}
+POST /api/v1/interview/{application_id}/cancel-booking
+```
+
+The existing `POST /api/v1/interview/start` gains a booking check: if
+booking is enabled, requires a confirmed booking within the grace
+window. Otherwise rejected with a clear error.
+
+**Portal flow inside the existing Interview view:**
+
+| State | UI shown |
+|-------|---------|
+| `interview` stage, no booking | Preference form → matching slots → pick one |
+| Booked, before grace window | "Your interview is at {date/time}. Come back then." + "Cancel and reschedule" link |
+| Booked, within window | Existing pre-interview screen ("Begin Interview") |
+| Booked, > grace after | "You missed your appointment, please reschedule" + rebook UI (or reject if max missed) |
+| In progress / completed | Existing chat / result UI |
+
+#### Polish layer — nice-to-have additions (deferred)
+
+These are wanted but not in the first polish pass:
+
+1. **Calendar invite (.ics file)** — booking confirmation includes a
+   downloadable .ics that adds the appointment to the student's
+   personal calendar (Google, Apple, Outlook)
+2. **Per-company business hours** — IronVale could conduct interviews
+   8am-4pm to mimic mining shifts; Horizon Foundation might offer
+   evenings; etc. Override via brief.yaml
+3. **HR-mediated bookings** — for agency listings, the booking flow
+   shows "Catalyst Recruitment is finding a time" with simulated
+   back-and-forth before confirmation
+4. **Reminder messages** — inbox notification 24h and 1h before booked
+   interview (lazy evaluation: deliver_at on a pre-created message)
+5. **Reschedule limits** — cap reschedules per application (e.g., 2)
+   independent of misses
+6. **Timezone display per student** — show appointments in the
+   student's local time if they're not in Perth
+7. **Working day lookup** — handle public holidays via a configurable
+   list so 25 December isn't offered as a slot
+
+#### Conversation flow (guided phases)
 
 #### Decisions
 
