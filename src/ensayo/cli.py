@@ -136,6 +136,39 @@ def content_add_doc(
     generate_single_document(Path(brief), Path(content_dir), doc_type, title, instructions)
 
 
+@content.command("add-job")
+@click.option("--title", required=True, help="Job title")
+@click.option("--department", default="", help="Department")
+@click.option("--location", default="", help="Job location")
+@click.option("--employment-type", default="Full-time", help="Employment type")
+@click.option("--reports-to", default="", help="Name of the hiring manager")
+@click.option("--instructions", default="", help="Instructions for content generation")
+@click.option("--brief", type=click.Path(exists=True), default="brief.yaml", help="Brief file")
+@click.option(
+    "--content-dir", type=click.Path(), default="content",
+    help="Content directory",
+)
+def content_add_job(
+    title: str,
+    department: str,
+    location: str,
+    employment_type: str,
+    reports_to: str,
+    instructions: str,
+    brief: str,
+    content_dir: str,
+) -> None:
+    """Add a job posting to an existing simulation."""
+    from ensayo.generator import generate_single_job
+
+    generate_single_job(
+        Path(brief), Path(content_dir), title,
+        department=department, location=location,
+        employment_type=employment_type, reports_to=reports_to,
+        instructions=instructions,
+    )
+
+
 @content.command("prompts")
 @click.option(
     "--content-dir", type=click.Path(exists=True), default="content",
@@ -164,6 +197,95 @@ def build(config: str, content_dir: str, output: str) -> None:
     from ensayo.builder import build_site
 
     build_site(Path(config), Path(content_dir), Path(output))
+
+
+@main.command("export-jobs")
+@click.option(
+    "--content-dir", type=click.Path(exists=True), default="content",
+    help="Content directory",
+)
+@click.option(
+    "--config", type=click.Path(), default="site.yaml",
+    help="Site config file",
+)
+@click.option(
+    "--brief", type=click.Path(), default="brief.yaml",
+    help="Brief file (for reports_to and interview_pipeline metadata)",
+)
+@click.option(
+    "--base-url", default="",
+    help="Base URL of the deployed site (e.g. https://cloudcore.github.io)",
+)
+@click.option(
+    "--output", type=click.Path(), default="jobs.json",
+    help="Output JSON file",
+)
+def export_jobs(
+    content_dir: str, config: str, brief: str, base_url: str, output: str,
+) -> None:
+    """Export job postings as JSON for external job board integration.
+
+    Reads the AI-generated job descriptions from content/jobs/*.md and
+    merges in brief.yaml metadata (reports_to, interview_pipeline) so
+    downstream consumers like the WorkReady API can drive multi-stage
+    interview pipelines.
+    """
+    import json
+
+    import yaml
+
+    from ensayo.content import load_job_postings, load_site_config
+
+    config_path = Path(config)
+    site = load_site_config(config_path) if config_path.is_file() else None
+
+    # Load brief.yaml metadata if available — keyed by job title
+    # (titles are more reliable than slugs because the AI sometimes
+    # generates a different slug than ensayo's filename convention)
+    brief_meta: dict[str, dict] = {}
+    brief_path = Path(brief)
+    if brief_path.is_file():
+        brief_data = yaml.safe_load(brief_path.read_text(encoding="utf-8")) or {}
+        for j in brief_data.get("jobs", []):
+            title = (j.get("title", "") or "").strip().lower()
+            if title:
+                brief_meta[title] = {
+                    "reports_to": j.get("reports_to", ""),
+                    "interview_pipeline": j.get("interview_pipeline"),
+                }
+
+    postings = load_job_postings(Path(content_dir))
+
+    company_name = site.company.name if site else ""
+    company_slug = site.company.slug if site else ""
+
+    jobs_list = []
+    for job in postings:
+        meta = brief_meta.get(job.title.strip().lower(), {})
+        entry = {
+            "title": job.title,
+            "slug": job.slug,
+            "department": job.department,
+            "location": job.location,
+            "employment_type": job.employment_type,
+            "url": f"{base_url}/careers/{job.slug}.html" if base_url else "",
+            "description": job.body,
+            "reports_to": meta.get("reports_to", ""),
+        }
+        if meta.get("interview_pipeline"):
+            entry["interview_pipeline"] = meta["interview_pipeline"]
+        jobs_list.append(entry)
+
+    jobs_data = {
+        "company": company_name,
+        "company_slug": company_slug,
+        "company_url": base_url,
+        "jobs": jobs_list,
+    }
+
+    out_path = Path(output)
+    out_path.write_text(json.dumps(jobs_data, indent=2), encoding="utf-8")
+    click.echo(f"Exported {len(postings)} jobs → {out_path}")
 
 
 @main.command("export-booking-config")
