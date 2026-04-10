@@ -243,6 +243,7 @@ def export_jobs(
     # (titles are more reliable than slugs because the AI sometimes
     # generates a different slug than ensayo's filename convention)
     brief_meta: dict[str, dict] = {}
+    company_business_hours: dict | None = None
     brief_path = Path(brief)
     if brief_path.is_file():
         brief_data = yaml.safe_load(brief_path.read_text(encoding="utf-8")) or {}
@@ -255,6 +256,17 @@ def export_jobs(
                     "additional_postings": j.get("additional_postings", []),
                     "blocking_override": j.get("blocking_override"),
                 }
+        # Optional per-company business hours override
+        company_section = brief_data.get("company", {})
+        bh = company_section.get("business_hours")
+        if bh:
+            company_business_hours = {
+                "start": bh.get("start", 9),
+                "end": bh.get("end", 17),
+                "days": bh.get("days", [1, 2, 3, 4, 5]),
+                "timezone": bh.get("timezone"),
+                "description": bh.get("description", ""),
+            }
 
     postings = load_job_postings(Path(content_dir))
 
@@ -314,6 +326,8 @@ def export_jobs(
         "company_url": base_url,
         "jobs": jobs_list,
     }
+    if company_business_hours:
+        jobs_data["business_hours"] = company_business_hours
 
     out_path = Path(output)
     out_path.write_text(json.dumps(jobs_data, indent=2), encoding="utf-8")
