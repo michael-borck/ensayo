@@ -432,19 +432,169 @@ Benefits over passwords:
 - **Content security policy** headers
 - **CSRF tokens** if cookie-based auth is added later
 
-### Pre-Stage 3 refactors (small but load-bearing)
+### Pre-Stage 3 refactors — DONE (2026-04-10)
 
-Three small refactors before building Stage 3, to avoid retrofit cost:
+1. **Notification adapter** — `notify()` dispatches to registered
+   channel handlers (currently in_app only). Adding email/Telegram
+   later = one new handler + `register_channel()` call.
+2. **Internal student_id** — integer PK on students, email as unique
+   column. All FK references updated. Migration handles legacy DBs.
+3. **Multi-stage interview data model** — `current_interview_step` on
+   applications, `get_interview_pipeline()` returns configured or
+   default pipeline, jobs.json exports include `reports_to`.
 
-1. **Notification adapter** — wrap `create_message()` in `notify()`.
-   ~1 hour. Today only does in-app, but the abstraction is in place.
-2. **Internal student_id** — migration from `student_email` as PK to
-   `student_id` integer with email as a unique column. ~2 hours.
-3. **Multi-stage interview data model** — `interview_pipeline` field on
-   job specs and `current_interview_stage` on applications. MVP fills
-   in single-stage only. ~30 minutes of design.
+### Posting model, agency listings, and configurable blocking
 
-Total: ~half a day, saves weeks of refactoring later.
+Decided 2026-04-10. This is about making the job board and
+application flow authentic and configurable. Four phases:
+
+#### Phase A: Configurable blocking
+
+Blocking level determines what gets greyed out on seek.jobs when a
+student is rejected. Default:
+- Resume failure → blocks **role** only (company can still be applied to)
+- Interview failure → blocks **company** (the manager remembers you)
+- Task failure → blocks **company**
+
+These are cohort-wide defaults stored in simulation config, with
+per-job overrides in `brief.yaml`:
+
+```yaml
+# API config (global defaults)
+blocking:
+  resume_failure: "role"
+  interview_failure: "company"
+  task_failure: "company"
+
+# Per-job override in brief.yaml
+jobs:
+  - title: "Service Desk Analyst"
+    blocking_override:
+      resume_failure: "none"  # entry-level, re-apply OK
+```
+
+Greying is preferred over hiding — students see the consequences.
+
+#### Phase B: Posting model
+
+A **posting** is a listing of a job somewhere. Each job has at least
+one posting (company direct). Agency listings are additional postings
+of the same underlying job.
+
+```sql
+CREATE TABLE postings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    company_slug TEXT NOT NULL,
+    job_slug TEXT NOT NULL,
+    source_type TEXT NOT NULL DEFAULT 'direct',  -- direct | agency
+    agency_name TEXT,
+    listing_title TEXT NOT NULL,
+    listing_description TEXT,
+    confidential INTEGER DEFAULT 0,
+    created_at TEXT NOT NULL
+);
+```
+
+Applications now reference `posting_id`. The posting resolves to the
+underlying (company_slug, job_slug) for interview routing, scoring,
+and blocking decisions.
+
+Auto-created: one direct posting per job from jobs.json on startup.
+
+#### Phase C: Agency listings
+
+Extend `brief.yaml` to declare agency postings per job:
+
+```yaml
+jobs:
+  - title: "Junior Security Analyst"
+    reports_to: "Marcus Webb"
+    additional_postings:
+      - agency: "Hays Recruitment"
+        title: "Junior Cybersecurity Analyst | Growing MSP"
+        confidential: false
+      - agency: "Robert Half"
+        title: "Cybersecurity Analyst — Confidential Client"
+        confidential: true
+```
+
+During `ensayo export-jobs`, these become additional entries in
+jobs.json with `source_type: "agency"` and `confidential: true/false`.
+
+**Fictional recruitment agencies** (used across all companies):
+- PerthTalent Recruitment
+- WestForce Staffing
+- Catalyst People Solutions
+
+Students see different wording for the same underlying role. Apply
+routes all hit the same API endpoint with different `source` values:
+- `source: "direct"` — from company careers page
+- `source: "seek"` — from seek.jobs Quick Apply on a direct listing
+- `source: "agency"` — from seek.jobs on an agency listing
+
+#### Phase D: Confidential listings and reveal UX
+
+Confidential agency listings hide the actual company:
+- On seek.jobs: "Our client, a leading WA tech company..."
+- In application confirmation: "via Hays Recruitment" (no company)
+- **Reveal on interview invitation:** "We're delighted to invite you
+  to interview at **NexusPoint Systems** with **Marcus Webb**"
+- If rejected: company stays anonymous forever (realistic — you never
+  find out who rejected you through an agency)
+
+#### Blocking with multiple postings
+
+Same (company, job) resolves regardless of which posting the student
+applied through:
+- Applied via Hays for JSA at NexusPoint → rejected
+- NexusPoint's direct JSA listing also greyed out (it's the same role)
+- Other NexusPoint roles: depend on blocking level (role vs company)
+- Confidential listings for blocked companies: greyed out only when
+  the student has been *revealed* the company (i.e. they somehow know
+  it's the same company). If they haven't been revealed, they can
+  still apply — but the API recognises the duplicate and either blocks
+  or links to the existing application.
+
+#### Build order for posting/blocking work
+
+1. Schema: postings table + migration
+2. Auto-create direct postings from jobs.json on startup
+3. Configurable blocking rules (cohort defaults + per-job override)
+4. Update resume endpoint to reference posting_id
+5. Update seek.jobs to show/grey postings based on blocking
+6. Extend brief.yaml with additional_postings, re-export jobs.json
+7. seek.jobs renders agency listings alongside direct listings
+8. Confidential listing UX + reveal in interview invitation
+
+### Multi-cycle iterations (same student, same semester)
+
+Students may complete the simulation 2-3 times in a 12-week course.
+The data model supports this naturally — each application is a separate
+record. After cycle 1 (completed or rejected), the student returns
+to NOT_APPLIED with some companies blocked and starts a fresh cycle.
+
+Additions for multi-cycle:
+- **`cycle` field on applications** — auto-incremented per student,
+  supports portfolio view ("Attempt 1 score: 42, Attempt 2: 71")
+- **Progressive assessment** (optional, cohort config) — first cycle
+  uses lenient rubric, later cycles more rigorous. Or reverse (force
+  a learning failure first, then fairer scoring)
+- **End-of-semester portfolio** — student sees all their attempts and
+  improvement trajectory. Powerful for reflective assessment.
+
+### Multi-unit deployment
+
+Multiple course units using WorkReady → same platform, more students.
+No per-unit management layer needed. All students see the same jobs,
+same companies. Unit separation is operational:
+- Same course → same WorkReady instance
+- Different courses wanting different companies → separate deployment
+  (different API, different DB, different company sites)
+
+The **cohort** concept (future) handles lecturer dashboards:
+- `cohort_id` on students (set at enrolment)
+- Lecturer sees only their cohort's progress
+- Doesn't affect the simulation at all — just filtering for admin views
 
 ---
 
@@ -810,11 +960,12 @@ analytics (do students who apply directly perform differently?).
 | 4 | Schema migration: applications.status, interview_sessions table | DONE |
 | 5 | Stage 2 outcome messages include full feedback (retroactive fix) | DONE |
 | 6 | blocked_companies in StudentState | DONE |
-| 7 | **Notification adapter** — wrap create_message in notify() | NEXT (pre-S3) |
-| 8 | **Internal student_id** — schema migration, email as property | NEXT (pre-S3) |
-| 9 | **Multi-stage interview data model** — interview_pipeline support | NEXT (pre-S3) |
-| 10 | **Interview endpoint** (Stage 3) + chat UI in portal | After refactors |
-| 11 | seek.jobs becomes API-aware — grey out blocked companies | With Stage 3 |
+| 7 | Notification adapter — wrap create_message in notify() | DONE |
+| 8 | Internal student_id — schema migration, email as property | DONE |
+| 9 | Multi-stage interview data model — interview_pipeline support | DONE |
+| 10 | **Posting model + configurable blocking** (Phases A-D) | NEXT |
+| 11 | **seek.jobs API-aware** — grey out blocked, agency listings, confidential | NEXT |
+| 12 | **Interview endpoint** (Stage 3) + chat UI in portal | After posting model |
 | 12 | **Hired-state portal** — theme switching, dashboard, work inbox | After Stage 3 |
 | 13 | **Task content system** in ensayo (task briefs + rubrics) | Stage 4 content |
 | 14 | **Task submission + mentor chat** (Stage 4) | Core work simulation |
