@@ -9,11 +9,14 @@ import yaml
 
 from ensayo.frontmatter import load_frontmatter_file
 from ensayo.models import (
+    AssetsConfig,
     BrandingConfig,
+    CareersConfig,
     ChatbotConfig,
     CompanyConfig,
     Document,
     Employee,
+    JobPosting,
     PageOverride,
     SiteConfig,
     SiteContent,
@@ -45,11 +48,28 @@ def load_site_config(path: Path) -> SiteConfig:
         booking_api=chatbot_raw.get("booking_api", ""),
     )
 
+    careers_raw = raw.get("careers", {})
+    careers = CareersConfig(
+        label=careers_raw.get("label", "Careers"),
+        submit_url=careers_raw.get("submit_url", ""),
+        show_apply_form=careers_raw.get("show_apply_form", True),
+    )
+
+    assets_raw = raw.get("assets", {})
+    assets = AssetsConfig(
+        logo=assets_raw.get("logo", ""),
+        hero_image=assets_raw.get("hero_image", ""),
+        favicon=assets_raw.get("favicon", ""),
+    )
+
     return SiteConfig(
         company=company,
         theme=raw.get("theme", "base"),
+        layout=raw.get("layout", ""),
         branding=branding,
         chatbot=chatbot,
+        careers=careers,
+        assets=assets,
     )
 
 
@@ -134,6 +154,35 @@ def load_page_overrides(content_dir: Path) -> dict[str, PageOverride]:
     return overrides
 
 
+def _build_job_posting(
+    meta: dict[str, Any], body: str, slug_from_file: str,
+) -> JobPosting:
+    """Build a JobPosting from parsed frontmatter and body."""
+    return JobPosting(
+        title=meta.get("title", slug_from_file.replace("-", " ").title()),
+        slug=meta.get("slug", slug_from_file),
+        department=meta.get("department", ""),
+        location=meta.get("location", ""),
+        employment_type=meta.get("employment_type", "Full-time"),
+        body=body,
+    )
+
+
+def load_job_postings(content_dir: Path) -> list[JobPosting]:
+    """Load all job postings from content/jobs/*.md."""
+    jobs_dir = content_dir / "jobs"
+    if not jobs_dir.is_dir():
+        return []
+
+    postings: list[JobPosting] = []
+    for path in sorted(jobs_dir.glob("*.md")):
+        meta, body = load_frontmatter_file(path)
+        slug = path.stem
+        postings.append(_build_job_posting(meta, body, slug))
+
+    return postings
+
+
 def load_data_files(content_dir: Path) -> list[Path]:
     """List data files from content/data/."""
     data_dir = content_dir / "data"
@@ -150,4 +199,5 @@ def load_content(content_dir: Path) -> SiteContent:
         policy_docs=load_documents(content_dir, "policy"),
         page_overrides=load_page_overrides(content_dir),
         data_files=load_data_files(content_dir),
+        job_postings=load_job_postings(content_dir),
     )

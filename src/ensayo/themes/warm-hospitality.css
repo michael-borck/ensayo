@@ -1,4 +1,4 @@
-/* Ensayo Theme: Warm Hospitality — Pinnacle Events style */
+/* Ensayo Theme: Warm Hospitality — serif headings, soft rounds, community warmth */
 
 :root {
     --sim-primary: #8B4513;
@@ -16,8 +16,19 @@
     --sim-danger: #C62828;
     --sim-font-heading: 'Playfair Display', Georgia, 'Times New Roman', serif;
     --sim-font-body: 'Open Sans', system-ui, -apple-system, sans-serif;
-    --sim-radius: 6px;
+    --sim-radius: 12px;
 }
 
-.hero { border-bottom-color: var(--sim-accent); }
-.tag { background: #FFF3E0; border-color: var(--sim-accent); color: var(--sim-secondary); }
+/* Soft, rounded cards */
+.card { border: none; box-shadow: 0 2px 8px var(--sim-shadow); }
+.card:hover { box-shadow: 0 6px 20px var(--sim-shadow); }
+
+/* Warm hero */
+.hero { border-bottom-color: var(--sim-accent); background: linear-gradient(180deg, var(--sim-bg) 0%, #FFF3E0 100%); }
+
+/* Tags */
+.tag { background: #FFF3E0; border-color: var(--sim-accent); color: var(--sim-secondary); border-radius: 20px; }
+.btn { border-radius: 20px; }
+
+/* Job cards with warm accent */
+.job-card { border-left-color: var(--sim-secondary); }

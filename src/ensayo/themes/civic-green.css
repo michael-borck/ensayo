@@ -1,0 +1,65 @@
+/* Ensayo Theme: Civic Green — government/public sector, official and accessible */
+
+:root {
+    --sim-primary: #1B5E3B;
+    --sim-primary-dark: #134D30;
+    --sim-secondary: #2E7D52;
+    --sim-accent: #81C784;
+    --sim-bg: #F4F8F5;
+    --sim-text: #1A1A2E;
+    --sim-muted: #5A6570;
+    --sim-white: #FFFFFF;
+    --sim-border: #D4DED6;
+    --sim-shadow: rgba(27, 94, 59, 0.08);
+    --sim-ok: #2E7D52;
+    --sim-warn: #ED6C02;
+    --sim-danger: #D32F2F;
+    --sim-font-heading: 'Merriweather', Georgia, 'Times New Roman', serif;
+    --sim-font-body: 'Source Sans Pro', system-ui, -apple-system, sans-serif;
+    --sim-radius: 4px;
+    --sim-max-width: 1100px;
+}
+
+/* Official, structured header */
+.header {
+    background: var(--sim-white);
+    color: var(--sim-text);
+    border-bottom: 3px solid var(--sim-primary);
+    box-shadow: none;
+}
+.nav-brand { color: var(--sim-primary); }
+.nav-brand:hover { color: var(--sim-primary-dark); }
+.nav-links a {
+    color: var(--sim-text);
+}
+.nav-links a:hover,
+.nav-links a.active {
+    background: var(--sim-primary);
+    color: var(--sim-white);
+}
+
+/* Banner-style hero */
+.hero {
+    background: var(--sim-primary);
+    color: var(--sim-white);
+    border-bottom: none;
+    padding: 3.5rem 0;
+    margin-left: calc(-50vw + 50%);
+    margin-right: calc(-50vw + 50%);
+    width: 100vw;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+}
+.hero h1 { color: var(--sim-white); font-size: 2.2rem; }
+.hero-tagline { color: rgba(255, 255, 255, 0.9); }
+
+/* Cards with understated borders */
+.card { border: 1px solid var(--sim-border); border-left: 4px solid var(--sim-primary); }
+.card:hover { transform: none; border-left-color: var(--sim-accent); }
+
+/* Four-column footer */
+.footer { background: #1A1A2E; }
+.footer-content { grid-template-columns: 2fr 1fr 1fr 2fr; }
+
+/* Accessibility: larger base text */
+body { font-size: 1.05rem; line-height: 1.7; }

@@ -20,6 +20,16 @@ def parse_frontmatter(text: str) -> tuple[dict[str, object], str]:
     returns an empty dict and the full text as body.
     """
     text = text.strip()
+
+    # Strip code fences that AI models sometimes wrap around output
+    if text.startswith("```"):
+        first_newline = text.find("\n")
+        if first_newline != -1:
+            text = text[first_newline + 1:]
+        if text.endswith("```"):
+            text = text[:-3]
+        text = text.strip()
+
     if not text.startswith("---"):
         return {}, text
 

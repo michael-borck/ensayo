@@ -95,6 +95,7 @@ def build_site(
     console.print(
         f"  Documents: {len(content.support_docs)} support, {len(content.policy_docs)} policies"
     )
+    console.print(f"  Job postings: {len(content.job_postings)}")
 
     # Set up Jinja2
     templates_dir = _get_package_path("templates")
@@ -143,6 +144,25 @@ def build_site(
         # Copy prompt.txt if backstory exists
         if emp.body:
             (emp_dir / "prompt.txt").write_text(emp.body, encoding="utf-8")
+
+    # --- Careers section ---
+    if content.job_postings:
+        careers_body = ""
+        if "careers" in content.page_overrides:
+            careers_body = _md_to_html(content.page_overrides["careers"].body)
+
+        _render_page(
+            env, "careers.html.j2", output_dir / "careers" / "index.html",
+            depth=1, active_page="careers",
+            job_postings=content.job_postings, page_body=careers_body, **ctx,
+        )
+
+        for job in content.job_postings:
+            job_body = _md_to_html(job.body)
+            _render_page(
+                env, "job.html.j2", output_dir / "careers" / f"{job.slug}.html",
+                depth=1, active_page="careers", job=job, job_body=job_body, **ctx,
+            )
 
     # --- Document listing + individual pages ---
     _build_doc_section(

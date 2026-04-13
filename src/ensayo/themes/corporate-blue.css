@@ -1,4 +1,4 @@
-/* Ensayo Theme: Corporate Blue — CloudCore style */
+/* Ensayo Theme: Corporate Blue — sharp, structured, consulting-grade */
 
 :root {
     --sim-primary: #1a365d;
@@ -16,5 +16,17 @@
     --sim-danger: #e53e3e;
     --sim-font-heading: 'Inter', system-ui, -apple-system, sans-serif;
     --sim-font-body: 'Inter', system-ui, -apple-system, sans-serif;
-    --sim-radius: 6px;
+    --sim-radius: 3px;
 }
+
+/* Sharp, authoritative feel */
+.card { border-top: 3px solid var(--sim-primary); border-radius: 0 0 var(--sim-radius) var(--sim-radius); }
+.hero { border-bottom: 3px solid var(--sim-primary); }
+h1, h2 { letter-spacing: -0.01em; }
+
+/* Structured footer */
+.footer-content { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+/* Tag styling */
+.tag { border-radius: var(--sim-radius); }
+.btn { border-radius: var(--sim-radius); }

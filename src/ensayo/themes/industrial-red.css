@@ -1,0 +1,49 @@
+/* Ensayo Theme: Industrial Red — mining/resources, bold and grounded */
+
+:root {
+    --sim-primary: #9B1B30;
+    --sim-primary-dark: #7A1526;
+    --sim-secondary: #C0392B;
+    --sim-accent: #E67E22;
+    --sim-bg: #F5F0EB;
+    --sim-text: #2C2C2C;
+    --sim-muted: #6B6B6B;
+    --sim-white: #FFFFFF;
+    --sim-border: #D5CDC4;
+    --sim-shadow: rgba(155, 27, 48, 0.1);
+    --sim-ok: #27AE60;
+    --sim-warn: #F39C12;
+    --sim-danger: #C0392B;
+    --sim-font-heading: 'Oswald', 'Arial Narrow', Impact, sans-serif;
+    --sim-font-body: 'Source Sans Pro', system-ui, -apple-system, sans-serif;
+    --sim-radius: 2px;
+}
+
+/* Bold, industrial headers */
+h1, h2, h3 { text-transform: uppercase; letter-spacing: 0.04em; }
+h1 { font-size: 2.2rem; }
+
+/* Hard edges on everything */
+.card { border-radius: 0; border-top: 4px solid var(--sim-primary); }
+.card:hover { transform: none; box-shadow: 0 4px 12px var(--sim-shadow); }
+.btn { border-radius: 0; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; }
+.tag { border-radius: 0; }
+
+/* Hero with weight */
+.hero {
+    border-bottom: 4px solid var(--sim-accent);
+    background: linear-gradient(135deg, #2C2C2C 0%, #4A1A24 100%);
+    color: var(--sim-white);
+    padding: 4rem 0;
+}
+.hero h1 { color: var(--sim-white); font-size: 2.8rem; }
+.hero-tagline { color: rgba(255, 255, 255, 0.85); }
+
+/* Header bar */
+.header { background: #2C2C2C; }
+
+/* Footer */
+.footer { background: #1A1A1A; }
+
+/* Job cards */
+.job-card { border-left: 4px solid var(--sim-accent); border-radius: 0; }

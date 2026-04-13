@@ -103,6 +103,41 @@ def render_chatbot_prompt(
     )
 
 
+def render_job_system() -> str:
+    """Render the system prompt for job posting generation."""
+    env = _get_env()
+    template = env.get_template("job_system.txt.j2")
+    return template.render()
+
+
+def render_job_user(
+    *,
+    company: dict[str, Any],
+    scenario: dict[str, Any],
+    job_title: str,
+    department: str = "",
+    location: str = "",
+    employment_type: str = "Full-time",
+    reports_to: str = "",
+    job_brief: str = "",
+    employees: list[EmployeeSpec],
+) -> str:
+    """Render the user prompt for job posting generation."""
+    env = _get_env()
+    template = env.get_template("job_user.txt.j2")
+    return template.render(
+        company=company,
+        scenario=scenario,
+        job_title=job_title,
+        department=department,
+        location=location,
+        employment_type=employment_type,
+        reports_to=reports_to,
+        job_brief=job_brief,
+        employees=employees,
+    )
+
+
 def brief_to_company_dict(brief: BriefConfig) -> dict[str, Any]:
     """Extract a company context dict from a BriefConfig for use in templates."""
     c = brief.company

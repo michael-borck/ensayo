@@ -2,7 +2,7 @@
 {% block title %}{{ site.company.name }} — {{ site.company.tagline }}{% endblock %}
 
 {% block content %}
-<section class="hero">
+<section class="hero"{% if site.assets.hero_image %} style="background-image: url('{{ base_url }}{{ site.assets.hero_image }}')"{% endif %}>
     <h1>{{ site.company.name }}</h1>
     {% if site.company.tagline %}
     <p class="hero-tagline">{{ site.company.tagline }}</p>
@@ -37,6 +37,23 @@
         {% endfor %}
     </div>
     <p class="section-more"><a href="{{ base_url }}docs/support/index.html">View all documents &rarr;</a></p>
+</section>
+{% endif %}
+
+{% if content.job_postings %}
+<section class="section">
+    <h2>{{ site.careers.label }}</h2>
+    <div class="card-grid">
+        {% for job in content.job_postings[:3] %}
+        <a href="{{ base_url }}careers/{{ job.slug }}.html" class="card card-link">
+            <h3>{{ job.title }}</h3>
+            <p class="card-role">{{ job.department }}{% if job.department and job.employment_type %} &middot; {% endif %}{{ job.employment_type }}</p>
+        </a>
+        {% endfor %}
+    </div>
+    {% if content.job_postings|length > 3 %}
+    <p class="section-more"><a href="{{ base_url }}careers/index.html">View all positions &rarr;</a></p>
+    {% endif %}
 </section>
 {% endif %}
 {% endblock %}

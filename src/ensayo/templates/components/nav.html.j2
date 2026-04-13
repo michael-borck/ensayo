@@ -1,5 +1,7 @@
 <nav class="nav">
-    <a href="{{ base_url }}index.html" class="nav-brand">{{ site.company.name }}</a>
+    <a href="{{ base_url }}index.html" class="nav-brand">
+        {%- if site.assets.logo %}<img src="{{ base_url }}{{ site.assets.logo }}" alt="{{ site.company.name }}" class="nav-logo">{% else %}{{ site.company.name }}{% endif -%}
+    </a>
     <ul class="nav-links">
         <li><a href="{{ base_url }}index.html"{% if active_page == "index" %} class="active"{% endif %}>Home</a></li>
         <li><a href="{{ base_url }}services.html"{% if active_page == "services" %} class="active"{% endif %}>Services</a></li>
@@ -12,6 +14,9 @@
                 <li><a href="{{ base_url }}docs/policies/index.html">Policies</a></li>
             </ul>
         </li>
+        {% if content.job_postings %}
+        <li><a href="{{ base_url }}careers/index.html"{% if active_page == "careers" %} class="active"{% endif %}>{{ site.careers.label }}</a></li>
+        {% endif %}
         <li><a href="{{ base_url }}contact.html"{% if active_page == "contact" %} class="active"{% endif %}>Contact</a></li>
     </ul>
 </nav>

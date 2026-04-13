@@ -1,0 +1,32 @@
+Create the following job posting for {{ company.name }}:
+
+JOB TITLE: {{ job_title }}
+{% if department %}DEPARTMENT: {{ department }}{% endif %}
+{% if location %}LOCATION: {{ location }}{% endif %}
+{% if employment_type %}EMPLOYMENT TYPE: {{ employment_type }}{% endif %}
+{% if reports_to %}REPORTS TO: {{ reports_to }}{% endif %}
+{% if job_brief %}
+BRIEF: {{ job_brief }}
+{% endif %}
+
+COMPANY CONTEXT:
+- Name: {{ company.name }}
+- Industry: {{ company.industry }}
+- Location: {{ company.location }}
+- Founded: {{ company.founded }}
+- Employees: {{ company.employees }}
+- Revenue: {{ company.revenue }}
+- Description: {{ company.description }}
+{% if company.services %}
+- Services: {{ company.services | join(", ") }}
+{% endif %}
+
+SCENARIO: {{ scenario.name }}
+{{ scenario.description }}
+
+EMPLOYEES (reference the hiring manager or team members where appropriate):
+{% for emp in employees %}
+- {{ emp.name }} — {{ emp.role }}
+{% endfor %}
+
+Generate the complete markdown file with frontmatter now.

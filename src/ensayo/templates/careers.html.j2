@@ -1,0 +1,35 @@
+{% extends "base.html.j2" %}
+{% block title %}{{ site.careers.label }} — {{ site.company.name }}{% endblock %}
+
+{% block content %}
+<section class="section">
+    <h1>{{ site.careers.label }}</h1>
+    {% if page_body %}
+    {{ page_body }}
+    {% else %}
+    <p>Explore current opportunities at {{ site.company.name }}. We're looking for talented people to join our team.</p>
+    {% endif %}
+</section>
+
+{% if job_postings %}
+<section class="section">
+    <h2>Open Positions</h2>
+    <div class="job-listing">
+        {% for job in job_postings %}
+        <div class="card job-card">
+            <h3><a href="{{ base_url }}careers/{{ job.slug }}.html">{{ job.title }}</a></h3>
+            <p class="job-meta">
+                {% if job.department %}<span class="job-dept">{{ job.department }}</span>{% endif %}
+                {% if job.location %}{% if job.department %} &middot; {% endif %}<span class="job-loc">{{ job.location }}</span>{% endif %}
+                {% if job.employment_type %}{% if job.department or job.location %} &middot; {% endif %}<span class="job-type">{{ job.employment_type }}</span>{% endif %}
+            </p>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% else %}
+<section class="section">
+    <p>No open positions at this time. Please check back later.</p>
+</section>
+{% endif %}
+{% endblock %}

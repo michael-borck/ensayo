@@ -38,13 +38,34 @@ class ChatbotConfig:
 
 
 @dataclass
+class CareersConfig:
+    """Careers page configuration from site.yaml."""
+
+    label: str = "Careers"
+    submit_url: str = ""
+    show_apply_form: bool = True
+
+
+@dataclass
+class AssetsConfig:
+    """Asset paths from site.yaml."""
+
+    logo: str = ""
+    hero_image: str = ""
+    favicon: str = ""
+
+
+@dataclass
 class SiteConfig:
     """Top-level site configuration from site.yaml."""
 
     company: CompanyConfig
     theme: str = "base"
+    layout: str = ""
     branding: BrandingConfig = field(default_factory=BrandingConfig)
     chatbot: ChatbotConfig = field(default_factory=ChatbotConfig)
+    careers: CareersConfig = field(default_factory=CareersConfig)
+    assets: AssetsConfig = field(default_factory=AssetsConfig)
 
 
 @dataclass
@@ -73,6 +94,18 @@ class Document:
 
 
 @dataclass
+class JobPosting:
+    """A job posting parsed from content/jobs/*.md frontmatter + body."""
+
+    title: str
+    slug: str
+    department: str = ""
+    location: str = ""
+    employment_type: str = "Full-time"
+    body: str = ""
+
+
+@dataclass
 class PageOverride:
     """A page override from content/pages/*.md."""
 
@@ -90,6 +123,7 @@ class SiteContent:
     policy_docs: list[Document] = field(default_factory=list)
     page_overrides: dict[str, PageOverride] = field(default_factory=dict)
     data_files: list[Path] = field(default_factory=list)
+    job_postings: list[JobPosting] = field(default_factory=list)
 
 
 # --- Brief / Content Generation models ---
@@ -164,6 +198,18 @@ class DocumentSpec:
 
 
 @dataclass
+class JobSpec:
+    """Job posting request in a brief."""
+
+    title: str = ""
+    department: str = ""
+    location: str = ""
+    employment_type: str = "Full-time"
+    reports_to: str = ""
+    brief: str = ""
+
+
+@dataclass
 class BriefConfig:
     """Full brief for content generation."""
 
@@ -171,6 +217,9 @@ class BriefConfig:
     scenario: Scenario = field(default_factory=Scenario)
     branding: BrandingConfig = field(default_factory=BrandingConfig)
     chatbot: ChatbotConfig = field(default_factory=ChatbotConfig)
+    theme: str = "base"
+    layout: str = ""
     employees: list[EmployeeSpec] = field(default_factory=list)
     documents: list[DocumentSpec] = field(default_factory=list)
+    jobs: list[JobSpec] = field(default_factory=list)
     disciplines: dict[str, list[str]] = field(default_factory=dict)

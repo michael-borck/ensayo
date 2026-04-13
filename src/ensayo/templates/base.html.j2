@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ site.company.name }}{% endblock %}</title>
     <link rel="stylesheet" href="{{ base_url }}assets/css/style.css">
+    {% if site.assets.favicon %}<link rel="icon" href="{{ base_url }}{{ site.assets.favicon }}">{% endif %}
     {% block head %}{% endblock %}
 </head>
-<body class="sim-site" data-theme="{{ site.theme }}">
+<body class="sim-site{% if site.layout %} layout-{{ site.layout }}{% endif %}" data-theme="{{ site.theme }}">
     <header class="header">
         <div class="wrap">
             {% include "components/nav.html.j2" %}

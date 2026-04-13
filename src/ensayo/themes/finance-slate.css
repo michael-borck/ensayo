@@ -1,0 +1,60 @@
+/* Ensayo Theme: Finance Slate — financial services, restrained prestige */
+
+:root {
+    --sim-primary: #1E293B;
+    --sim-primary-dark: #0F172A;
+    --sim-secondary: #334155;
+    --sim-accent: #0EA5E9;
+    --sim-bg: #F8FAFC;
+    --sim-text: #1E293B;
+    --sim-muted: #64748B;
+    --sim-white: #FFFFFF;
+    --sim-border: #E2E8F0;
+    --sim-shadow: rgba(30, 41, 59, 0.08);
+    --sim-ok: #059669;
+    --sim-warn: #D97706;
+    --sim-danger: #DC2626;
+    --sim-font-heading: 'Libre Baskerville', 'Georgia', serif;
+    --sim-font-body: 'Inter', system-ui, -apple-system, sans-serif;
+    --sim-radius: 4px;
+}
+
+/* Dark, authoritative header */
+.header { background: linear-gradient(180deg, #0F172A 0%, #1E293B 100%); }
+
+/* Refined hero — dark background, light text */
+.hero {
+    background: #0F172A;
+    color: var(--sim-white);
+    border-bottom: 2px solid var(--sim-accent);
+    padding: 4rem 0;
+}
+.hero h1 { color: var(--sim-white); letter-spacing: -0.02em; }
+.hero-tagline { color: #94A3B8; }
+
+/* Minimal, clean cards */
+.card {
+    border: 1px solid var(--sim-border);
+    box-shadow: none;
+}
+.card:hover {
+    box-shadow: 0 1px 6px var(--sim-shadow);
+    transform: none;
+}
+.card-link h3 { color: var(--sim-primary); }
+
+/* Two-column card grid for wider feel */
+.card-grid {
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1.25rem;
+}
+
+/* Buttons — understated */
+.btn { font-weight: 500; letter-spacing: 0.01em; }
+
+/* Footer */
+.footer { background: #0F172A; }
+
+/* Tables in documents — financial feel */
+.doc-content th { background: #F1F5F9; font-variant-numeric: tabular-nums; }
+.doc-content td { font-variant-numeric: tabular-nums; }

@@ -1,0 +1,98 @@
+{% extends "base.html.j2" %}
+{% block title %}{{ job.title }} — {{ site.company.name }}{% endblock %}
+
+{% block content %}
+<section class="section">
+    <nav class="breadcrumb">
+        <a href="{{ base_url }}careers/index.html">{{ site.careers.label }}</a> &rsaquo; {{ job.title }}
+    </nav>
+
+    <h1>{{ job.title }}</h1>
+    <p class="job-meta">
+        {% if job.department %}<span class="job-dept">{{ job.department }}</span>{% endif %}
+        {% if job.location %}{% if job.department %} &middot; {% endif %}<span class="job-loc">{{ job.location }}</span>{% endif %}
+        {% if job.employment_type %}{% if job.department or job.location %} &middot; {% endif %}<span class="job-type">{{ job.employment_type }}</span>{% endif %}
+    </p>
+
+    <div class="doc-content">
+        {{ job_body }}
+    </div>
+</section>
+
+{% if site.careers.show_apply_form %}
+<section class="section" id="apply">
+    <h2>Apply for this Position</h2>
+    <form class="apply-form" id="apply-form"
+          {% if site.careers.submit_url %}action="{{ site.careers.submit_url }}" method="POST" enctype="multipart/form-data"{% endif %}>
+        <input type="hidden" name="company_slug" value="{{ site.company.slug }}">
+        <input type="hidden" name="job_slug" value="{{ job.slug }}">
+        <input type="hidden" name="job_title" value="{{ job.title }}">
+
+        <div class="form-group">
+            <label for="applicant_name">Full Name <span class="required">*</span></label>
+            <input type="text" id="applicant_name" name="applicant_name" required>
+        </div>
+
+        <div class="form-group">
+            <label for="applicant_email">Email Address <span class="required">*</span></label>
+            <input type="email" id="applicant_email" name="applicant_email" required>
+        </div>
+
+        <div class="form-group">
+            <label for="cover_letter">Cover Letter</label>
+            <textarea id="cover_letter" name="cover_letter" rows="6" placeholder="Tell us why you're a great fit for this role..."></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="resume">Resume (PDF) <span class="required">*</span></label>
+            <input type="file" id="resume" name="resume" accept=".pdf" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Submit Application</button>
+    </form>
+    <div id="apply-result" class="apply-result" style="display:none;"></div>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if site.careers.show_apply_form and site.careers.submit_url %}
+<script>
+(function() {
+    var form = document.getElementById('apply-form');
+    var result = document.getElementById('apply-result');
+    if (!form) return;
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        var data = new FormData(form);
+        var btn = form.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.textContent = 'Submitting...';
+        result.style.display = 'none';
+
+        fetch(form.action, { method: 'POST', body: data })
+            .then(function(r) {
+                if (r.ok) return r.json();
+                throw new Error('Submission failed — please try again.');
+            })
+            .then(function(body) {
+                result.className = 'apply-result apply-success';
+                result.textContent = body.message || 'Application submitted successfully!';
+                result.style.display = 'block';
+                form.reset();
+            })
+            .catch(function(err) {
+                result.className = 'apply-result apply-error';
+                result.textContent = err.message;
+                result.style.display = 'block';
+            })
+            .finally(function() {
+                btn.disabled = false;
+                btn.textContent = 'Submit Application';
+            });
+    });
+})();
+</script>
+{% endif %}
+{% endblock %}

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import contextlib
+import random
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +20,7 @@ from ensayo.models import (
     DocumentSpec,
     EmployeeCustomisation,
     EmployeeSpec,
+    JobSpec,
     Scenario,
 )
 from ensayo.prompts import (
@@ -29,6 +31,8 @@ from ensayo.prompts import (
     render_chatbot_prompt,
     render_document_system,
     render_document_user,
+    render_job_system,
+    render_job_user,
 )
 from ensayo.templates_data import load_archetype, load_industry
 
@@ -117,6 +121,18 @@ def load_brief(brief_path: Path) -> BriefConfig:
             brief=doc_raw.get("brief", ""),
         ))
 
+    # Job postings
+    jobs: list[JobSpec] = []
+    for job_raw in raw.get("jobs", []):
+        jobs.append(JobSpec(
+            title=job_raw.get("title", ""),
+            department=job_raw.get("department", ""),
+            location=job_raw.get("location", ""),
+            employment_type=job_raw.get("employment_type", "Full-time"),
+            reports_to=job_raw.get("reports_to", ""),
+            brief=job_raw.get("brief", ""),
+        ))
+
     # Disciplines
     disciplines_raw = raw.get("disciplines", {})
     disciplines: dict[str, list[str]] = {}
@@ -132,8 +148,11 @@ def load_brief(brief_path: Path) -> BriefConfig:
         scenario=scenario,
         branding=branding,
         chatbot=chatbot,
+        theme=raw.get("theme", "base"),
+        layout=raw.get("layout", ""),
         employees=employees,
         documents=documents,
+        jobs=jobs,
         disciplines=disciplines,
     )
 
@@ -185,6 +204,35 @@ def generate_document(
     return generate_text(system_prompt, user_prompt, max_tokens=4096)
 
 
+def generate_job_posting(
+    brief: BriefConfig,
+    job_title: str,
+    department: str = "",
+    location: str = "",
+    employment_type: str = "Full-time",
+    reports_to: str = "",
+    job_brief: str = "",
+) -> str:
+    """Generate a job posting using AI. Returns raw markdown with frontmatter."""
+    company_dict = brief_to_company_dict(brief)
+    scenario_dict = brief_to_scenario_dict(brief)
+
+    system_prompt = render_job_system()
+    user_prompt = render_job_user(
+        company=company_dict,
+        scenario=scenario_dict,
+        job_title=job_title,
+        department=department,
+        location=location or brief.company.location,
+        employment_type=employment_type,
+        reports_to=reports_to,
+        job_brief=job_brief,
+        employees=brief.employees,
+    )
+
+    return generate_text(system_prompt, user_prompt, max_tokens=2048)
+
+
 def generate_chatbot_prompt_file(
     brief: BriefConfig,
     employee: EmployeeSpec,
@@ -201,15 +249,28 @@ def generate_chatbot_prompt_file(
     )
 
 
+CAREERS_LABELS = [
+    "Careers",
+    "Work With Us",
+    "Join Our Team",
+    "We're Hiring",
+    "Open Positions",
+    "Job Opportunities",
+    "Come Work With Us",
+    "Current Vacancies",
+    "Your Next Role",
+]
+
+
 def generate_site_yaml(brief: BriefConfig) -> dict[str, Any]:
     """Extract the slim site.yaml config from a brief."""
-    return {
+    site: dict[str, Any] = {
         "company": {
             "name": brief.company.name,
             "slug": brief.company.slug,
             "tagline": brief.company.tagline,
         },
-        "theme": "base",
+        "theme": brief.theme,
         "branding": {
             "primary": brief.branding.primary,
             "secondary": brief.branding.secondary,
@@ -222,6 +283,18 @@ def generate_site_yaml(brief: BriefConfig) -> dict[str, Any]:
             "booking_api": brief.chatbot.booking_api,
         },
     }
+
+    if brief.layout:
+        site["layout"] = brief.layout
+
+    if brief.jobs:
+        site["careers"] = {
+            "label": random.choice(CAREERS_LABELS),  # noqa: S311
+            "submit_url": "",
+            "show_apply_form": True,
+        }
+
+    return site
 
 
 def _write_content_file(path: Path, content: str) -> None:
@@ -311,6 +384,29 @@ def generate_all(brief_path: Path, output_dir: Path) -> None:
                 f"  [green]+ {doc_spec.title}[/green] → docs/{doc_spec.type}/{slug}.md"
             )
 
+    # --- Generate job postings ---
+    if brief.jobs:
+        jobs_dir = output_dir / "jobs"
+        console.print(f"[bold]Generating {len(brief.jobs)} job postings...[/bold]")
+        for job_spec in brief.jobs:
+            slug = job_spec.title.lower().replace(" ", "-").replace("&", "and")
+
+            with console.status(f"Generating job posting: {job_spec.title}..."):
+                raw = generate_job_posting(
+                    brief,
+                    job_title=job_spec.title,
+                    department=job_spec.department,
+                    location=job_spec.location,
+                    employment_type=job_spec.employment_type,
+                    reports_to=job_spec.reports_to,
+                    job_brief=job_spec.brief,
+                )
+
+            _write_content_file(jobs_dir / f"{slug}.md", raw)
+            console.print(
+                f"  [green]+ {job_spec.title}[/green] → jobs/{slug}.md"
+            )
+
     # --- Generate site.yaml ---
     site_yaml = generate_site_yaml(brief)
     site_yaml_path = output_dir.parent / "site.yaml"
@@ -381,6 +477,38 @@ def generate_single_document(
             doc_type=doc_type,
             doc_brief=instructions,
             industry_context=industry,
+        )
+
+    path = dest_dir / f"{slug}.md"
+    _write_content_file(path, raw)
+    console.print(f"[green]+ {title}[/green] → {path}")
+
+
+def generate_single_job(
+    brief_path: Path,
+    content_dir: Path,
+    title: str,
+    department: str = "",
+    location: str = "",
+    employment_type: str = "Full-time",
+    reports_to: str = "",
+    instructions: str = "",
+) -> None:
+    """Add a single job posting to existing content."""
+    brief = load_brief(brief_path)
+
+    slug = title.lower().replace(" ", "-").replace("&", "and")
+    dest_dir = content_dir / "jobs"
+
+    with console.status(f"Generating job posting: {title}..."):
+        raw = generate_job_posting(
+            brief,
+            job_title=title,
+            department=department,
+            location=location,
+            employment_type=employment_type,
+            reports_to=reports_to,
+            job_brief=instructions,
         )
 
     path = dest_dir / f"{slug}.md"
