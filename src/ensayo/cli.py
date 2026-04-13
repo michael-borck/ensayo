@@ -244,6 +244,7 @@ def export_jobs(
     # generates a different slug than ensayo's filename convention)
     brief_meta: dict[str, dict] = {}
     company_business_hours: dict | None = None
+    company_task_templates: list[dict] | None = None
     brief_path = Path(brief)
     if brief_path.is_file():
         brief_data = yaml.safe_load(brief_path.read_text(encoding="utf-8")) or {}
@@ -267,6 +268,21 @@ def export_jobs(
                 "timezone": bh.get("timezone"),
                 "description": bh.get("description", ""),
             }
+        # Optional Stage 4 task templates (pool the mentor picks from)
+        raw_templates = brief_data.get("task_templates") or []
+        if raw_templates:
+            company_task_templates = [
+                {
+                    "title": t.get("title", ""),
+                    "brief": t.get("brief", ""),
+                    "description": t.get("description", ""),
+                    "difficulty": (t.get("difficulty") or "medium").lower(),
+                    "discipline": t.get("discipline"),
+                    "estimated_hours": int(t.get("estimated_hours", 4)),
+                }
+                for t in raw_templates
+                if t.get("title")
+            ]
 
     postings = load_job_postings(Path(content_dir))
 
@@ -328,6 +344,8 @@ def export_jobs(
     }
     if company_business_hours:
         jobs_data["business_hours"] = company_business_hours
+    if company_task_templates:
+        jobs_data["task_templates"] = company_task_templates
 
     out_path = Path(output)
     out_path.write_text(json.dumps(jobs_data, indent=2), encoding="utf-8")
