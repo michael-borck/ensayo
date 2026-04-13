@@ -245,6 +245,7 @@ def export_jobs(
     brief_meta: dict[str, dict] = {}
     company_business_hours: dict | None = None
     company_task_templates: list[dict] | None = None
+    company_employees: list[dict] | None = None
     brief_path = Path(brief)
     if brief_path.is_file():
         brief_data = yaml.safe_load(brief_path.read_text(encoding="utf-8")) or {}
@@ -283,6 +284,28 @@ def export_jobs(
                 for t in raw_templates
                 if t.get("title")
             ]
+        # Stage 5: lightweight employee roster (id, name, role, tier)
+        # for lunchroom participant picking, cross-character chat, etc.
+        # Only the minimal fields are emitted here — the full persona
+        # customisation stays in content/employees/*-prompt.txt.
+        raw_employees = brief_data.get("employees") or []
+        if raw_employees:
+            company_employees = []
+            for e in raw_employees:
+                name = (e.get("name") or "").strip()
+                if not name:
+                    continue
+                # Fall back to a simple slug if id is missing. The
+                # authoritative _name_to_slug helper is defined below
+                # this block; a naive lowercase+dash is good enough
+                # for the rare missing-id case.
+                emp_id = e.get("id") or name.lower().replace(" ", "-")
+                company_employees.append({
+                    "slug": emp_id,
+                    "name": name,
+                    "role": e.get("role", ""),
+                    "tier": e.get("tier", ""),
+                })
 
     postings = load_job_postings(Path(content_dir))
 
@@ -346,6 +369,8 @@ def export_jobs(
         jobs_data["business_hours"] = company_business_hours
     if company_task_templates:
         jobs_data["task_templates"] = company_task_templates
+    if company_employees:
+        jobs_data["employees"] = company_employees
 
     out_path = Path(output)
     out_path.write_text(json.dumps(jobs_data, indent=2), encoding="utf-8")
