@@ -1,0 +1,15 @@
+.git
+.github
+**/node_modules
+**/dist
+**/.astro
+**/.ensayo-build
+out
+dist-out
+.venv
+__pycache__
+**/*.pyc
+.env
+instance.env
+.DS_Store
+tests

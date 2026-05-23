@@ -28,7 +28,7 @@ install_deps() {
     debian-keyring debian-archive-keyring apt-transport-https
 
   if ! command -v node >/dev/null 2>&1; then
-    curl -fsSL https://deb.nodesource.com/setup_20.x | $SUDO -E bash -
+    curl -fsSL https://deb.nodesource.com/setup_20.x | $SUDO bash -
     $SUDO apt-get install -y --no-install-recommends nodejs
   fi
 

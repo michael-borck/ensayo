@@ -104,12 +104,13 @@ def _build_site(
     log(f"Copying theme {theme_dir.name} → build workspace")
     shutil.copytree(theme_dir, work, ignore=_THEME_IGNORE, dirs_exist_ok=True)
 
-    # Vendored node_modules (shipped image) are reused if present in the theme.
+    # Reuse the theme's vendored node_modules by symlinking (copying would
+    # dereference the .bin/* symlinks and break Astro's CLI shim).
     vendored = theme_dir / "node_modules"
-    if vendored.exists():
-        log("Reusing theme's vendored node_modules")
-        if not (work / "node_modules").exists():
-            shutil.copytree(vendored, work / "node_modules", dirs_exist_ok=True)
+    link = work / "node_modules"
+    if vendored.exists() and not link.exists():
+        log("Linking theme's vendored node_modules")
+        link.symlink_to(vendored.resolve(), target_is_directory=True)
 
     write_theme_data(config, work / "src")
     _install_shared_assets(work)
