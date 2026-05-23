@@ -1,0 +1,16 @@
+name: tech-modern
+description: Modern, clean corporate theme for technology and SaaS companies.
+derived_from: nexuspoint-systems
+supports:
+  chatbot_modes: [keyword, llm, hybrid]
+  layouts: [topnav, sidebar]
+  audience: [adults, minors]
+features:
+  - employee_directory
+  - document_library
+  - keyword_chatbot
+  - scenario_intro
+content_props:
+  - company
+  - employees
+  - documents

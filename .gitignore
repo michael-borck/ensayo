@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+
+# Node / Astro (themes vendor these; not committed)
+node_modules/
+.astro/
+
+# Generator output
+dist/
+dist-out/
+.ensayo-build/
+out/
+
+# Local config (secrets + instance settings)
+.env
+instance.env
+
+# OS
+.DS_Store

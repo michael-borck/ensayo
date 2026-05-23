@@ -1,0 +1,33 @@
+# Ensayo — zero-config first run (spec §5.4):
+#
+#   docker compose up -d         # build + run
+#   open http://localhost:8080
+#
+# No API keys, no DNS, no AnythingLLM required. The image ships a pre-built demo
+# simulation served by Caddy with path-based routing.
+
+services:
+  ensayo:
+    build: .
+    image: ghcr.io/michael-borck/ensayo:latest
+    ports:
+      # Override with ENSAYO_HTTP_PORT in instance.env. Default 8080 to avoid
+      # clashing with anything already on port 80.
+      - "${ENSAYO_HTTP_PORT:-8080}:80"
+    env_file:
+      - instance.env
+      # - .env        # uncomment once you've added secrets (LLM keys, etc.)
+    volumes:
+      - ensayo-data:/var/ensayo
+    restart: unless-stopped
+
+  # Optional — enable for Tier 3 (LLM chatbots with RAG). Spec §9.
+  # anythingllm:
+  #   image: mintplexlabs/anythingllm
+  #   ports: ["3001:3001"]
+  #   volumes:
+  #     - anythingllm-data:/app/server/storage
+
+volumes:
+  ensayo-data:
+  # anythingllm-data:

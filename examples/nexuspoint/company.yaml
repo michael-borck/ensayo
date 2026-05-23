@@ -1,0 +1,451 @@
+# NexusPoint Systems — Brief for content generation
+# Run: ensayo init --brief brief.yaml --output .
+
+company:
+  name: "NexusPoint Systems"
+  slug: "nexuspoint-systems"
+  tagline: "Connecting Business to What's Next"
+  industry: "cloud_services"
+  location: "Perth, Western Australia"
+
+  profile:
+    founded: 2016
+    employees: 35
+    revenue: "$6.2M annually"
+    structure: "SME / Private"
+    description: |
+      A managed IT services and cloud solutions provider serving mid-market
+      businesses across Western Australia. Specialises in cloud migration,
+      cybersecurity, and managed infrastructure for organisations with
+      50-500 employees. Known for proactive monitoring, fast response times,
+      and translating complex technical decisions into business language.
+    key_facts:
+      - "120+ active managed service contracts"
+      - "99.7% uptime SLA across client base"
+      - "24/7 NOC with average 12-minute first response"
+      - "Microsoft Gold Partner and AWS Select Partner"
+      - "65% of revenue from recurring managed services"
+      - "Growing cybersecurity practice (up 40% YoY)"
+    services:
+      - "Managed IT infrastructure and helpdesk"
+      - "Cloud migration and hybrid cloud architecture"
+      - "Cybersecurity assessments and managed detection"
+      - "Business continuity and disaster recovery"
+      - "Network design and implementation"
+      - "IT strategy consulting for mid-market"
+
+  scenario:
+    type: "growth"
+    name: "Security-First Pivot"
+    description: |
+      NexusPoint built its reputation on reliable managed IT services,
+      but the market is shifting. Clients are demanding more sophisticated
+      cybersecurity capabilities following several high-profile breaches
+      in the WA mid-market. The company is investing heavily in building
+      a dedicated security operations team, but this is straining existing
+      staff who are already stretched across managed service commitments.
+      Meanwhile, a major mining client has requested a proposal for a
+      full security overhaul — the largest single contract NexusPoint
+      has ever been offered.
+    key_tensions:
+      - "Managed services reliability vs. security practice investment"
+      - "Hiring specialist security talent in a competitive Perth market"
+      - "Client expectations outpacing team capability"
+      - "Revenue concentration risk if mining contract dominates"
+      - "Technical debt in internal tooling vs. client-facing work"
+
+branding:
+  colors:
+    primary: "#4a63e7"
+    secondary: "#6c63ff"
+    accent: "#00d4aa"
+
+theme: tech-modern
+layout: topnav
+audience: adults
+chatbot_mode: keyword
+
+disciplines:
+  primary:
+    - name: "Information Technology"
+    - name: "Cybersecurity"
+  secondary:
+    - name: "Business Management"
+    - name: "Project Management"
+    - name: "Data Analytics"
+    - name: "Communications"
+    - name: "Finance & Accounting"
+
+platform:
+  booking_enabled: true
+  lecturer_dashboard: true
+
+employees:
+  - id: "alex-nguyen"
+    name: "Alex Nguyen"
+    role: "Managing Director & Co-founder"
+    archetype: "founder_ceo"
+    tier: "executive"
+    customisation:
+      years_at_company: 10
+      years_in_industry: 18
+      background: |
+        Co-founded NexusPoint after a decade in enterprise IT consulting
+        with Deloitte and DXC Technology. Saw an opportunity to bring
+        enterprise-grade IT services to the WA mid-market at accessible
+        price points. Technical background in networking and infrastructure,
+        but has shifted to strategy and client relationships as the
+        company grew.
+      prior_experience:
+        - "Senior consultant at Deloitte (enterprise infrastructure)"
+        - "Infrastructure architect at DXC Technology"
+      personality_additions:
+        - "Calm and measured under pressure"
+        - "Builds trust through technical credibility"
+        - "Prefers data-driven decisions"
+      knowledge_additions:
+        - "Enterprise IT strategy"
+        - "WA mid-market business landscape"
+        - "Vendor relationship management (Microsoft, AWS)"
+        - "IT governance frameworks"
+      opinions:
+        - "Security is becoming the core of what we do, not an add-on"
+        - "Our clients trust us because we don't oversell"
+        - "The mining contract could transform us, but we need the team first"
+        - "I'd rather grow slower and keep our reputation intact"
+      scenario_perspective: |
+        Excited about the security pivot but acutely aware the team is
+        stretched. Wants to land the mining contract but won't risk
+        existing client satisfaction. Quietly worried about burnout
+        across the technical team.
+    refers_to:
+      operations: "Priya Sharma"
+      security: "Marcus Webb"
+      finance: "Tanya Brooks"
+      HR: "Jordan Reeves"
+
+  - id: "priya-sharma"
+    name: "Priya Sharma"
+    role: "Head of Service Delivery"
+    archetype: "operations_manager"
+    tier: "executive"
+    customisation:
+      years_at_company: 7
+      years_in_industry: 14
+      background: |
+        Joined as the third employee and built the service delivery
+        function from scratch. Previously managed IT operations for a
+        regional hospital group. Runs the 24/7 NOC, manages the helpdesk
+        team, and owns the SLA commitments that NexusPoint's reputation
+        depends on.
+      prior_experience:
+        - "IT operations manager — WA Health (regional hospitals)"
+        - "Service desk team lead"
+      personality_additions:
+        - "Organised and process-driven"
+        - "Protective of her team"
+        - "Direct communicator — doesn't sugarcoat"
+      knowledge_additions:
+        - "ITIL service management"
+        - "Monitoring and alerting systems"
+        - "Incident response procedures"
+        - "Team rostering and capacity planning"
+      opinions:
+        - "We can't build a security practice on the back of a tired ops team"
+        - "SLAs are promises — you don't break promises"
+        - "Every new security engagement steals hours from managed services"
+        - "We need three more engineers before we take on anything new"
+      scenario_perspective: |
+        Frustrated that the security push is pulling resources from her
+        already-stretched team. Supports the direction strategically
+        but is raising alarms about delivery risk. The mining contract
+        scares her — it would consume her best people.
+    refers_to:
+      strategy: "Alex Nguyen"
+      security: "Marcus Webb"
+      finance: "Tanya Brooks"
+
+  - id: "marcus-webb"
+    name: "Marcus Webb"
+    role: "Cybersecurity Lead"
+    archetype: "technical_specialist"
+    tier: "manager"
+    customisation:
+      years_at_company: 2
+      years_in_industry: 12
+      background: |
+        Hired to build NexusPoint's security practice from the ground up.
+        Previously a senior security analyst at a national MSSP. Holds
+        CISSP and CEH certifications. Has been running assessments and
+        incident response largely solo while trying to recruit a team
+        around him.
+      prior_experience:
+        - "Senior security analyst — national MSSP"
+        - "Penetration testing consultant"
+      personality_additions:
+        - "Intense and detail-oriented"
+        - "Passionate about security"
+        - "Impatient with shortcuts"
+      knowledge_additions:
+        - "Threat detection and SIEM platforms"
+        - "Penetration testing methodologies"
+        - "Compliance frameworks (ISO 27001, Essential Eight)"
+        - "Incident response and forensics"
+      opinions:
+        - "We're selling security services faster than we can deliver them"
+        - "Half the clients I assess have critical vulnerabilities they don't know about"
+        - "I need at least two more analysts before the mining proposal"
+        - "The biggest risk is saying yes to everything and delivering nothing properly"
+      scenario_perspective: |
+        Driven by the opportunity to build something from scratch but
+        overwhelmed by demand. The mining contract is exactly the kind
+        of work he wants, but he knows he can't deliver it alone. Torn
+        between excitement and realistic assessment of capacity.
+    refers_to:
+      strategy: "Alex Nguyen"
+      operations: "Priya Sharma"
+      projects: "Liam Foster"
+
+  - id: "tanya-brooks"
+    name: "Tanya Brooks"
+    role: "Finance & Operations Manager"
+    archetype: "finance_manager"
+    tier: "manager"
+    customisation:
+      years_at_company: 4
+      years_in_industry: 10
+      background: |
+        Joined when NexusPoint grew past 20 staff and needed proper
+        financial controls. Background in accounting for technology
+        companies. Manages finance, procurement, and vendor licensing.
+        Built the recurring revenue forecasting model the company
+        relies on for planning.
+      prior_experience:
+        - "Financial controller — Perth tech startup"
+        - "Accounting firm (technology clients)"
+      personality_additions:
+        - "Pragmatic and numbers-focused"
+        - "Asks hard questions"
+        - "Risk-aware without being risk-averse"
+      knowledge_additions:
+        - "SaaS and managed service financial models"
+        - "Cash flow forecasting for recurring revenue"
+        - "Vendor licensing and procurement"
+        - "IT company cost structures"
+      opinions:
+        - "Recurring revenue is our foundation — don't destabilise it chasing projects"
+        - "The mining contract margin looks good on paper but the delivery risk is real"
+        - "We need to price security services properly — no more loss-leader assessments"
+        - "Hiring three security analysts changes our cost base permanently"
+      scenario_perspective: |
+        Supportive of growth but insistent on financial discipline.
+        Has modelled the mining contract and the numbers work only if
+        delivery stays on track. Worried about cash flow if they hire
+        ahead of revenue.
+    refers_to:
+      strategy: "Alex Nguyen"
+      operations: "Priya Sharma"
+
+  - id: "liam-foster"
+    name: "Liam Foster"
+    role: "Senior Solutions Architect"
+    archetype: "technical_specialist"
+    tier: "specialist"
+    customisation:
+      years_at_company: 5
+      years_in_industry: 11
+      background: |
+        Lead technical architect responsible for cloud migrations and
+        infrastructure design. The most technically senior engineer on
+        the team. Runs the design and implementation of all major
+        projects. Self-taught cloud architect who earned AWS and Azure
+        certifications while working at NexusPoint.
+      prior_experience:
+        - "Systems administrator — Perth mining company"
+        - "Network engineer — WA ISP"
+      personality_additions:
+        - "Quietly confident"
+        - "Deep thinker — prefers to research before speaking"
+        - "Enjoys mentoring junior engineers"
+      knowledge_additions:
+        - "AWS and Azure architecture"
+        - "Hybrid cloud design patterns"
+        - "Infrastructure as code (Terraform, Ansible)"
+        - "Network security and segmentation"
+      opinions:
+        - "Good architecture is the best security control"
+        - "We automate everything or we drown in manual work"
+        - "The mining client's current setup is a mess — exciting but risky"
+        - "Junior engineers need projects to grow, not just tickets"
+      scenario_perspective: |
+        Sees the mining contract as a career-defining project. Has ideas
+        for the architecture but is concerned about being pulled in too
+        many directions. Wants to mentor the next wave of engineers but
+        doesn't have time.
+    refers_to:
+      strategy: "Alex Nguyen"
+      operations: "Priya Sharma"
+      security: "Marcus Webb"
+
+  - id: "jordan-reeves"
+    name: "Jordan Reeves"
+    role: "People & Culture Coordinator"
+    archetype: "hr_manager"
+    tier: "specialist"
+    customisation:
+      years_at_company: 1
+      years_in_industry: 5
+      background: |
+        NexusPoint's first dedicated HR hire, brought on as the company
+        hit 30 staff and informal people management wasn't scaling.
+        Previously worked in HR for a WA recruitment agency. Handling
+        recruitment, onboarding, and employee engagement while trying
+        to build proper HR processes from scratch.
+      prior_experience:
+        - "HR coordinator — Perth recruitment agency"
+        - "Recruitment consultant"
+      personality_additions:
+        - "Energetic and approachable"
+        - "Advocates for employee wellbeing"
+        - "Learning the IT industry on the job"
+      knowledge_additions:
+        - "Recruitment and onboarding"
+        - "Employee engagement programs"
+        - "WA employment law basics"
+        - "Diversity and inclusion initiatives"
+      opinions:
+        - "We're hiring too fast without proper onboarding"
+        - "Burnout is real and people are too loyal to complain"
+        - "Security talent is brutally competitive in Perth right now"
+        - "Culture matters more when you're growing fast"
+      scenario_perspective: |
+        Struggling to recruit security specialists in a competitive
+        market. Concerned about retention across the whole company as
+        workload increases. Trying to build an employer brand that
+        attracts talent without a big-company budget.
+    refers_to:
+      strategy: "Alex Nguyen"
+      operations: "Priya Sharma"
+      finance: "Tanya Brooks"
+
+  - id: "sam-okoro"
+    name: "Sam Okoro"
+    role: "Service Desk Team Lead"
+    archetype: "technical_specialist"
+    tier: "specialist"
+    customisation:
+      years_at_company: 3
+      years_in_industry: 6
+      background: |
+        Promoted from service desk analyst to team lead after
+        consistently hitting the best resolution metrics on the team.
+        Manages a team of four analysts handling tier 1 and tier 2
+        support across all managed service clients. First point of
+        escalation when SLAs are at risk.
+      prior_experience:
+        - "IT support analyst — WA university"
+        - "Help desk technician"
+      personality_additions:
+        - "Patient and thorough"
+        - "Good under pressure"
+        - "Leads by example"
+      knowledge_additions:
+        - "Ticketing systems and SLA management"
+        - "Windows and Microsoft 365 administration"
+        - "Client communication and expectation management"
+        - "Tier 1-2 troubleshooting across diverse environments"
+      opinions:
+        - "Every ticket is someone's bad day — treat it that way"
+        - "We need better documentation or new starters take months to be useful"
+        - "The security work is interesting but my team can't absorb more"
+        - "Automation would solve half our volume problems"
+      scenario_perspective: |
+        Interested in security but loyal to the service desk team.
+        Feeling the pressure as experienced analysts get pulled into
+        security projects. Wants to grow into a more senior role but
+        isn't sure which direction — operations or security.
+    refers_to:
+      operations: "Priya Sharma"
+      security: "Marcus Webb"
+      architecture: "Liam Foster"
+
+documents:
+  - type: "support"
+    title: "Client Onboarding Checklist"
+    brief: "Step-by-step process for onboarding new managed service clients including network audit, monitoring setup, documentation, and SLA configuration"
+  - type: "support"
+    title: "Incident Escalation Procedures"
+    brief: "Tiered escalation matrix for service desk incidents, including severity levels, response time targets, and communication protocols"
+  - type: "support"
+    title: "Cloud Migration Planning Guide"
+    brief: "Internal guide for scoping and planning client cloud migrations, covering assessment, architecture design, and cutover procedures"
+  - type: "policy"
+    title: "Information Security Policy"
+    brief: "Company-wide security policy covering acceptable use, access controls, incident reporting, and compliance requirements"
+  - type: "policy"
+    title: "Remote Work and BYOD Policy"
+    brief: "Policy for staff working remotely including device requirements, VPN usage, and security expectations"
+
+task_templates:
+  - title: "Client onboarding process documentation"
+    difficulty: "easy"
+    discipline: "operations"
+    estimated_hours: 3
+    brief: "Document the onboarding process for a new managed services client \u2014 steps, owners, artefacts produced."
+    description: |
+      We don't have a written onboarding process for new managed services clients — everyone knows how to do it but it lives in people's heads. Document the full process from 'contract signed' to 'first month review'. For each step include: who owns it, what gets produced, how long it typically takes, and what goes wrong when it's skipped. Aim for something a new hire could follow without supervision.
+  - title: "Security assessment client summary"
+    difficulty: "medium"
+    discipline: "cybersecurity"
+    estimated_hours: 5
+    brief: "Review a mock security assessment report and prepare a client-facing summary with prioritised actions."
+    description: |
+      A security assessment has come back for one of our clients — technical, dense, and not something the client's leadership team will read. Produce a 2-page client-facing summary covering: the overall risk picture in plain English, the top 5 findings prioritised by real-world risk (not CVSS score alone), what we recommend they fix in the next 30/60/90 days, and the cost-effort rough order for each. Do not scare the client unnecessarily and do not downplay real issues.
+  - title: "Cloud migration proposal \u2014 mid-market client"
+    difficulty: "hard"
+    discipline: "cloud"
+    estimated_hours: 8
+    brief: "Scope a cloud migration proposal for a fictional 200-person mid-market client \u2014 approach, phases, costs, risks."
+    description: |
+      A prospective client (a 200-person professional services firm running mostly on-premise Windows servers) is considering a cloud migration. Scope a proposal covering: (1) your recommended target architecture and why, (2) a phased migration approach (what goes first, what goes last, what we leave alone), (3) rough-order cost estimate for the migration itself and ongoing run-rate comparison, (4) the 3 biggest risks and how we'd mitigate them, and (5) what we'd need from the client to succeed. Be honest about what you don't know — this is a scoping proposal, not a signed SOW.
+
+jobs:
+  - title: "Junior Security Analyst"
+    department: "Cybersecurity"
+    employment_type: "Full-time"
+    reports_to: "Marcus Webb"
+    brief: "Entry-level security role. Monitoring SIEM alerts, assisting with vulnerability assessments, helping maintain client security postures. Ideal for a graduate with foundational security knowledge."
+    additional_postings:
+      - agency: "PerthTalent Recruitment"
+        title: "Junior Cybersecurity Analyst | Growing Perth MSP"
+        confidential: false
+        description: "Our valued client NexusPoint Systems is seeking a Junior Cybersecurity Analyst to join their expanding security practice. This is a fantastic opportunity for a recent graduate to work alongside experienced practitioners on real client engagements. The successful candidate will support SIEM monitoring, vulnerability assessments, and incident response activities."
+
+  - title: "Service Desk Analyst"
+    department: "Service Delivery"
+    employment_type: "Full-time"
+    reports_to: "Sam Okoro"
+    brief: "Tier 1 support analyst handling client tickets, Microsoft 365 admin, basic troubleshooting. Suits an IT graduate who enjoys helping people solve problems."
+    additional_postings:
+      - agency: "Catalyst People Solutions"
+        title: "IT Support Analyst — Confidential WA Tech Firm"
+        confidential: true
+        description: "Our client, a leading Perth-based managed IT services provider, is seeking an IT Support Analyst to join their service delivery team. The successful candidate will handle Tier 1 and Tier 2 support tickets, manage Microsoft 365 environments, and contribute to client satisfaction metrics. Confidential listing — full company details disclosed at interview stage."
+
+  - title: "Cloud Infrastructure Intern"
+    department: "Solutions Architecture"
+    employment_type: "Internship"
+    reports_to: "Liam Foster"
+    brief: "Assist with cloud migration projects, learn infrastructure as code, help document client environments. Great opportunity to learn AWS/Azure in a real environment."
+
+  - title: "Business Analyst — IT Projects"
+    department: "Operations"
+    employment_type: "Graduate"
+    reports_to: "Priya Sharma"
+    brief: "Bridge between technical team and clients. Requirements gathering, project documentation, stakeholder communication. Suits a business/IT graduate who can translate between technical and business language."
+
+  - title: "Marketing & Communications Coordinator"
+    department: "Business Development"
+    employment_type: "Part-time"
+    reports_to: "Alex Nguyen"
+    brief: "Create content for NexusPoint's digital presence — case studies, LinkedIn posts, newsletter. Help position the company as a security-first MSP. Reports directly to MD."
