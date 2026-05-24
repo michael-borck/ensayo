@@ -15,7 +15,16 @@ const initials = d.name
   .map((p: string) => p.charAt(0))
   .slice(0, 2)
   .join("");
-const showChat = d.chatbotMode === "keyword" || d.chatbotMode === "hybrid";
+const embedId = d.chatbotEmbedId ?? "";
+const allm = d.anythingllm ?? { baseUrl: "", embedSrc: "" };
+// LLM chat (AnythingLLM embed) is shown when the mode allows it AND the employee
+// has been provisioned with an embed widget (Phase 4). Otherwise keyword mode.
+const showLLM =
+  (d.chatbotMode === "llm" || d.chatbotMode === "hybrid") &&
+  !!embedId && !!allm.embedSrc;
+const showKeyword =
+  d.chatbotMode === "keyword" || (d.chatbotMode === "hybrid" && !showLLM);
+const firstName = d.name.split(" ")[0];
 const kw = JSON.stringify(d.keywords ?? {});
 ---
 
@@ -51,15 +60,28 @@ const kw = JSON.stringify(d.keywords ?? {});
           </section>
         )}
 
-        {showChat && (
+        {showKeyword && (
           <section>
-            <h2>Chat with {d.name.split(" ")[0]}</h2>
+            <h2>Chat with {firstName}</h2>
             <p class="muted small">
               Keyword chatbot — deterministic, runs entirely in your browser.
             </p>
             <div data-ensayo-chat></div>
             <script type="application/json" id="ensayo-kw-data" set:html={kw}></script>
             <script src={`${base}ensayo/keyword-chatbot.js`} is:inline></script>
+          </section>
+        )}
+
+        {showLLM && (
+          <section>
+            <h2>Chat with {firstName}</h2>
+            <p class="muted small">AI chatbot powered by AnythingLLM.</p>
+            <script
+              data-embed-id={embedId}
+              data-base-api-url={allm.baseUrl}
+              src={allm.embedSrc}
+              is:inline
+            ></script>
           </section>
         )}
       </div>

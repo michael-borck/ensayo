@@ -1,15 +1,22 @@
 """Persona prompt + content builders.
 
-Phase 0 ships a basic layered builder (company → individual). Phase 1 adds the
-archetype and industry layers and a proper archetype library. Persona prompts
-are written to ``content/employees/{slug}-prompt.txt`` in the repo and are the
-canonical persona definition (spec §3.2, §15.1).
+The prompt builder is **layered** (spec §7 / Phase 1): a persona is composed from
+four layers, each adding context the next can build on:
+
+    archetype  →  industry  →  company  →  individual
+
+The archetype supplies the role's baseline traits/knowledge/voice; the industry
+adds sector context and norms; the company adds its description and scenario; the
+individual customisation overrides and extends all of it. Persona prompts are
+written to ``content/employees/{slug}-prompt.txt`` and are the canonical persona
+definition (spec §3.2, §15.1).
 """
 
 from __future__ import annotations
 
 import re
 
+from .library import load_archetype, load_industry
 from .models import CompanyConfig, Employee
 
 
@@ -17,26 +24,53 @@ def _bullets(items: list[str]) -> str:
     return "\n".join(f"- {item}" for item in items)
 
 
+def _merge(*lists: list[str]) -> list[str]:
+    """Concatenate lists, dropping case-insensitive duplicates, preserving order."""
+    seen: set[str] = set()
+    out: list[str] = []
+    for lst in lists:
+        for item in lst:
+            key = item.strip().lower()
+            if key and key not in seen:
+                seen.add(key)
+                out.append(item)
+    return out
+
+
 def build_prompt(config: CompanyConfig, employee: Employee) -> str:
-    """Assemble the chatbot system prompt for one employee."""
+    """Assemble the layered chatbot system prompt for one employee."""
     company = config.company
     cust = employee.customisation
+    archetype = load_archetype(employee.archetype)
+    industry = load_industry(company.industry)
+
     parts: list[str] = []
 
-    role = employee.role or "team member"
+    # --- identity -----------------------------------------------------------
+    role = employee.role or archetype.label or "team member"
     parts.append(f"You are {employee.name}, {role} at {company.name}.")
 
+    # --- company layer ------------------------------------------------------
     if company.profile.description:
         parts.append(company.profile.description.strip())
 
+    # --- industry layer -----------------------------------------------------
+    if industry.context:
+        parts.append("INDUSTRY CONTEXT:\n" + industry.context.strip())
+
+    # --- archetype layer (role framing) ------------------------------------
+    if archetype.prompt_fragment:
+        parts.append("YOUR ROLE:\n" + archetype.prompt_fragment.strip())
+
+    # --- individual layer ---------------------------------------------------
     if cust.background:
         parts.append("ABOUT YOU:\n" + cust.background.strip())
 
-    personality = cust.personality_additions
+    personality = _merge(archetype.personality, cust.personality_additions)
     if personality:
         parts.append("PERSONALITY:\n" + _bullets(personality))
 
-    knowledge = cust.knowledge_additions
+    knowledge = _merge(archetype.knowledge, cust.knowledge_additions)
     if knowledge:
         parts.append("WHAT YOU KNOW:\n" + _bullets(knowledge))
 
@@ -56,30 +90,43 @@ def build_prompt(config: CompanyConfig, employee: Employee) -> str:
         )
         parts.append("WHEN A TOPIC ISN'T YOURS:\n" + referrals)
 
-    parts.append(
-        "Stay in character. Answer as this person would, drawing only on what "
-        "they plausibly know. Keep replies conversational and concise. If asked "
-        "something outside your role, say so and point them to the right colleague."
+    # --- closing: voice + guardrails ---------------------------------------
+    closing = []
+    if archetype.communication_style:
+        closing.append(f"Communication style: {archetype.communication_style.strip()}")
+    for norm in industry.norms:
+        closing.append(norm)
+    closing.append(
+        "Stay in character. Answer as this person would, drawing only on what they "
+        "plausibly know. Keep replies conversational and concise. If asked something "
+        "outside your role, say so and point them to the right colleague."
     )
+    parts.append("\n".join(closing))
+
     return "\n\n".join(parts).strip() + "\n"
 
 
 def build_employee_markdown(config: CompanyConfig, employee: Employee) -> str:
     """Build the ``{slug}.md`` profile file (YAML frontmatter + backstory)."""
     cust = employee.customisation
+    archetype = load_archetype(employee.archetype)
+    personality = _merge(archetype.personality, cust.personality_additions)
+    knowledge = _merge(archetype.knowledge, cust.knowledge_additions)
+
     fm: list[str] = ["---"]
     fm.append(f"name: {_yaml_str(employee.name)}")
     fm.append(f"slug: {employee.slug}")
     fm.append(f"role: {_yaml_str(employee.role)}")
     fm.append(f"tier: {employee.tier.value}")
+    fm.append(f"archetype: {employee.archetype}")
     if employee.department:
         fm.append(f"department: {_yaml_str(employee.department)}")
-    if cust.personality_additions:
+    if personality:
         fm.append("personality:")
-        fm += [f"  - {_yaml_str(p)}" for p in cust.personality_additions]
-    if cust.knowledge_additions:
+        fm += [f"  - {_yaml_str(p)}" for p in personality]
+    if knowledge:
         fm.append("knowledge:")
-        fm += [f"  - {_yaml_str(k)}" for k in cust.knowledge_additions]
+        fm += [f"  - {_yaml_str(k)}" for k in knowledge]
     if employee.refers_to:
         fm.append("refers_to:")
         fm += [f"  {topic}: {_yaml_str(who)}" for topic, who in employee.refers_to.items()]
@@ -94,25 +141,32 @@ def build_employee_markdown(config: CompanyConfig, employee: Employee) -> str:
 
 
 def build_keyword_responses(config: CompanyConfig, employee: Employee) -> dict:
-    """Produce a basic keyword-chatbot dataset for an employee.
+    """Produce the keyword-chatbot dataset for an employee.
 
-    Phase 0 derives a small response map from the persona so the zero-config demo
-    has a working (deterministic) chatbot with no LLM. Phase 1 makes this a
-    first-class authored ``keywords.json``.
+    Seeds from the archetype's authored ``keyword_seeds`` (a solid deterministic
+    baseline for the role) and layers individual-specific rules on top (opinions,
+    knowledge, referrals). Powers keyword mode with no LLM (spec §2.3).
     """
     cust = employee.customisation
+    archetype = load_archetype(employee.archetype)
     rules: list[dict] = []
 
+    # Archetype-provided baseline rules (role-appropriate out of the box).
+    for seed in archetype.keyword_seeds:
+        if seed.keywords and seed.response:
+            rules.append({"keywords": list(seed.keywords), "response": seed.response})
+
+    # Individual-specific rules.
     if cust.background:
         rules.append({
-            "keywords": ["who are you", "your role", "what do you do", "your job"],
+            "keywords": ["who are you", "your role", "what do you do", "your job", "background"],
             "response": _first_sentences(cust.background, 2),
         })
     for opinion in cust.opinions[:4]:
         topic = _topic_keywords(opinion)
         if topic:
             rules.append({"keywords": topic, "response": opinion})
-    for area in cust.knowledge_additions[:6]:
+    for area in cust.knowledge_additions[:5]:
         rules.append({
             "keywords": _topic_keywords(area),
             "response": f"That's something I work with a lot — {area.lower()}. Ask me anything specific.",
@@ -131,6 +185,7 @@ def build_keyword_responses(config: CompanyConfig, employee: Employee) -> dict:
     return {
         "employee": employee.name,
         "role": employee.role,
+        "archetype": employee.archetype,
         "greeting": greeting,
         "fallback": "I'm not sure about that one — try asking me about my work, or ask a colleague.",
         "rules": rules,

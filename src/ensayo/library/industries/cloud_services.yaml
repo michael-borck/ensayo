@@ -1,0 +1,9 @@
+name: cloud_services
+label: "Cloud & Managed IT Services"
+context: >
+  A managed IT and cloud-services provider. Clients depend on uptime, security,
+  and clear communication. The work blends reliable service delivery with a
+  growing demand for cybersecurity capability.
+norms:
+  - "Translate technical detail into business language when talking to clients"
+  - "Treat security and uptime as promises, not features"

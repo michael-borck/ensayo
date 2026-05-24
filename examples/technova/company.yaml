@@ -1,0 +1,94 @@
+# TechNova Systems — school-outreach simulation (Years 10–12).
+# Demonstrates the minors-safe audience bundle: keyword chatbots only, no PII.
+# (spec §2.3, §7). The audience setting forces keyword mode regardless of
+# per-employee settings.
+
+company:
+  name: "TechNova Systems"
+  slug: "technova-systems"
+  tagline: "IT That Just Works"
+  industry: "cloud_services"
+  location: "Perth, Western Australia"
+  profile:
+    founded: 2014
+    employees: 28
+    revenue: "$5M annually"
+    description: |
+      A managed IT services company that keeps schools, clinics and small
+      businesses running. Friendly local team handling helpdesk support,
+      networks, and cybersecurity for organisations that don't have their own
+      IT department.
+    key_facts:
+      - "Supports 40+ schools and small businesses"
+      - "Average helpdesk response under 15 minutes"
+      - "Local Perth team, no overseas call centres"
+    services:
+      - "Helpdesk and desktop support"
+      - "Network setup and maintenance"
+      - "Cybersecurity basics and staff training"
+  scenario:
+    type: "growth"
+    name: "Career Exploration Day"
+    description: |
+      TechNova is hosting students to explore careers in IT. Meet the team,
+      learn what different IT roles actually do day to day, and discover the
+      paths into the industry.
+    key_tensions:
+      - "There are many different jobs in IT, not just 'programmer'"
+      - "You don't always need a degree to start in IT"
+
+theme: tech-modern
+audience: minors
+chatbot_mode: keyword
+
+branding:
+  colors:
+    primary: "#2563eb"
+    accent: "#22c55e"
+
+employees:
+  - name: "Maria Santos"
+    role: "Managing Director"
+    archetype: founder_ceo
+    customisation:
+      background: |
+        Started TechNova after years working in IT for a big company, wanting to
+        support local schools and small businesses with friendly, jargon-free help.
+      opinions:
+        - "There's a place in IT for every kind of person"
+
+  - name: "Daniel Okafor"
+    role: "Service Desk Team Lead"
+    archetype: customer_support
+    customisation:
+      background: |
+        Runs the helpdesk team. Loves solving problems and helping people who are
+        stressed because their tech has stopped working.
+      knowledge_additions:
+        - "Helping non-technical people with computer problems"
+
+  - name: "Aisha Rahman"
+    role: "Cybersecurity Technician"
+    archetype: technical_specialist
+    customisation:
+      background: |
+        Keeps client systems safe from online threats. Came into IT through a
+        TAFE course rather than university.
+      opinions:
+        - "Cybersecurity is like being a digital detective"
+
+  - name: "Tom Bradley"
+    role: "Network Engineer"
+    archetype: technical_specialist
+    customisation:
+      background: |
+        Sets up and looks after the networks that connect everything. Started as
+        an apprentice and learned on the job.
+
+documents:
+  - type: support
+    title: "Careers in IT — A Quick Guide"
+    brief: "An overview of the different jobs in IT and the paths into them."
+  - type: support
+    title: "Staying Safe Online"
+    brief: "Simple cybersecurity tips everyone should know."

@@ -105,6 +105,7 @@ class Employee(_Model):
     customisation: EmployeeCustomisation = Field(default_factory=EmployeeCustomisation)
     refers_to: dict[str, str] = Field(default_factory=dict)
     chatbot_mode: ChatbotMode | None = None  # falls back to company default
+    chatbot_embed_id: str | None = None  # AnythingLLM embed UUID (set by Phase 4 provisioning)
     avatar: str | None = None
 
     @model_validator(mode="after")
@@ -137,6 +138,13 @@ class Platform(_Model):
     lecturer_dashboard: bool = False
 
 
+class AnythingLLM(_Model):
+    """Connection details for AnythingLLM embed widgets (full provisioning: Phase 4)."""
+
+    base_url: str = ""  # e.g. https://anythingllm.example.com/api
+    embed_src: str = ""  # e.g. https://anythingllm.example.com/embed/anythingllm-chat.min.js
+
+
 class CompanyConfig(_Model):
     """Top-level single-company simulation configuration."""
 
@@ -147,6 +155,7 @@ class CompanyConfig(_Model):
     chatbot_mode: ChatbotMode = ChatbotMode.keyword
     branding: Branding = Field(default_factory=Branding)
     platform: Platform = Field(default_factory=Platform)
+    anythingllm: AnythingLLM = Field(default_factory=AnythingLLM)
     employees: list[Employee] = Field(default_factory=list)
     documents: list[Document] = Field(default_factory=list)
 

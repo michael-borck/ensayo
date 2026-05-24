@@ -28,9 +28,10 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/ensayo"]
 
-# Bundle the shared client assets (keyword chatbot, etc.) inside the wheel.
+# Bundle shared client assets + the archetype/industry library inside the wheel.
 [tool.hatch.build.targets.wheel.force-include]
 "src/ensayo/shared" = "ensayo/shared"
+"src/ensayo/library" = "ensayo/library"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -34,6 +34,9 @@ def write_repo_content(config: CompanyConfig, root: Path) -> dict[str, int]:
         (employees_dir / f"{emp.slug}-prompt.txt").write_text(
             build_prompt(config, emp), encoding="utf-8"
         )
+        (employees_dir / f"{emp.slug}-keywords.json").write_text(
+            json.dumps(build_keyword_responses(config, emp), indent=2), encoding="utf-8"
+        )
 
     for doc in config.documents:
         (docs_dir / f"{doc.slug}.md").write_text(_doc_markdown(doc), encoding="utf-8")
@@ -124,6 +127,11 @@ def _employee_payload(config: CompanyConfig, emp: Employee) -> dict:
         "scenarioPerspective": cust.scenario_perspective.strip(),
         "refersTo": emp.refers_to,
         "chatbotMode": config.effective_chatbot_mode(emp).value,
+        "chatbotEmbedId": emp.chatbot_embed_id,
+        "anythingllm": {
+            "baseUrl": config.anythingllm.base_url,
+            "embedSrc": config.anythingllm.embed_src,
+        },
         "keywords": build_keyword_responses(config, emp),
     }
 

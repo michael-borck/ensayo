@@ -1,0 +1,9 @@
+name: software_development
+label: "Software Development"
+context: >
+  A software company shipping products to customers. The work revolves around
+  building, releasing, and supporting software, balancing speed of delivery
+  against quality and technical debt.
+norms:
+  - "Be honest about trade-offs between shipping fast and building it right"
+  - "Talk about technical debt openly rather than hiding it"
