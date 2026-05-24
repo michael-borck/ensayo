@@ -146,31 +146,54 @@ documents:
     for (const s of sims) {
       const el = document.createElement("div");
       el.className = "card";
+      const unpub = s.has_unpublished_changes
+        ? '<span class="pill" style="color:#ffd5a8">unpublished changes</span>' : "";
+      const repo = s.repo_url ? "Publish" : "Connect repo + publish";
       el.innerHTML = `
         <div class="row" style="justify-content:space-between">
-          <div><strong>${s.name}</strong> <span class="pill">${s.status}</span>
-            <div class="muted small">${s.slug} · ${s.audience} · ${s.type}</div></div>
+          <div><strong>${s.name}</strong> <span class="pill">${s.status}</span> ${unpub}
+            <div class="muted small">${s.slug} · ${s.audience} · ${s.type}
+              ${s.repo_url ? "· " + s.repo_url : ""}</div></div>
           <div class="row">
             <a class="ghost" style="padding:0.5rem 1rem;border:1px solid var(--border);border-radius:9px"
-               href="/sims/${s.slug}/" target="_blank">View site ↗</a>
+               href="/sims/${s.slug}/" target="_blank">View ↗</a>
+            <button class="ghost" data-edit="${s.id}">Edit</button>
             <button class="ghost" data-gen="${s.id}">Regenerate</button>
-            <button class="ghost" data-pub="${s.id}">Publish</button>
+            <button class="primary" data-pub="${s.id}">${repo}</button>
           </div>
         </div>`;
       $("list").appendChild(el);
     }
     document.querySelectorAll("[data-gen]").forEach(b => b.onclick = () => act(b.dataset.gen, "generate", b));
-    document.querySelectorAll("[data-pub]").forEach(b => b.onclick = () => act(b.dataset.pub, "publish", b));
+    document.querySelectorAll("[data-pub]").forEach(b => b.onclick = () => doPublish(b.dataset.pub, b));
+    document.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => openEdit(b.dataset.edit));
   }
 
   async function act(id, kind, btn) {
-    btn.disabled = true; btn.textContent = kind === "generate" ? "Regenerating…" : "Publishing…";
-    const body = kind === "generate" ? JSON.stringify({ build: true }) : null;
-    const r = await api(`/api/v1/simulations/${id}/${kind}`, { method: "POST", body });
+    btn.disabled = true; btn.textContent = "Regenerating…";
+    const r = await api(`/api/v1/simulations/${id}/${kind}`,
+                        { method: "POST", body: JSON.stringify({ build: true }) });
     const data = await r.json().catch(() => ({}));
-    if (!r.ok) msg(data.detail || "Action failed", "err");
-    else if (kind === "publish" && !data.published) msg("Publish skipped: " + data.reason, "");
-    else msg(kind === "generate" ? "Regenerated." : "Published.", "ok");
+    msg(r.ok ? "Regenerated." : (data.detail || "Action failed"), r.ok ? "ok" : "err");
+    refresh();
+  }
+
+  async function doPublish(id, btn) {
+    const sims = await (await api("/api/v1/simulations")).json();
+    const sim = sims.find(s => s.id === id);
+    if (sim && !sim.repo_url) {
+      const url = prompt("GitHub repo URL to publish to (https://github.com/you/repo.git):");
+      if (!url) return;
+      const cr = await api(`/api/v1/simulations/${id}/repo`,
+                           { method: "POST", body: JSON.stringify({ repo_url: url }) });
+      if (!cr.ok) { msg((await cr.json()).detail || "Connect failed", "err"); return; }
+    }
+    btn.disabled = true; btn.textContent = "Publishing…";
+    const r = await api(`/api/v1/simulations/${id}/publish`, { method: "POST" });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) msg(data.detail || "Publish failed", "err");
+    else if (!data.published) msg("Publish skipped: " + data.reason, "");
+    else msg("Published" + (data.pages_url ? " → " + data.pages_url : ""), "ok");
     refresh();
   }
 
@@ -203,18 +226,46 @@ documents:
   $("loginBtn").onclick = login;
   $("password").addEventListener("keydown", e => { if (e.key === "Enter") login(); });
   $("logout").onclick = () => { localStorage.removeItem("ensayo_token"); location.reload(); };
-  $("newBtn").onclick = () => $("newForm").classList.toggle("hidden");
+  let editingId = null;
+  function openNew() {
+    editingId = null;
+    $("simName").value = ""; $("simName").readOnly = false;
+    $("simPw").value = ""; $("simYaml").value = TEMPLATE;
+    $("createBtn").textContent = "Create";
+    document.querySelector("#newForm h2").textContent = "New simulation";
+    $("newForm").classList.remove("hidden");
+  }
+  async function openEdit(id) {
+    const sims = await (await api("/api/v1/simulations")).json();
+    const sim = sims.find(s => s.id === id);
+    const yr = await api(`/api/v1/simulations/${id}/yaml`);
+    if (!yr.ok) { msg("Could not load YAML", "err"); return; }
+    editingId = id;
+    $("simName").value = sim ? sim.name : "";
+    $("simName").readOnly = true;
+    $("simPw").value = "";
+    $("simYaml").value = (await yr.json()).company_yaml;
+    $("createBtn").textContent = "Save changes";
+    document.querySelector("#newForm h2").textContent = "Edit simulation";
+    $("newForm").classList.remove("hidden");
+    $("newForm").scrollIntoView({ behavior: "smooth" });
+  }
+  $("newBtn").onclick = openNew;
   $("cancelBtn").onclick = () => $("newForm").classList.add("hidden");
   $("createBtn").onclick = async () => {
-    $("createMsg").textContent = "Creating… (building the site can take a few seconds)";
-    const r = await api("/api/v1/simulations", { method: "POST", body: JSON.stringify({
-      name: $("simName").value, company_yaml: $("simYaml").value,
-      shared_password: $("simPw").value || null,
-      with_llm: $("simLlm").checked, build: $("simBuild").checked }) });
+    const editing = !!editingId;
+    $("createMsg").textContent = editing ? "Saving…" : "Creating… (build can take a few seconds)";
+    const body = JSON.stringify(editing
+      ? { company_yaml: $("simYaml").value, with_llm: $("simLlm").checked, build: $("simBuild").checked }
+      : { name: $("simName").value, company_yaml: $("simYaml").value,
+          shared_password: $("simPw").value || null,
+          with_llm: $("simLlm").checked, build: $("simBuild").checked });
+    const url = editing ? `/api/v1/simulations/${editingId}` : "/api/v1/simulations";
+    const r = await api(url, { method: editing ? "PUT" : "POST", body });
     const data = await r.json().catch(() => ({}));
-    if (!r.ok) { $("createMsg").textContent = ""; msg(data.detail || "Create failed", "err"); return; }
+    if (!r.ok) { $("createMsg").textContent = ""; msg(data.detail || "Failed", "err"); return; }
     $("createMsg").textContent = ""; $("newForm").classList.add("hidden");
-    msg("Created " + data.slug, "ok"); refresh();
+    msg(editing ? "Saved." : ("Created " + data.slug), "ok"); refresh();
   };
 
   boot();

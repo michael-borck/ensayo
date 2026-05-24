@@ -66,11 +66,39 @@ def migrate(conn: sqlite3.Connection) -> None:
             config_cache          TEXT DEFAULT '{}',
             created_at            TEXT NOT NULL,
             updated_at            TEXT NOT NULL,
+            last_published_at     TEXT,
             FOREIGN KEY (owner_uc_id) REFERENCES uc_accounts(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS bookings (
+            id            TEXT PRIMARY KEY,
+            simulation_id TEXT NOT NULL,
+            employee_slug TEXT NOT NULL,
+            student_name  TEXT DEFAULT '',
+            student_email TEXT DEFAULT '',
+            slot_start    TEXT NOT NULL,
+            slot_end      TEXT NOT NULL,
+            status        TEXT NOT NULL DEFAULT 'confirmed',
+            created_at    TEXT NOT NULL,
+            FOREIGN KEY (simulation_id) REFERENCES simulations(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS visibility_rules (
+            id            TEXT PRIMARY KEY,
+            simulation_id TEXT NOT NULL,
+            unit_code     TEXT DEFAULT '',
+            target_type   TEXT NOT NULL,
+            target_id     TEXT NOT NULL,
+            action        TEXT NOT NULL DEFAULT 'hide',
+            trigger_type  TEXT NOT NULL DEFAULT 'always',
+            trigger_value TEXT DEFAULT '',
+            created_at    TEXT NOT NULL,
+            FOREIGN KEY (simulation_id) REFERENCES simulations(id)
         );
         """
     )
-    # Future column additions go here via _add_column(conn, "table", "col TYPE ...").
+    # Idempotent column additions for existing databases (spec §15.1 pattern).
+    _add_column(conn, "simulations", "last_published_at TEXT")
     conn.commit()
 
 

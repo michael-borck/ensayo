@@ -103,15 +103,20 @@ uv run ensayo serve                       # → http://127.0.0.1:8000/admin/
 ```
 
 A Unit Coordinator logs in, creates a simulation (paste a `company.yaml`, optional
-shared password, optional LLM generation), and the server runs the generator into a
-git working clone and serves the site at `/sims/<slug>/`. Students authenticate with
-the shared password. Configuration: `ENSAYO_DB`, `WORKING_CLONES_DIR`, `JWT_SECRET`,
-`GITHUB_TOKEN` (for publish).
+shared password, optional LLM generation), **edits** it (Save), and **publishes** it
+to GitHub Pages. The server runs the generator into a per-simulation git working
+clone (with locking), serves the site locally at `/sims/<slug>/`, and on publish
+pushes content to `main` and the built site to the `gh-pages` branch. Students
+authenticate with the shared password and can **book appointments**; **visibility
+rules** gate content server-side. Configuration: `ENSAYO_DB`, `WORKING_CLONES_DIR`,
+`JWT_SECRET`, `GITHUB_TOKEN` (for publish).
 
-> **Status:** the Phase 3 *spine* — UC/JWT auth, simulation create/list/regenerate,
-> shared-password student auth, working-clone git management, and a minimal
-> dashboard. The full 9-step wizard, booking, server-enforced visibility rules, and
-> GitHub Pages publish are in progress.
+> **Status (MVP reached).** Phase 3 delivers: UC/JWT auth, simulation
+> create/list/edit(Save)/regenerate, **Save-vs-Publish** with GitHub Pages publish,
+> per-simulation locking, shared-password student auth, **booking**, server-enforced
+> **visibility rules**, and the lecturer dashboard. Remaining polish: a guided
+> multi-step wizard UI (today it's a single YAML form) and richer dashboard UIs for
+> booking/visibility (the APIs exist).
 
 ## Output layout
 
