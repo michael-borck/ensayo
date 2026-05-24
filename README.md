@@ -117,6 +117,17 @@ rules** gate content server-side. Configuration: `ENSAYO_DB`, `WORKING_CLONES_DI
 > **visibility rules**, and the lecturer dashboard. Remaining polish: a guided
 > multi-step wizard UI (today it's a single YAML form).
 
+### Student accounts (Phase 5)
+
+Each simulation picks an auth mode: **shared password**, **individual accounts**
+(email + password), or **email-only**. With individual/email-only modes students
+register/sign in at `/api/v1/sims/<slug>/students/...`; optionally restrict sign-up
+to a **CSV whitelist**. Password reset is by emailed code (SMTP via `SMTP_HOST`…) or,
+if SMTP isn't configured, the code is returned for the UC to relay (or the UC resets
+manually). The dashboard's **Students** panel lists the roster + per-student metrics,
+uploads the whitelist, resets/soft-deletes students (PII-redacting, spec §6.7), and
+exports a CSV. Minors-audience simulations are forced to shared password (no PII).
+
 ### LLM chatbots & booking-gated chat (Phase 4)
 
 Click **Provision chatbots** to create an AnythingLLM workspace per employee

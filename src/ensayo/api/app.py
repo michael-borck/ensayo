@@ -12,9 +12,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+
+from . import students as student_mgmt
+from . import studentauth
 
 from .. import __version__
 from ..config import ConfigError
@@ -60,8 +63,44 @@ class CreateSimReq(BaseModel):
     name: str
     company_yaml: str
     shared_password: str | None = None
+    auth_mode: str = "shared_password"
     with_llm: bool = False
     build: bool = True
+
+
+class AuthModeReq(BaseModel):
+    auth_mode: str
+    shared_password: str | None = None
+
+
+class StudentRegisterReq(BaseModel):
+    email: str
+    name: str = ""
+    password: str
+
+
+class StudentLoginReq(BaseModel):
+    email: str
+    password: str = ""
+
+
+class ResetRequestReq(BaseModel):
+    email: str
+
+
+class ResetReq(BaseModel):
+    email: str
+    code: str
+    new_password: str
+
+
+class WhitelistReq(BaseModel):
+    emails: list[str] = []
+    csv: str = ""
+
+
+class UcResetReq(BaseModel):
+    new_password: str
 
 
 class GenerateReq(BaseModel):
@@ -153,8 +192,8 @@ def create_app() -> FastAPI:
         try:
             return create_simulation(
                 conn, uc["id"], req.name, req.company_yaml,
-                shared_password=req.shared_password, with_llm=req.with_llm,
-                build=req.build)
+                shared_password=req.shared_password, auth_mode=req.auth_mode,
+                with_llm=req.with_llm, build=req.build)
         except ConfigError as exc:
             raise HTTPException(422, f"invalid company.yaml:\n{exc}") from exc
         except ServiceError as exc:
@@ -278,6 +317,119 @@ def create_app() -> FastAPI:
             return delete_visibility_rule(conn, sim, rule_id)
         except ServiceError as exc:
             raise HTTPException(404, str(exc)) from exc
+
+    # --- auth mode (UC) ---------------------------------------------------
+    @app.post("/api/v1/simulations/{sim_id}/auth-mode")
+    def set_auth_mode(sim_id: str, req: AuthModeReq,
+                      uc: sqlite3.Row = Depends(current_uc),
+                      conn: sqlite3.Connection = Depends(get_conn)):
+        sim = _owned_sim(sim_id, uc, conn)
+        if req.auth_mode not in ("shared_password", "individual_account", "email_only"):
+            raise HTTPException(400, "invalid auth_mode")
+        if sim["audience"] == "minors" and req.auth_mode != "shared_password":
+            raise HTTPException(400, "minors-audience simulations must use shared_password")
+        from .auth import hash_password
+        ph = hash_password(req.shared_password) if req.shared_password else sim["shared_password_hash"]
+        conn.execute("UPDATE simulations SET auth_mode = ?, shared_password_hash = ? WHERE id = ?",
+                     (req.auth_mode, ph, sim_id))
+        conn.commit()
+        return {"auth_mode": req.auth_mode}
+
+    # --- student management (UC) ------------------------------------------
+    @app.get("/api/v1/simulations/{sim_id}/students")
+    def list_sim_students(sim_id: str, uc: sqlite3.Row = Depends(current_uc),
+                          conn: sqlite3.Connection = Depends(get_conn)):
+        return student_mgmt.list_students(conn, _owned_sim(sim_id, uc, conn))
+
+    @app.get("/api/v1/simulations/{sim_id}/students/metrics")
+    def sim_student_metrics(sim_id: str, uc: sqlite3.Row = Depends(current_uc),
+                            conn: sqlite3.Connection = Depends(get_conn)):
+        return student_mgmt.metrics(conn, _owned_sim(sim_id, uc, conn))
+
+    @app.get("/api/v1/simulations/{sim_id}/students/export")
+    def export_sim_students(sim_id: str, uc: sqlite3.Row = Depends(current_uc),
+                            conn: sqlite3.Connection = Depends(get_conn)):
+        sim = _owned_sim(sim_id, uc, conn)
+        csv_text = student_mgmt.export_students(conn, sim)
+        return Response(content=csv_text, media_type="text/csv",
+                        headers={"Content-Disposition":
+                                 f"attachment; filename={sim['slug']}-students.csv"})
+
+    @app.get("/api/v1/simulations/{sim_id}/whitelist")
+    def get_whitelist(sim_id: str, uc: sqlite3.Row = Depends(current_uc),
+                      conn: sqlite3.Connection = Depends(get_conn)):
+        return {"emails": student_mgmt.list_whitelist(conn, _owned_sim(sim_id, uc, conn))}
+
+    @app.post("/api/v1/simulations/{sim_id}/whitelist")
+    def post_whitelist(sim_id: str, req: WhitelistReq,
+                       uc: sqlite3.Row = Depends(current_uc),
+                       conn: sqlite3.Connection = Depends(get_conn)):
+        sim = _owned_sim(sim_id, uc, conn)
+        emails = list(req.emails) + (student_mgmt.parse_whitelist_csv(req.csv) if req.csv else [])
+        return student_mgmt.add_whitelist(conn, sim, emails)
+
+    @app.post("/api/v1/simulations/{sim_id}/students/{student_id}/reset-password")
+    def uc_reset_student(sim_id: str, student_id: str, req: UcResetReq,
+                         uc: sqlite3.Row = Depends(current_uc),
+                         conn: sqlite3.Connection = Depends(get_conn)):
+        sim = _owned_sim(sim_id, uc, conn)
+        try:
+            return student_mgmt.uc_reset_password(conn, sim, student_id, req.new_password)
+        except studentauth.StudentError as exc:
+            raise HTTPException(exc.status, str(exc)) from exc
+
+    @app.delete("/api/v1/simulations/{sim_id}/students/{student_id}")
+    def delete_sim_student(sim_id: str, student_id: str,
+                           uc: sqlite3.Row = Depends(current_uc),
+                           conn: sqlite3.Connection = Depends(get_conn)):
+        sim = _owned_sim(sim_id, uc, conn)
+        try:
+            return student_mgmt.soft_delete(conn, sim, student_id)
+        except studentauth.StudentError as exc:
+            raise HTTPException(exc.status, str(exc)) from exc
+
+    # --- student-facing auth (by slug) ------------------------------------
+    @app.post("/api/v1/sims/{slug}/students/register", status_code=201)
+    def student_register(slug: str, req: StudentRegisterReq,
+                         conn: sqlite3.Connection = Depends(get_conn)):
+        sim = _sim_by_slug(slug, conn)
+        try:
+            return studentauth.register(conn, sim, req.email, req.name, req.password)
+        except studentauth.StudentError as exc:
+            raise HTTPException(exc.status, str(exc)) from exc
+
+    @app.post("/api/v1/sims/{slug}/students/login")
+    def student_login(slug: str, req: StudentLoginReq,
+                      conn: sqlite3.Connection = Depends(get_conn)):
+        sim = _sim_by_slug(slug, conn)
+        try:
+            student, token = studentauth.login(conn, sim, req.email, req.password)
+            return {"student": student, "token": token}
+        except studentauth.StudentError as exc:
+            raise HTTPException(exc.status, str(exc)) from exc
+
+    @app.post("/api/v1/sims/{slug}/students/request-reset")
+    def student_request_reset(slug: str, req: ResetRequestReq,
+                              conn: sqlite3.Connection = Depends(get_conn)):
+        return studentauth.request_reset(conn, _sim_by_slug(slug, conn), req.email)
+
+    @app.post("/api/v1/sims/{slug}/students/reset")
+    def student_reset(slug: str, req: ResetReq,
+                      conn: sqlite3.Connection = Depends(get_conn)):
+        sim = _sim_by_slug(slug, conn)
+        try:
+            return studentauth.reset(conn, sim, req.email, req.code, req.new_password)
+        except studentauth.StudentError as exc:
+            raise HTTPException(exc.status, str(exc)) from exc
+
+    @app.get("/api/v1/sims/{slug}/students/me")
+    def student_me(slug: str, student: dict = Depends(studentauth.current_student),
+                   conn: sqlite3.Connection = Depends(get_conn)):
+        row = conn.execute("SELECT * FROM student_access WHERE id = ?",
+                           (student["id"],)).fetchone()
+        if row is None or row["deleted_at"] is not None:
+            raise HTTPException(401, "account not found")
+        return {"id": row["id"], "email": row["email"], "name": row["name"]}
 
     # --- student auth (shared password) -----------------------------------
     @app.post("/api/v1/auth/student/verify")

@@ -95,10 +95,42 @@ def migrate(conn: sqlite3.Connection) -> None:
             created_at    TEXT NOT NULL,
             FOREIGN KEY (simulation_id) REFERENCES simulations(id)
         );
+
+        CREATE TABLE IF NOT EXISTS student_access (
+            id             TEXT PRIMARY KEY,
+            simulation_id  TEXT NOT NULL,
+            unit_code      TEXT DEFAULT '',
+            auth_mode      TEXT NOT NULL DEFAULT 'individual_account',
+            email          TEXT,
+            name           TEXT DEFAULT '',
+            password_hash  TEXT DEFAULT '',
+            status         TEXT NOT NULL DEFAULT 'active',
+            progress       TEXT DEFAULT '{}',
+            reset_code     TEXT DEFAULT '',
+            reset_expires  TEXT DEFAULT '',
+            first_access_at TEXT,
+            last_access_at  TEXT,
+            deleted_at     TEXT,
+            created_at     TEXT NOT NULL,
+            FOREIGN KEY (simulation_id) REFERENCES simulations(id)
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_student_email
+            ON student_access (simulation_id, email);
+
+        CREATE TABLE IF NOT EXISTS student_whitelist (
+            id            TEXT PRIMARY KEY,
+            simulation_id TEXT NOT NULL,
+            email         TEXT NOT NULL,
+            created_at    TEXT NOT NULL,
+            FOREIGN KEY (simulation_id) REFERENCES simulations(id)
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_whitelist_email
+            ON student_whitelist (simulation_id, email);
         """
     )
     # Idempotent column additions for existing databases (spec §15.1 pattern).
     _add_column(conn, "simulations", "last_published_at TEXT")
+    _add_column(conn, "simulations", "auth_mode TEXT NOT NULL DEFAULT 'shared_password'")
     conn.commit()
 
 

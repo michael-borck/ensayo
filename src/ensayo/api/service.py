@@ -83,13 +83,22 @@ def row_to_dict(row: sqlite3.Row) -> dict:
     return d
 
 
+_AUTH_MODES = ("shared_password", "individual_account", "email_only")
+
+
 def create_simulation(
     conn: sqlite3.Connection, owner_uc_id: str, name: str, company_yaml: str, *,
-    shared_password: str | None = None, with_llm: bool = False, build: bool = True,
-    log=lambda m: None,
+    shared_password: str | None = None, auth_mode: str = "shared_password",
+    with_llm: bool = False, build: bool = True, log=lambda m: None,
 ) -> dict:
     config = load_company_config_from_text(company_yaml)  # raises ConfigError if bad
     slug = config.slug
+
+    if auth_mode not in _AUTH_MODES:
+        raise ServiceError(f"auth_mode must be one of {_AUTH_MODES}")
+    # Minors-safe bundle (spec §7.2): shared password only, no PII accounts.
+    if config.audience.value == "minors":
+        auth_mode = "shared_password"
 
     if conn.execute("SELECT 1 FROM simulations WHERE slug = ?", (slug,)).fetchone():
         raise ServiceError(f"a simulation with slug {slug!r} already exists")
@@ -113,10 +122,10 @@ def create_simulation(
     now = _now()
     conn.execute(
         """INSERT INTO simulations
-           (id, name, slug, type, audience, owner_uc_id, working_clone_path,
+           (id, name, slug, type, audience, auth_mode, owner_uc_id, working_clone_path,
             site_url, status, shared_password_hash, config_cache, created_at, updated_at)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-        (sim_id, name, slug, "single_company", config.audience.value, owner_uc_id,
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        (sim_id, name, slug, "single_company", config.audience.value, auth_mode, owner_uc_id,
          str(clone), base, "draft",
          hash_password(shared_password) if shared_password else "",
          json.dumps(config.model_dump(mode="json")), now, now),
