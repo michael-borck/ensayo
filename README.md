@@ -153,6 +153,23 @@ unlocks once it begins. Sites on GitHub Pages reach the VPS API via
 `api_base_url` in the config (empty = same origin). The dashboard's **Bookings**
 button shows bookings per simulation.
 
+## Multi-site simulations (Phase 8, in progress)
+
+A `simulation.yaml` with a `companies:` list is a **multi-site** simulation: a
+portal coordinating several company sites in **one repo**, each served at a subpath
+(`/<company-slug>/`), each able to use a different theme. `ensayo generate`
+auto-detects it:
+
+```bash
+uv run ensayo generate -c examples/workready-mini/simulation.yaml -o ./out
+# → out/dist/index.html (portal) + out/dist/<company>/… per company
+```
+
+Multi-site is single-repo by design (ADR-0001) and unavailable for `minors`
+audiences (spec §7.5). Still to come in this phase: the runtime interaction
+surfaces wired to the workflow engine, the student portal, and the dedicated
+`portal-clean` / `directory` themes.
+
 ## Output layout
 
 `ensayo generate` produces a directory shaped like a simulation repo:

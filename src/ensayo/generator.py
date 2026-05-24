@@ -15,11 +15,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable
 
-from .config import load_company_config
+from .config import dump_config_yaml, load_company_config, load_simulation_config
 from .content import write_repo_content, write_theme_data
 from .enrich import enrich_config
 from .llm import get_provider
-from .models import CompanyConfig
+from .models import CompanyConfig, SimulationConfig
 from .themes import default_themes_dir, resolve_theme
 
 # Directories never copied from a theme into the build workspace.
@@ -43,6 +43,15 @@ class GenerationResult:
     dist_dir: Path | None
     built: bool
     content_manifest: dict = field(default_factory=dict)
+
+
+@dataclass
+class MultisiteResult:
+    config: SimulationConfig
+    output_dir: Path
+    dist_dir: Path | None
+    built: bool
+    company_results: list = field(default_factory=list)
 
 
 def generate(
@@ -207,3 +216,94 @@ def _run(cmd: list[str], cwd: Path, log: Logger, what: str,
             f"--- stdout ---\n{proc.stdout[-2000:]}\n"
             f"--- stderr ---\n{proc.stderr[-2000:]}"
         )
+
+
+# --- multi-site generation (Phase 8) ---------------------------------------
+
+def generate_multisite(
+    config_path: str | Path, output_dir: str | Path, *,
+    base: str = "/", themes_dir: str | Path | None = None,
+    with_llm: bool = False, force_llm: bool = False, build: bool = True,
+    log: Logger = _noop,
+) -> MultisiteResult:
+    """Generate a multi-site simulation: a portal + N company sites in one repo.
+
+    Each company is built at the subpath ``{base}{company_slug}/``; a portal index
+    is written at the repo root linking to them (spec §12)."""
+    sim = load_simulation_config(config_path)
+    output_dir = Path(output_dir).resolve()
+    themes_dir = Path(themes_dir).resolve() if themes_dir else default_themes_dir()
+    base = base if base.endswith("/") else base + "/"
+
+    log(f"Loaded multi-site simulation: {sim.name} ({sim.slug}) — "
+        f"{len(sim.companies)} companies")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(Path(config_path), output_dir / "simulation.yaml")
+
+    dist = output_dir / "dist"
+    if dist.exists():
+        shutil.rmtree(dist)
+    dist.mkdir(parents=True)
+
+    results: list[GenerationResult] = []
+    for company in sim.companies:
+        company_base = f"{base}{company.slug}/"
+        company_dir = output_dir / "companies" / company.slug
+        company_dir.mkdir(parents=True, exist_ok=True)
+        (company_dir / "company.yaml").write_text(dump_config_yaml(company), encoding="utf-8")
+        log(f"— {company.company.name} → {company_base}")
+        res = generate(company_dir / "company.yaml", company_dir, base=company_base,
+                       themes_dir=themes_dir, with_llm=with_llm, force_llm=force_llm,
+                       build=build, log=lambda m: log("  " + m))
+        if res.built and res.dist_dir:
+            shutil.copytree(res.dist_dir, dist / company.slug)
+        results.append(res)
+
+    (dist / "index.html").write_text(_portal_index_html(sim, base), encoding="utf-8")
+    log(f"Portal + {len(sim.companies)} companies → {dist}")
+    return MultisiteResult(sim, output_dir, dist if build else None, build, results)
+
+
+def _portal_index_html(sim: SimulationConfig, base: str) -> str:
+    title = sim.portal.title or sim.name
+    tagline = sim.portal.tagline or ""
+    cards = "\n".join(
+        f'      <a class="card" href="{base}{c.slug}/">'
+        f'<strong>{c.company.name} →</strong>'
+        f'<span>{c.company.tagline or c.company.industry}</span></a>'
+        for c in sim.companies
+    )
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{title}</title>
+  <style>
+    :root {{ color-scheme: dark; }}
+    body {{ margin:0; min-height:100vh; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(900px 500px at 70% -10%, #243, #0e1118) fixed; color:#e7ecf3; }}
+    main {{ max-width:760px; margin:0 auto; padding:3rem 1.5rem; }}
+    h1 {{ font-size:2.6rem; margin:0 0 0.3rem; }}
+    .tag {{ color:#00d4aa; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; font-size:0.8rem; }}
+    p {{ color:#97a3b6; line-height:1.6; }}
+    .grid {{ display:grid; gap:0.8rem; margin-top:1.5rem; }}
+    .card {{ display:flex; flex-direction:column; gap:0.25rem; padding:1.1rem 1.3rem; border:1px solid #2a3344;
+      border-radius:14px; background:#161b26; color:inherit; text-decoration:none; }}
+    .card:hover {{ border-color:#00d4aa; }}
+    .card strong {{ font-size:1.1rem; }}
+    .card span {{ color:#97a3b6; }}
+  </style>
+</head>
+<body>
+  <main>
+    <p class="tag">{sim.name}</p>
+    <h1>{title}</h1>
+    <p>{tagline}</p>
+    <div class="grid">
+{cards}
+    </div>
+  </main>
+</body>
+</html>
+"""

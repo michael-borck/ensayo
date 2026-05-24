@@ -203,3 +203,42 @@ class CompanyConfig(_Model):
 
     def effective_chatbot_mode(self, employee: Employee) -> ChatbotMode:
         return employee.chatbot_mode or self.chatbot_mode
+
+
+class PortalConfig(_Model):
+    """The hub/portal that fronts a multi-site simulation."""
+
+    title: str = ""
+    tagline: str = ""
+    description: str = ""
+
+
+class SimulationConfig(_Model):
+    """Multi-site simulation: a portal coordinating N companies in one repo,
+    each served at a subpath (spec §12). Single-company sims use CompanyConfig."""
+
+    name: str
+    slug: str = ""
+    type: str = "multi_site"
+    audience: Audience = Audience.adults
+    workflow: str = ""  # bundled workflow name (e.g. "internship")
+    theme: str = "portal-clean"  # portal theme (Phase 8 increment 2)
+    branding: Branding = Field(default_factory=Branding)
+    portal: PortalConfig = Field(default_factory=PortalConfig)
+    companies: list[CompanyConfig] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _validate(self) -> SimulationConfig:
+        if not self.slug:
+            self.slug = slugify(self.name)
+        if self.audience is Audience.minors:
+            # spec §7.5: multi-site is not available for minors audiences.
+            raise ValueError("multi-site simulations are not available for minors audiences")
+        if not self.companies:
+            raise ValueError("a multi-site simulation needs at least one company")
+        seen: set[str] = set()
+        for c in self.companies:
+            if c.slug in seen:
+                raise ValueError(f"duplicate company slug: {c.slug!r}")
+            seen.add(c.slug)
+        return self

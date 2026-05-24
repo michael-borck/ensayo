@@ -7,9 +7,9 @@ from pathlib import Path
 import click
 
 from . import __version__
-from .config import ConfigError, dump_config_yaml, load_company_config
+from .config import ConfigError, dump_config_yaml, is_multisite, load_company_config
 from .enrich import enrich_config, estimate
-from .generator import GenerationError, generate
+from .generator import GenerationError, generate, generate_multisite
 from .llm import get_provider
 from .themes import ThemeError, default_themes_dir, list_themes
 from .workflow import WorkflowError, list_workflows, load_workflow
@@ -47,17 +47,25 @@ def main() -> None:
 def generate_cmd(config: Path, output: Path, theme: str | None,
                  themes_dir: Path | None, base: str | None,
                  with_llm: bool, force_llm: bool, no_build: bool) -> None:
-    """Generate a static simulation site from a company.yaml."""
+    """Generate a static simulation site (single-company or multi-site, auto-detected)."""
+    log = lambda m: click.echo(click.style("  " + m, dim=True))
+    multisite = is_multisite(config)
     try:
-        result = generate(
-            config, output, theme=theme, themes_dir=themes_dir, base=base,
-            with_llm=with_llm or force_llm, force_llm=force_llm,
-            build=not no_build, log=lambda m: click.echo(click.style("  " + m, dim=True)),
-        )
+        if multisite:
+            result = generate_multisite(
+                config, output, themes_dir=themes_dir, base=base or "/",
+                with_llm=with_llm or force_llm, force_llm=force_llm,
+                build=not no_build, log=log)
+        else:
+            result = generate(
+                config, output, theme=theme, themes_dir=themes_dir, base=base,
+                with_llm=with_llm or force_llm, force_llm=force_llm,
+                build=not no_build, log=log)
     except (ConfigError, ThemeError, GenerationError) as exc:
         raise click.ClickException(str(exc)) from exc
 
-    click.secho("✓ Generation complete", fg="green", bold=True)
+    click.secho("✓ Generation complete" + (" (multi-site)" if multisite else ""),
+                fg="green", bold=True)
     if result.built and result.dist_dir:
         click.echo(f"  Static site: {result.dist_dir}")
         click.echo(f"  Preview:     python3 -m http.server -d {result.dist_dir} 8000")

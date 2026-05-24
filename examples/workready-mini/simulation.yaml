@@ -1,0 +1,56 @@
+# A minimal multi-site internship simulation: a portal coordinating two company
+# sites, each with its own theme, in one repo at subpaths. Generate with:
+#   ensayo generate -c examples/workready-mini/simulation.yaml -o ./out
+# (multi-site is auto-detected from the `companies:` key).
+
+name: "WorkReady Mini — Internship"
+slug: workready-mini
+type: multi_site
+audience: adults
+workflow: internship
+
+portal:
+  title: "WorkReady Internships"
+  tagline: "Find a placement, meet your team, and complete your internship."
+
+branding:
+  colors:
+    primary: "#4a63e7"
+    accent: "#00d4aa"
+
+companies:
+  - theme: tech-modern
+    company:
+      name: "NexusPoint Systems"
+      tagline: "Connecting Business to What's Next"
+      industry: cloud_services
+      location: "Perth, Western Australia"
+      profile:
+        description: |
+          A managed IT and cloud-services provider serving WA mid-market businesses.
+      scenario:
+        type: growth
+        name: "Security-First Pivot"
+    branding:
+      colors: { primary: "#4a63e7", accent: "#00d4aa" }
+    employees:
+      - { name: "Alex Nguyen", role: "Managing Director", archetype: founder_ceo }
+      - { name: "Marcus Webb", role: "Cybersecurity Lead", archetype: technical_specialist }
+
+  - theme: finance-traditional
+    company:
+      name: "Southern Cross Financial"
+      tagline: "Trusted advice for generations"
+      industry: finance
+      location: "Perth, Western Australia"
+      profile:
+        description: |
+          A boutique financial advisory firm modernising how it serves clients.
+      scenario:
+        type: digital_transformation
+        name: "Modernising Advice"
+    branding:
+      colors: { primary: "#1b365d", accent: "#b8860b" }
+    employees:
+      - { name: "Eleanor Vance", role: "Managing Partner", archetype: founder_ceo }
+      - { name: "Raj Patel", role: "Senior Adviser", archetype: finance_manager }
