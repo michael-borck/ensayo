@@ -153,22 +153,25 @@ unlocks once it begins. Sites on GitHub Pages reach the VPS API via
 `api_base_url` in the config (empty = same origin). The dashboard's **Bookings**
 button shows bookings per simulation.
 
-## Multi-site simulations (Phase 8, in progress)
+## Multi-site simulations (Phase 8)
 
 A `simulation.yaml` with a `companies:` list is a **multi-site** simulation: a
-portal coordinating several company sites in **one repo**, each served at a subpath
-(`/<company-slug>/`), each able to use a different theme. `ensayo generate`
-auto-detects it:
+portal coordinating several company sites in **one repo**, each at a subpath
+(`/<company-slug>/`) with its own theme. `ensayo generate` auto-detects it and
+builds the `portal-clean` hub at the root, the `directory` job board at `/jobs/`,
+and each company site at its subpath:
 
 ```bash
 uv run ensayo generate -c examples/workready-mini/simulation.yaml -o ./out
-# → out/dist/index.html (portal) + out/dist/<company>/… per company
+# → out/dist/index.html (portal) + /jobs/ (board) + /<company>/… per company
 ```
 
 Multi-site is single-repo by design (ADR-0001) and unavailable for `minors`
-audiences (spec §7.5). Still to come in this phase: the runtime interaction
-surfaces wired to the workflow engine, the student portal, and the dedicated
-`portal-clean` / `directory` themes.
+audiences (spec §7.5). The student runtime — a declarative **workflow** drives each
+student's application through stages, with six interaction surfaces (messaging,
+booking, 1-on-1 conversation, group chat, document submission, assessment), an
+in-app inbox (lazy delivery), the student portal at `/portal/`, and versioned
+**export endpoints** for external tools — is all wired to the VPS API.
 
 ## Output layout
 
@@ -195,19 +198,17 @@ out/
 | `nfp-warm` | Charities, NFPs & social enterprise | horizon-foundation |
 | `government-formal` | Government & public sector | metro-council-wa |
 | `advisory-cool` | Consulting & advisory | meridian-advisory |
+| `portal-clean` | Multi-site student portal / hub | workready-portal |
+| `directory` | Multi-site job board | workready-jobs |
 
-Two further themes — `portal-clean` (student portal) and `directory` (job
-board / hub) — are *multi-site* surfaces and ship with **Phase 8** (multi-site),
-where the portal/jobs data they render exists.
+`portal-clean` and `directory` are the multi-site surfaces: the generator builds
+`portal-clean` at the simulation root and `directory` at `/jobs/`.
 
 Develop a theme standalone (uses committed fixtures in `src/data/`):
 
 ```bash
 cd themes/tech-modern && npm install && npm run dev
 ```
-
-More themes (`portal-clean`, `directory`, `finance-traditional`, …) land in later
-phases per the spec roadmap.
 
 ## Repository layout
 

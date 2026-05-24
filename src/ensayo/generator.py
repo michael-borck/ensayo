@@ -8,6 +8,7 @@ build, and captures the static output.
 
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import subprocess
@@ -142,48 +143,48 @@ def _run_enrichment(config: CompanyConfig, force: bool, log: Logger) -> None:
     log(f"LLM generation done: {result.generated} generated, {result.failed} failed.{tok}")
 
 
-def _build_site(
-    config: CompanyConfig, theme_dir: Path, output_dir: Path,
-    base: str | None, log: Logger
-) -> Path:
-    if shutil.which("npm") is None:
-        raise GenerationError(
-            "npm not found. Install Node 20+ to build themes, or use --no-build."
-        )
-
-    build_root = output_dir / ".ensayo-build"
-    work = build_root / config.slug
+def _prepare_workspace(theme_dir: Path, work: Path, log: Logger) -> None:
+    """Copy a theme into an isolated build workspace + reuse its vendored deps."""
     if work.exists():
         shutil.rmtree(work)
     work.mkdir(parents=True)
-
     log(f"Copying theme {theme_dir.name} → build workspace")
     shutil.copytree(theme_dir, work, ignore=_THEME_IGNORE, dirs_exist_ok=True)
-
-    # Reuse the theme's vendored node_modules by symlinking (copying would
-    # dereference the .bin/* symlinks and break Astro's CLI shim).
+    # Symlink vendored node_modules (copying dereferences .bin/* symlinks).
     vendored = theme_dir / "node_modules"
     link = work / "node_modules"
     if vendored.exists() and not link.exists():
-        log("Linking theme's vendored node_modules")
         link.symlink_to(vendored.resolve(), target_is_directory=True)
-
-    write_theme_data(config, work / "src")
     _install_shared_assets(work)
 
+
+def _compile(work: Path, base: str | None, log: Logger) -> Path:
+    """Run the Astro build in *work* and return its dist/ path."""
+    if shutil.which("npm") is None:
+        raise GenerationError(
+            "npm not found. Install Node 20+ to build themes, or use --no-build.")
     if not (work / "node_modules").exists():
         _run(["npm", _install_cmd(work), "--no-audit", "--no-fund"], work, log,
              "installing theme dependencies (npm)")
-
     build_env = dict(os.environ)
     if base:
         build_env["ENSAYO_BASE"] = base if base.endswith("/") else base + "/"
         log(f"Building with base path: {build_env['ENSAYO_BASE']}")
     _run(["npm", "run", "build"], work, log, "building site (astro)", env=build_env)
-
-    built_dist = work / "dist"
-    if not built_dist.exists():
+    dist = work / "dist"
+    if not dist.exists():
         raise GenerationError(f"Astro build produced no dist/ in {work}")
+    return dist
+
+
+def _build_site(
+    config: CompanyConfig, theme_dir: Path, output_dir: Path,
+    base: str | None, log: Logger
+) -> Path:
+    work = output_dir / ".ensayo-build" / config.slug
+    _prepare_workspace(theme_dir, work, log)
+    write_theme_data(config, work / "src")
+    built_dist = _compile(work, base, log)
 
     final_dist = output_dir / "dist"
     if final_dist.exists():
@@ -259,9 +260,55 @@ def generate_multisite(
             shutil.copytree(res.dist_dir, dist / company.slug)
         results.append(res)
 
-    (dist / "index.html").write_text(_portal_index_html(sim, base), encoding="utf-8")
+    if build:
+        # Portal hub at the root, job-board "directory" at /jobs/.
+        portal_data = {"portal.json": json.dumps(_portal_payload(sim, base))}
+        portal_dist = _build_aux_theme("portal-clean", output_dir, themes_dir,
+                                       portal_data, base, log)
+        shutil.copytree(portal_dist, dist, dirs_exist_ok=True)
+
+        jobs_data = {"jobs.json": json.dumps(
+            {"jobs": sim.aggregate_jobs(), "base": base, "name": sim.name})}
+        dir_dist = _build_aux_theme("directory", output_dir, themes_dir,
+                                    jobs_data, f"{base}jobs/", log)
+        jobs_target = dist / "jobs"
+        if jobs_target.exists():
+            shutil.rmtree(jobs_target)
+        shutil.copytree(dir_dist, jobs_target)
+    else:
+        (dist / "index.html").write_text(_portal_index_html(sim, base), encoding="utf-8")
+
     log(f"Portal + {len(sim.companies)} companies → {dist}")
     return MultisiteResult(sim, output_dir, dist if build else None, build, results)
+
+
+def _portal_payload(sim: SimulationConfig, base: str) -> dict:
+    return {
+        "name": sim.name,
+        "title": sim.portal.title or sim.name,
+        "tagline": sim.portal.tagline,
+        "description": sim.portal.description,
+        "portalAppUrl": "/portal/",   # the interactive student portal SPA on the VPS
+        "jobsUrl": f"{base}jobs/",
+        "jobsCount": len(sim.aggregate_jobs()),
+        "companies": [{"name": c.company.name, "slug": c.slug,
+                       "tagline": c.company.tagline or c.company.industry,
+                       "url": f"{base}{c.slug}/"} for c in sim.companies],
+    }
+
+
+def _build_aux_theme(theme_name: str, output_dir: Path, themes_dir: Path,
+                     data_files: dict[str, str], base: str, log: Logger) -> Path:
+    """Build a non-company theme (portal/directory) with injected JSON data."""
+    theme_dir = resolve_theme(theme_name, themes_dir)
+    work = output_dir / ".ensayo-build" / f"_{theme_name}"
+    _prepare_workspace(theme_dir, work, log)
+    data_dir = work / "src" / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+    for rel, content in data_files.items():
+        (data_dir / rel).write_text(content, encoding="utf-8")
+    log(f"— {theme_name} → {base}")
+    return _compile(work, base, log)
 
 
 def _portal_index_html(sim: SimulationConfig, base: str) -> str:

@@ -1,0 +1,92 @@
+---
+import data from "../data/jobs.json";
+const jobs = (data as any).jobs ?? [];
+const siteBase = (data as any).base ?? "/";  // multi-site root (companies live here)
+const companies = [...new Set(jobs.map((j: any) => j.company))];
+const types = [...new Set(jobs.map((j: any) => j.employment_type).filter(Boolean))];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Open roles — {data.name}</title>
+    <style is:inline set:html={`
+      :root{color-scheme:dark;--bg:#0e1118;--surface:#161b26;--surface2:#1e2532;--border:#2a3344;
+        --text:#e7ecf3;--muted:#97a3b6;--accent:#00d4aa;--primary:#4a63e7;}
+      *{box-sizing:border-box}
+      body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+        background:var(--bg);color:var(--text);line-height:1.6;}
+      .wrap{max-width:880px;margin:0 auto;padding:2.5rem 1.5rem 5rem;}
+      a.back{color:var(--muted);text-decoration:none;} a.back:hover{color:var(--accent);}
+      h1{font-size:clamp(1.9rem,5vw,2.8rem);margin:0.4rem 0 0.3rem;}
+      .muted{color:var(--muted);}
+      .filters{display:flex;gap:0.6rem;flex-wrap:wrap;margin:1.2rem 0;}
+      select{background:var(--bg);border:1px solid var(--border);border-radius:9px;
+        padding:0.5rem 0.7rem;color:var(--text);font-family:inherit;}
+      .list{display:grid;gap:0.7rem;}
+      .job{display:block;padding:1rem 1.25rem;border:1px solid var(--border);border-radius:14px;
+        background:var(--surface);color:inherit;text-decoration:none;}
+      .job:hover{border-color:var(--accent);}
+      .job strong{font-size:1.1rem;}
+      .tags{display:flex;gap:0.4rem;flex-wrap:wrap;margin:0.35rem 0;}
+      .tag{font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;padding:0.12rem 0.5rem;
+        border-radius:999px;background:var(--surface2);color:var(--muted);}
+      .empty{color:var(--muted);padding:1rem 0;}
+    `}></style>
+  </head>
+  <body>
+    <div class="wrap">
+      <a class="back" href={siteBase}>← Portal</a>
+      <h1>Open roles</h1>
+      <p class="muted">{jobs.length} role(s) across {companies.length} organisation(s).</p>
+
+      <div class="filters">
+        <select id="fCompany">
+          <option value="">All organisations</option>
+          {companies.map((c) => <option value={c}>{c}</option>)}
+        </select>
+        <select id="fType">
+          <option value="">All types</option>
+          {types.map((t) => <option value={t}>{t}</option>)}
+        </select>
+      </div>
+
+      <div class="list" id="list">
+        {jobs.map((j: any) => (
+          <a class="job" href={`${siteBase}${j.company_slug}/`}
+             data-company={j.company} data-type={j.employment_type}>
+            <strong>{j.title}</strong>
+            <div class="tags">
+              <span class="tag">{j.company}</span>
+              {j.department && <span class="tag">{j.department}</span>}
+              {j.employment_type && <span class="tag">{j.employment_type}</span>}
+            </div>
+            {j.brief && <span class="muted">{j.brief}</span>}
+          </a>
+        ))}
+      </div>
+      <p class="empty" id="empty" style="display:none">No roles match your filters.</p>
+    </div>
+
+    <script is:inline>
+      (function () {
+        var co = document.getElementById("fCompany");
+        var ty = document.getElementById("fType");
+        var cards = Array.prototype.slice.call(document.querySelectorAll(".job"));
+        function apply() {
+          var c = co.value, t = ty.value, shown = 0;
+          cards.forEach(function (el) {
+            var ok = (!c || el.dataset.company === c) && (!t || el.dataset.type === t);
+            el.style.display = ok ? "" : "none";
+            if (ok) shown++;
+          });
+          document.getElementById("empty").style.display = shown ? "none" : "block";
+        }
+        co.addEventListener("change", apply);
+        ty.addEventListener("change", apply);
+      })();
+    </script>
+  </body>
+</html>

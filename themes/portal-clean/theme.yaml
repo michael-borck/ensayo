@@ -1,0 +1,11 @@
+name: portal-clean
+description: Clean student-portal hub for multi-site simulations (the front door).
+derived_from: workready-portal
+supports:
+  audience: [adults]
+features:
+  - simulation_hub
+  - company_directory
+  - student_portal_link
+content_props:
+  - portal

@@ -1,0 +1,10 @@
+name: directory
+description: Job board / hub view aggregating roles across a multi-site simulation.
+derived_from: workready-jobs
+supports:
+  audience: [adults]
+features:
+  - job_board
+  - client_side_filter
+content_props:
+  - jobs

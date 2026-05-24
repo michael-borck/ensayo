@@ -26,6 +26,16 @@ def test_is_multisite_detection():
     assert is_multisite(COMPANY) is False
 
 
+def test_jobs_aggregate_across_companies():
+    sim = load_simulation_config(SIM)
+    jobs = sim.aggregate_jobs()
+    assert len(jobs) == 3  # 2 at NexusPoint + 1 at Southern Cross
+    titles = {j["title"] for j in jobs}
+    assert "Junior Security Analyst" in titles
+    assert "Graduate Financial Adviser" in titles
+    assert all(j["company"] and j["company_slug"] for j in jobs)
+
+
 def test_simulation_rejects_minors():
     with pytest.raises(Exception):
         SimulationConfig.model_validate({

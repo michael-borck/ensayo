@@ -1,0 +1,13 @@
+{
+  "name": "Fixture Internships",
+  "title": "Fixture Internships",
+  "tagline": "Portal fixture for standalone theme development.",
+  "description": "The Ensayo generator overwrites this at build time.",
+  "portalAppUrl": "/portal/",
+  "jobsUrl": "/jobs/",
+  "jobsCount": 2,
+  "companies": [
+    { "name": "Sample Tech Co", "slug": "sample-tech", "tagline": "Technology", "url": "/sample-tech/" },
+    { "name": "Sample Finance Co", "slug": "sample-finance", "tagline": "Finance", "url": "/sample-finance/" }
+  ]
+}

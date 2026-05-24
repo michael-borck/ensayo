@@ -48,7 +48,10 @@ install_ensayo() {
     || pip3 install --no-cache-dir -e "$ENSAYO_HOME"
 
   log "Vendoring theme dependencies (so first run needs no npm network)…"
-  ( cd "$ENSAYO_HOME/themes/tech-modern" && npm install --no-audit --no-fund )
+  for theme in "$ENSAYO_HOME"/themes/*/; do
+    [ -f "$theme/package.json" ] || continue
+    ( cd "$theme" && npm install --no-audit --no-fund )
+  done
 }
 
 build_demo() {

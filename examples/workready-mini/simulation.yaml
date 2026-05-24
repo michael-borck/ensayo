@@ -36,6 +36,12 @@ companies:
     employees:
       - { name: "Alex Nguyen", role: "Managing Director", archetype: founder_ceo }
       - { name: "Marcus Webb", role: "Cybersecurity Lead", archetype: technical_specialist }
+    jobs:
+      - { title: "Junior Security Analyst", department: "Cybersecurity",
+          employment_type: "Internship", reports_to: "Marcus Webb",
+          brief: "Monitor alerts and assist with vulnerability assessments." }
+      - { title: "Cloud Infrastructure Intern", department: "Architecture",
+          employment_type: "Internship", brief: "Help with cloud migrations and IaC." }
 
   - theme: finance-traditional
     company:
@@ -54,3 +60,7 @@ companies:
     employees:
       - { name: "Eleanor Vance", role: "Managing Partner", archetype: founder_ceo }
       - { name: "Raj Patel", role: "Senior Adviser", archetype: finance_manager }
+    jobs:
+      - { title: "Graduate Financial Adviser", department: "Advisory",
+          employment_type: "Graduate", reports_to: "Raj Patel",
+          brief: "Support advisers with client research and reviews." }

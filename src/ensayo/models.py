@@ -133,6 +133,21 @@ class Document(_Model):
         return self
 
 
+class Job(_Model):
+    title: str
+    slug: str = ""
+    department: str = ""
+    employment_type: str = ""
+    reports_to: str = ""
+    brief: str = ""
+
+    @model_validator(mode="after")
+    def _default_slug(self) -> Job:
+        if not self.slug:
+            self.slug = slugify(self.title)
+        return self
+
+
 class Platform(_Model):
     booking_enabled: bool = False
     lecturer_dashboard: bool = False
@@ -175,6 +190,7 @@ class CompanyConfig(_Model):
     llm: LLMConfig = Field(default_factory=LLMConfig)
     employees: list[Employee] = Field(default_factory=list)
     documents: list[Document] = Field(default_factory=list)
+    jobs: list[Job] = Field(default_factory=list)
 
     @field_validator("employees")
     @classmethod
@@ -242,3 +258,15 @@ class SimulationConfig(_Model):
                 raise ValueError(f"duplicate company slug: {c.slug!r}")
             seen.add(c.slug)
         return self
+
+    def aggregate_jobs(self) -> list[dict]:
+        """All jobs across companies, tagged with their company (for the board)."""
+        out: list[dict] = []
+        for c in self.companies:
+            for j in c.jobs:
+                out.append({
+                    "title": j.title, "slug": j.slug, "department": j.department,
+                    "employment_type": j.employment_type, "reports_to": j.reports_to,
+                    "brief": j.brief, "company": c.company.name, "company_slug": c.slug,
+                })
+        return out

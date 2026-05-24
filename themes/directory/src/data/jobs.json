@@ -1,0 +1,12 @@
+{
+  "name": "Fixture Internships",
+  "base": "/",
+  "jobs": [
+    { "title": "Junior Developer", "company": "Sample Tech Co", "company_slug": "sample-tech",
+      "department": "Engineering", "employment_type": "Internship",
+      "brief": "Build features alongside the team. Fixture data." },
+    { "title": "Graduate Analyst", "company": "Sample Finance Co", "company_slug": "sample-finance",
+      "department": "Advisory", "employment_type": "Graduate",
+      "brief": "Support client advisory work. Fixture data." }
+  ]
+}
