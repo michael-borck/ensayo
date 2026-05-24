@@ -81,7 +81,12 @@ def generate(
     theme_dir = resolve_theme(theme_name, themes_dir)
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(Path(config_path), output_dir / "company.yaml")
+    # Keep a copy of the config in the output (skip if it's already that file,
+    # e.g. when regenerating in place from a working clone).
+    src = Path(config_path).resolve()
+    dst = (output_dir / "company.yaml").resolve()
+    if src != dst:
+        shutil.copyfile(src, dst)
 
     manifest = write_repo_content(config, output_dir)
     log(f"Wrote canonical content: {manifest['employees']} employees, "

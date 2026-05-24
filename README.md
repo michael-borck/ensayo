@@ -90,6 +90,29 @@ with no keys and no network. Supported: `stub`, `ollama`, `lmstudio`, `openai`,
 `openrouter`, `gemini`, `anthropic`. `ensayo enrich -o enriched.yaml` writes the
 filled-in YAML back out for review.
 
+## Dashboard & API (Phase 3)
+
+Run the FastAPI service + lecturer dashboard:
+
+```bash
+# 1. Create an instance-admin account
+uv run ensayo admin create-uc --email you@uni.edu --admin
+
+# 2. Start the server
+uv run ensayo serve                       # → http://127.0.0.1:8000/admin/
+```
+
+A Unit Coordinator logs in, creates a simulation (paste a `company.yaml`, optional
+shared password, optional LLM generation), and the server runs the generator into a
+git working clone and serves the site at `/sims/<slug>/`. Students authenticate with
+the shared password. Configuration: `ENSAYO_DB`, `WORKING_CLONES_DIR`, `JWT_SECRET`,
+`GITHUB_TOKEN` (for publish).
+
+> **Status:** the Phase 3 *spine* — UC/JWT auth, simulation create/list/regenerate,
+> shared-password student auth, working-clone git management, and a minimal
+> dashboard. The full 9-step wizard, booking, server-enforced visibility rules, and
+> GitHub Pages publish are in progress.
+
 ## Output layout
 
 `ensayo generate` produces a directory shaped like a simulation repo:

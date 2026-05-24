@@ -155,6 +155,49 @@ def init(output: Path, name: str) -> None:
     click.echo("  Edit it, then run: ensayo generate -c " + str(output))
 
 
+@main.command()
+@click.option("--host", default="127.0.0.1", help="Bind host.")
+@click.option("--port", default=8000, type=int, help="Bind port.")
+@click.option("--reload", is_flag=True, default=False, help="Auto-reload (dev).")
+def serve(host: str, port: int, reload: bool) -> None:
+    """Run the Ensayo API + dashboard (FastAPI/uvicorn)."""
+    import uvicorn
+
+    click.secho(f"Ensayo dashboard → http://{host}:{port}/admin/", fg="cyan", bold=True)
+    uvicorn.run("ensayo.api.app:create_app", factory=True,
+                host=host, port=port, reload=reload)
+
+
+@main.group()
+def admin() -> None:
+    """Instance administration (account management)."""
+
+
+@admin.command(name="create-uc")
+@click.option("--email", "-e", required=True, help="UC email (login).")
+@click.option("--password", "-p", default=None, help="Password (prompted if omitted).")
+@click.option("--name", default="", help="Display name.")
+@click.option("--admin", "is_admin", is_flag=True, default=False,
+              help="Create an instance admin (full access) instead of a regular UC.")
+def create_uc(email: str, password: str | None, name: str, is_admin: bool) -> None:
+    """Create a UC (or instance-admin) account in the database."""
+    from .api.auth import create_uc as _create_uc
+    from .api.db import init_db
+
+    if not password:
+        password = click.prompt("Password", hide_input=True, confirmation_prompt=True)
+    conn = init_db()
+    try:
+        uc = _create_uc(conn, email, password, display_name=name,
+                        role="instance_admin" if is_admin else "uc")
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
+    finally:
+        conn.close()
+    click.secho(f"✓ Created {uc['role']} account: {uc['email']}", fg="green")
+    click.echo("  Log in at /admin/ after starting the server with: ensayo serve")
+
+
 _STARTER = """# Ensayo single-company simulation config
 company:
   name: "{{NAME}}"

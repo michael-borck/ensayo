@@ -64,9 +64,9 @@ company.yaml ──► ensayo (Python) ──► content/  (canonical: personas,
 
 ```
 Phase 0  Foundation                       ✅ done
-Phase 1  Prompts + archetype library      ← current
-Phase 2  LLM-assisted gen + more themes
-Phase 3  FastAPI + UC dashboard           ← MVP cutoff
+Phase 1  Prompts + archetype library      ✅ done
+Phase 2  LLM-assisted gen (+ more themes) ✅ core (theme ports pending)
+Phase 3  FastAPI + UC dashboard           ◑ spine done (wizard/booking/publish pending)  ← MVP cutoff
 Phase 4  AnythingLLM + booking
 Phase 5  Individual student accounts
 Phase 6  Safe mode / audience config

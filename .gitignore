@@ -15,6 +15,9 @@ dist-out/
 .ensayo-build/
 out/
 
+# API runtime data (SQLite DB + working clones)
+.ensayo-data/
+
 # Local config (secrets + instance settings)
 .env
 instance.env

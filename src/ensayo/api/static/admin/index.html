@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ensayo — Dashboard</title>
+  <style>
+    :root { color-scheme: dark; --bg:#0e1118; --surface:#161b26; --surface2:#1e2532;
+      --border:#2a3344; --text:#e7ecf3; --muted:#97a3b6; --accent:#00d4aa; --primary:#4a63e7; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background:var(--bg); color:var(--text); line-height:1.5; }
+    header { display:flex; align-items:center; justify-content:space-between;
+      padding:0.9rem 1.5rem; border-bottom:1px solid var(--border); }
+    .brand { font-weight:800; }
+    .brand span { color:var(--accent); }
+    main { max-width:880px; margin:0 auto; padding:1.5rem; }
+    h1,h2 { letter-spacing:-0.01em; }
+    label { display:block; font-size:0.85rem; color:var(--muted); margin:0.6rem 0 0.2rem; }
+    input, textarea, button { font-family:inherit; font-size:0.95rem; }
+    input[type=text], input[type=password], input[type=email], textarea {
+      width:100%; background:var(--bg); border:1px solid var(--border); border-radius:9px;
+      padding:0.55rem 0.7rem; color:var(--text); }
+    textarea { min-height:220px; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:0.82rem; }
+    button { cursor:pointer; border:1px solid transparent; border-radius:9px;
+      padding:0.5rem 1rem; font-weight:600; background:var(--surface2); color:var(--text); }
+    button.primary { background:linear-gradient(135deg,var(--primary),#6c63ff); color:#fff; }
+    button.ghost { background:transparent; border-color:var(--border); }
+    button:disabled { opacity:0.5; cursor:default; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:14px;
+      padding:1.1rem 1.25rem; margin-bottom:1rem; }
+    .row { display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; }
+    .muted { color:var(--muted); } .small { font-size:0.85rem; }
+    .pill { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.05em;
+      padding:0.1rem 0.5rem; border-radius:999px; background:var(--surface2); color:var(--muted); }
+    .grow { flex:1; } .hidden { display:none; }
+    a { color:var(--accent); }
+    #msg { margin:0.75rem 0; min-height:1.2em; }
+    .err { color:#ff7a7a; } .ok { color:var(--accent); }
+    .field-row { display:flex; gap:1rem; }
+    .field-row > div { flex:1; }
+    .checks { display:flex; gap:1.5rem; align-items:center; margin-top:0.6rem; }
+    .checks label { display:flex; gap:0.4rem; align-items:center; margin:0; color:var(--text); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">Ensayo<span>·</span>dashboard</div>
+    <div class="row">
+      <span id="who" class="muted small"></span>
+      <button id="logout" class="ghost hidden">Log out</button>
+    </div>
+  </header>
+  <main>
+    <div id="msg"></div>
+
+    <!-- Login -->
+    <section id="login" class="card">
+      <h2>Sign in</h2>
+      <p class="muted small">Use the UC account created with
+        <code>ensayo admin create-uc</code>.</p>
+      <label>Email</label>
+      <input id="email" type="email" autocomplete="username" />
+      <label>Password</label>
+      <input id="password" type="password" autocomplete="current-password" />
+      <div style="margin-top:1rem"><button class="primary" id="loginBtn">Sign in</button></div>
+    </section>
+
+    <!-- App -->
+    <section id="app" class="hidden">
+      <div class="row" style="justify-content:space-between">
+        <h1 style="margin:0">Simulations</h1>
+        <button class="primary" id="newBtn">+ New simulation</button>
+      </div>
+
+      <div id="newForm" class="card hidden" style="margin-top:1rem">
+        <h2>New simulation</h2>
+        <div class="field-row">
+          <div><label>Name</label><input id="simName" type="text"
+               placeholder="Acme Corp — ISYS6018 Sem1 2026" /></div>
+          <div><label>Shared password (optional)</label>
+               <input id="simPw" type="text" placeholder="students enter this" /></div>
+        </div>
+        <label>company.yaml</label>
+        <textarea id="simYaml"></textarea>
+        <div class="checks">
+          <label><input type="checkbox" id="simLlm" /> Generate content with LLM</label>
+          <label><input type="checkbox" id="simBuild" checked /> Build site (needs Node)</label>
+        </div>
+        <div class="row" style="margin-top:1rem">
+          <button class="primary" id="createBtn">Create</button>
+          <button class="ghost" id="cancelBtn">Cancel</button>
+          <span id="createMsg" class="small muted"></span>
+        </div>
+      </div>
+
+      <div id="list" style="margin-top:1rem"></div>
+    </section>
+  </main>
+
+  <script>
+  const $ = (id) => document.getElementById(id);
+  const api = (path, opts = {}) => {
+    const token = localStorage.getItem("ensayo_token");
+    return fetch(path, {
+      ...opts,
+      headers: { "Content-Type": "application/json",
+                 ...(token ? { Authorization: "Bearer " + token } : {}),
+                 ...(opts.headers || {}) },
+    });
+  };
+  const msg = (text, cls = "") => { const m = $("msg"); m.textContent = text; m.className = cls; };
+
+  const TEMPLATE = `company:
+  name: "Acme Corp"
+  tagline: "We make things"
+  industry: "general"
+  location: "Perth, Western Australia"
+  profile:
+    description: |
+      A short description of what this fictional company does.
+  scenario:
+    type: "growth"
+    name: "The central challenge"
+theme: tech-modern
+audience: adults
+employees:
+  - name: "Alex Lee"
+    role: "Managing Director"
+    archetype: founder_ceo
+  - name: "Sam Patel"
+    role: "Operations Manager"
+    archetype: operations_manager
+documents:
+  - type: policy
+    title: "Information Security Policy"
+    brief: "Acceptable use and access controls."
+`;
+
+  async function refresh() {
+    const r = await api("/api/v1/simulations");
+    if (!r.ok) return;
+    const sims = await r.json();
+    $("list").innerHTML = sims.length ? "" :
+      '<p class="muted">No simulations yet. Create one to get started.</p>';
+    for (const s of sims) {
+      const el = document.createElement("div");
+      el.className = "card";
+      el.innerHTML = `
+        <div class="row" style="justify-content:space-between">
+          <div><strong>${s.name}</strong> <span class="pill">${s.status}</span>
+            <div class="muted small">${s.slug} · ${s.audience} · ${s.type}</div></div>
+          <div class="row">
+            <a class="ghost" style="padding:0.5rem 1rem;border:1px solid var(--border);border-radius:9px"
+               href="/sims/${s.slug}/" target="_blank">View site ↗</a>
+            <button class="ghost" data-gen="${s.id}">Regenerate</button>
+            <button class="ghost" data-pub="${s.id}">Publish</button>
+          </div>
+        </div>`;
+      $("list").appendChild(el);
+    }
+    document.querySelectorAll("[data-gen]").forEach(b => b.onclick = () => act(b.dataset.gen, "generate", b));
+    document.querySelectorAll("[data-pub]").forEach(b => b.onclick = () => act(b.dataset.pub, "publish", b));
+  }
+
+  async function act(id, kind, btn) {
+    btn.disabled = true; btn.textContent = kind === "generate" ? "Regenerating…" : "Publishing…";
+    const body = kind === "generate" ? JSON.stringify({ build: true }) : null;
+    const r = await api(`/api/v1/simulations/${id}/${kind}`, { method: "POST", body });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) msg(data.detail || "Action failed", "err");
+    else if (kind === "publish" && !data.published) msg("Publish skipped: " + data.reason, "");
+    else msg(kind === "generate" ? "Regenerated." : "Published.", "ok");
+    refresh();
+  }
+
+  async function login() {
+    const r = await api("/api/v1/auth/login", { method: "POST",
+      body: JSON.stringify({ email: $("email").value, password: $("password").value }) });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) { msg(data.detail || "Login failed", "err"); return; }
+    localStorage.setItem("ensayo_token", data.token);
+    showApp(data.uc);
+  }
+
+  function showApp(uc) {
+    $("login").classList.add("hidden");
+    $("app").classList.remove("hidden");
+    $("logout").classList.remove("hidden");
+    $("who").textContent = uc.email + " (" + uc.role + ")";
+    $("simYaml").value = TEMPLATE;
+    msg("");
+    refresh();
+  }
+
+  async function boot() {
+    if (!localStorage.getItem("ensayo_token")) return;
+    const r = await api("/api/v1/auth/me");
+    if (r.ok) showApp(await r.json());
+    else localStorage.removeItem("ensayo_token");
+  }
+
+  $("loginBtn").onclick = login;
+  $("password").addEventListener("keydown", e => { if (e.key === "Enter") login(); });
+  $("logout").onclick = () => { localStorage.removeItem("ensayo_token"); location.reload(); };
+  $("newBtn").onclick = () => $("newForm").classList.toggle("hidden");
+  $("cancelBtn").onclick = () => $("newForm").classList.add("hidden");
+  $("createBtn").onclick = async () => {
+    $("createMsg").textContent = "Creating… (building the site can take a few seconds)";
+    const r = await api("/api/v1/simulations", { method: "POST", body: JSON.stringify({
+      name: $("simName").value, company_yaml: $("simYaml").value,
+      shared_password: $("simPw").value || null,
+      with_llm: $("simLlm").checked, build: $("simBuild").checked }) });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) { $("createMsg").textContent = ""; msg(data.detail || "Create failed", "err"); return; }
+    $("createMsg").textContent = ""; $("newForm").classList.add("hidden");
+    msg("Created " + data.slug, "ok"); refresh();
+  };
+
+  boot();
+  </script>
+</body>
+</html>
