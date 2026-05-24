@@ -18,6 +18,7 @@ from pydantic import BaseModel
 
 from . import students as student_mgmt
 from . import studentauth
+from . import workflow_runtime as wfr
 
 from .. import __version__
 from ..config import ConfigError, load_company_config
@@ -65,8 +66,19 @@ class CreateSimReq(BaseModel):
     company_yaml: str
     shared_password: str | None = None
     auth_mode: str = "shared_password"
+    workflow: str = ""
     with_llm: bool = False
     build: bool = True
+
+
+class ApplicationReq(BaseModel):
+    company_slug: str = ""
+    job_title: str = ""
+
+
+class AdvanceReq(BaseModel):
+    event: str
+    context: dict = {}
 
 
 class AuthModeReq(BaseModel):
@@ -194,7 +206,7 @@ def create_app() -> FastAPI:
             return create_simulation(
                 conn, uc["id"], req.name, req.company_yaml,
                 shared_password=req.shared_password, auth_mode=req.auth_mode,
-                with_llm=req.with_llm, build=req.build)
+                workflow=req.workflow, with_llm=req.with_llm, build=req.build)
         except ConfigError as exc:
             raise HTTPException(422, f"invalid company.yaml:\n{exc}") from exc
         except ServiceError as exc:
@@ -480,6 +492,64 @@ def create_app() -> FastAPI:
                            conn: sqlite3.Connection = Depends(get_conn)):
         sim = _sim_by_slug(slug, conn)
         return evaluate_visibility(conn, sim, unit_code=unit_code)
+
+    # --- workflow runtime: student applications + inbox -------------------
+    def _student_sim(slug: str, student: dict, conn: sqlite3.Connection) -> sqlite3.Row:
+        if student["slug"] != slug:
+            raise HTTPException(403, "token is for a different simulation")
+        return _sim_by_slug(slug, conn)
+
+    @app.post("/api/v1/sims/{slug}/applications", status_code=201)
+    def student_apply(slug: str, req: ApplicationReq,
+                      student: dict = Depends(studentauth.current_student),
+                      conn: sqlite3.Connection = Depends(get_conn)):
+        sim = _student_sim(slug, student, conn)
+        try:
+            return wfr.start_application(conn, sim, student["id"],
+                                        company_slug=req.company_slug, job_title=req.job_title)
+        except wfr.WorkflowRuntimeError as exc:
+            raise HTTPException(exc.status, str(exc)) from exc
+
+    @app.get("/api/v1/sims/{slug}/applications")
+    def student_applications(slug: str,
+                             student: dict = Depends(studentauth.current_student),
+                             conn: sqlite3.Connection = Depends(get_conn)):
+        sim = _student_sim(slug, student, conn)
+        return wfr.list_applications(conn, sim, student_id=student["id"])
+
+    @app.get("/api/v1/sims/{slug}/messages")
+    def student_messages(slug: str, inbox: str = "",
+                         student: dict = Depends(studentauth.current_student),
+                         conn: sqlite3.Connection = Depends(get_conn)):
+        sim = _student_sim(slug, student, conn)
+        return wfr.list_messages(conn, sim, student["id"], inbox=inbox or None)
+
+    @app.post("/api/v1/sims/{slug}/messages/{message_id}/read")
+    def student_mark_read(slug: str, message_id: str,
+                          student: dict = Depends(studentauth.current_student),
+                          conn: sqlite3.Connection = Depends(get_conn)):
+        sim = _student_sim(slug, student, conn)
+        try:
+            return wfr.mark_read(conn, sim, student["id"], message_id)
+        except wfr.WorkflowRuntimeError as exc:
+            raise HTTPException(exc.status, str(exc)) from exc
+
+    # --- workflow runtime: UC view + advance ------------------------------
+    @app.get("/api/v1/simulations/{sim_id}/applications")
+    def uc_applications(sim_id: str, uc: sqlite3.Row = Depends(current_uc),
+                        conn: sqlite3.Connection = Depends(get_conn)):
+        return wfr.list_applications(conn, _owned_sim(sim_id, uc, conn))
+
+    @app.post("/api/v1/simulations/{sim_id}/applications/{app_id}/advance")
+    def uc_advance(sim_id: str, app_id: str, req: AdvanceReq,
+                   uc: sqlite3.Row = Depends(current_uc),
+                   conn: sqlite3.Connection = Depends(get_conn)):
+        sim = _owned_sim(sim_id, uc, conn)
+        try:
+            app = wfr.get_application(conn, sim, app_id)
+            return wfr.advance(conn, sim, app, req.event, req.context)
+        except wfr.WorkflowRuntimeError as exc:
+            raise HTTPException(exc.status, str(exc)) from exc
 
     # --- serve generated sites (local; GitHub Pages in production) ---------
     @app.get("/sims/{slug}")

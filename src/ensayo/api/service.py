@@ -90,7 +90,7 @@ _AUTH_MODES = ("shared_password", "individual_account", "email_only")
 def create_simulation(
     conn: sqlite3.Connection, owner_uc_id: str, name: str, company_yaml: str, *,
     shared_password: str | None = None, auth_mode: str = "shared_password",
-    with_llm: bool = False, build: bool = True, log=lambda m: None,
+    workflow: str = "", with_llm: bool = False, build: bool = True, log=lambda m: None,
 ) -> dict:
     config = load_company_config_from_text(company_yaml)  # raises ConfigError if bad
     slug = config.slug
@@ -130,11 +130,12 @@ def create_simulation(
     now = _now()
     conn.execute(
         """INSERT INTO simulations
-           (id, name, slug, type, audience, auth_mode, owner_uc_id, working_clone_path,
-            site_url, status, shared_password_hash, config_cache, created_at, updated_at)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-        (sim_id, name, slug, "single_company", config.audience.value, auth_mode, owner_uc_id,
-         str(clone), base, "draft",
+           (id, name, slug, type, audience, auth_mode, workflow, owner_uc_id,
+            working_clone_path, site_url, status, shared_password_hash, config_cache,
+            created_at, updated_at)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        (sim_id, name, slug, "single_company", config.audience.value, auth_mode, workflow,
+         owner_uc_id, str(clone), base, "draft",
          hash_password(shared_password) if shared_password else "",
          json.dumps(config.model_dump(mode="json")), now, now),
     )

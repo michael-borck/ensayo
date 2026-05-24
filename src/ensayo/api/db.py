@@ -126,11 +126,42 @@ def migrate(conn: sqlite3.Connection) -> None:
         );
         CREATE UNIQUE INDEX IF NOT EXISTS idx_whitelist_email
             ON student_whitelist (simulation_id, email);
+
+        CREATE TABLE IF NOT EXISTS applications (
+            id            TEXT PRIMARY KEY,
+            simulation_id TEXT NOT NULL,
+            student_id    TEXT NOT NULL,
+            company_slug  TEXT DEFAULT '',
+            job_title     TEXT DEFAULT '',
+            current_stage TEXT NOT NULL,
+            status        TEXT NOT NULL DEFAULT 'active',
+            cycle         INTEGER NOT NULL DEFAULT 1,
+            created_at    TEXT NOT NULL,
+            updated_at    TEXT NOT NULL,
+            FOREIGN KEY (simulation_id) REFERENCES simulations(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS messages (
+            id             TEXT PRIMARY KEY,
+            simulation_id  TEXT NOT NULL,
+            student_id     TEXT NOT NULL,
+            application_id TEXT,
+            inbox          TEXT NOT NULL DEFAULT 'work',
+            sender_name    TEXT DEFAULT 'System',
+            subject        TEXT DEFAULT '',
+            body           TEXT DEFAULT '',
+            channel        TEXT NOT NULL DEFAULT 'in_app',
+            is_read        INTEGER NOT NULL DEFAULT 0,
+            deliver_at     TEXT NOT NULL,
+            created_at     TEXT NOT NULL,
+            FOREIGN KEY (simulation_id) REFERENCES simulations(id)
+        );
         """
     )
     # Idempotent column additions for existing databases (spec §15.1 pattern).
     _add_column(conn, "simulations", "last_published_at TEXT")
     _add_column(conn, "simulations", "auth_mode TEXT NOT NULL DEFAULT 'shared_password'")
+    _add_column(conn, "simulations", "workflow TEXT DEFAULT ''")
     conn.commit()
 
 
