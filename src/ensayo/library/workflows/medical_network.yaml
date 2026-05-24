@@ -1,0 +1,46 @@
+# A clinical case lifecycle — a completely different domain that reuses the SAME
+# interaction surfaces as the internship, just activated at different stages.
+# Proves the engine is domain-independent (no code changes between workflows).
+name: medical_network
+description: Triage → consultation → (ward round) → discharge.
+initial_stage: triage
+
+stages:
+  - id: triage
+    label: Triage
+    surfaces: [messaging, booking]
+    on_enter:
+      - { type: notify, message: "New patient case assigned — review and book a consult." }
+    transitions:
+      - { event: consult_booked, to: consultation }
+
+  - id: consultation
+    label: Consultation
+    surfaces: [conversation, tasks]
+    on_enter:
+      - { type: notify, message: "Conduct the consultation and record your notes." }
+    transitions:
+      - { event: case_result, to: ward_round, when: { outcome: admit } }
+      - { event: case_result, to: discharge, when: { outcome: discharge } }
+
+  - id: ward_round
+    label: Ward Round
+    surfaces: [group_chat, tasks, assessment]
+    on_enter:
+      - { type: notify, message: "Join the ward round to discuss the admitted patient." }
+    transitions:
+      - { event: round_complete, to: discharge }
+
+  - id: discharge
+    label: Discharge
+    surfaces: [conversation, assessment]
+    on_enter:
+      - { type: notify, message: "Complete the discharge summary and handover." }
+    transitions:
+      - { event: discharge_complete, to: closed }
+
+  - id: closed
+    label: Case Closed
+    terminal: true
+    on_enter:
+      - { type: notify, message: "Case closed — your reflection report is ready." }

@@ -12,6 +12,8 @@ from .enrich import enrich_config, estimate
 from .generator import GenerationError, generate
 from .llm import get_provider
 from .themes import ThemeError, default_themes_dir, list_themes
+from .workflow import WorkflowError, list_workflows, load_workflow
+from .workflow import run as run_workflow
 
 _THEMES_OPT = click.option(
     "--themes-dir",
@@ -196,6 +198,61 @@ def create_uc(email: str, password: str | None, name: str, is_admin: bool) -> No
         conn.close()
     click.secho(f"✓ Created {uc['role']} account: {uc['email']}", fg="green")
     click.echo("  Log in at /admin/ after starting the server with: ensayo serve")
+
+
+@main.group(name="workflow")
+def workflow_group() -> None:
+    """Inspect and dry-run declarative workflows (Phase 7)."""
+
+
+@workflow_group.command(name="list")
+def workflow_list() -> None:
+    """List bundled workflow templates."""
+    names = list_workflows()
+    if not names:
+        click.echo("No workflows found.")
+        return
+    for n in names:
+        wf = load_workflow(n)
+        click.echo(f"  • {click.style(n, fg='cyan')} — {wf.description} "
+                   f"({len(wf.stages)} stages)")
+
+
+@workflow_group.command(name="validate")
+@click.option("--workflow", "-w", "wf", required=True, help="Workflow name or path.")
+def workflow_validate(wf: str) -> None:
+    """Validate a workflow YAML."""
+    try:
+        w = load_workflow(wf)
+    except WorkflowError as exc:
+        raise click.ClickException(str(exc)) from exc
+    click.secho(f"✓ {w.name} is valid", fg="green", bold=True)
+    for s in w.stages:
+        surf = ", ".join(s.surfaces) or "—"
+        term = " [terminal]" if s.terminal else ""
+        click.echo(f"  {s.id}{term}: surfaces [{surf}]")
+
+
+@workflow_group.command(name="run")
+@click.option("--workflow", "-w", "wf", required=True, help="Workflow name or path.")
+@click.option("--events", "-e", default="",
+              help="Comma-separated events, e.g. 'application_submitted,interview_result:pass'.")
+def workflow_run(wf: str, events: str) -> None:
+    """Dry-run a workflow through a sequence of events and print the stage trace."""
+    try:
+        w = load_workflow(wf)
+    except WorkflowError as exc:
+        raise click.ClickException(str(exc)) from exc
+    evs = [e.strip() for e in events.split(",") if e.strip()]
+    result = run_workflow(w, evs)
+    click.secho(f"{w.name}", bold=True)
+    for step in result.steps:
+        click.echo(f"  → {click.style(step.label, fg='cyan')} "
+                   f"(via {step.via}) — surfaces: [{', '.join(step.surfaces) or '—'}]")
+        for a in step.actions:
+            click.echo(click.style(f"      · {a}", dim=True))
+    click.echo(f"  final: {result.final_stage}"
+               + (f"  | ignored: {result.ignored}" if result.ignored else ""))
 
 
 _STARTER = """# Ensayo single-company simulation config

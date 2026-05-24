@@ -26,6 +26,7 @@ it is without re-deriving it from the 2,500-line spec.
 | [0005](0005-yaml-canonical-sqlite-runtime.md) | YAML in git is canonical for content; SQLite is canonical for runtime | Accepted |
 | [0006](0006-open-self-host-no-saas.md) | Open self-host; no multi-tenant SaaS | Accepted |
 | [0007](0007-lazy-delivery-no-workers.md) | Lazy delivery for timed events; no background workers | Accepted |
+| [0008](0008-declarative-workflow-engine.md) | Declarative workflow engine (Phase 7 gate passed) | Accepted |
 
 ## Format
 

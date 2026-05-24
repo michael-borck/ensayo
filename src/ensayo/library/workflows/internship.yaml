@@ -1,0 +1,52 @@
+# Internship lifecycle (generalised from WorkReady). Drives the same engine as
+# every other workflow — only this YAML is domain-specific.
+name: internship
+description: Apply → interview → placement → tasks → exit interview.
+initial_stage: application
+
+stages:
+  - id: application
+    label: Application
+    surfaces: [messaging]
+    on_enter:
+      - { type: notify, message: "Welcome — submit your application to get started." }
+    transitions:
+      - { event: application_submitted, to: interview }
+
+  - id: interview
+    label: Interview
+    surfaces: [booking, conversation]
+    on_enter:
+      - { type: notify, message: "Book and attend your interview." }
+    transitions:
+      - { event: interview_result, to: placement, when: { outcome: pass } }
+      - { event: interview_result, to: rejected, when: { outcome: fail } }
+
+  - id: placement
+    label: Placement
+    surfaces: [messaging, tasks, group_chat]
+    on_enter:
+      - { type: assign_tasks }
+      - { type: notify, message: "You're placed! Your first tasks are assigned." }
+    transitions:
+      - { event: tasks_complete, to: exit_interview }
+
+  - id: exit_interview
+    label: Exit Interview
+    surfaces: [conversation, assessment]
+    on_enter:
+      - { type: notify, message: "Time for your exit interview and reflection." }
+    transitions:
+      - { event: exit_complete, to: complete }
+
+  - id: complete
+    label: Complete
+    terminal: true
+    on_enter:
+      - { type: notify, message: "Internship complete — your journey report is ready." }
+
+  - id: rejected
+    label: Not Selected
+    terminal: true
+    on_enter:
+      - { type: notify, message: "You weren't selected this time. Feedback is available." }

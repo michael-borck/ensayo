@@ -70,7 +70,7 @@ Phase 3  FastAPI + UC dashboard           ✅ MVP reached (guided-wizard UI poli
 Phase 4  AnythingLLM + booking            ✅ provisioning + booking-gated chat + booking analytics
 Phase 5  Individual student accounts      ✅ accounts/email-only/whitelist/reset/mgmt
 Phase 6  Safe mode / audience config      ✅ bundle + override banners + mature filter + privacy notice
-Phase 7  Workflow engine spike (gate)
+Phase 7  Workflow engine spike (gate)     ✅ GATE PASSED — declarative engine (ADR-0008)
 Phase 8  Multi-site simulations
 Phase 9  Polish + documentation
 ```
