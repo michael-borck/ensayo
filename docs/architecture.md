@@ -67,7 +67,7 @@ Phase 0  Foundation                       ✅ done
 Phase 1  Prompts + archetype library      ✅ done
 Phase 2  LLM-assisted gen (+ more themes) ✅ (6 company themes; portal+directory in P8)
 Phase 3  FastAPI + UC dashboard           ✅ MVP reached (guided-wizard UI polish pending)
-Phase 4  AnythingLLM + booking            ◑ provisioning done; booking-gated chat + analytics pending
+Phase 4  AnythingLLM + booking            ✅ provisioning + booking-gated chat + booking analytics
 Phase 5  Individual student accounts
 Phase 6  Safe mode / audience config
 Phase 7  Workflow engine spike (gate)

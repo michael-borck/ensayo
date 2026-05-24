@@ -16,6 +16,11 @@ const secondary = colors.secondary ?? primary;
 const pageTitle = title ? `${title} · ${company.name}` : company.name;
 const css = `:root{--brand-primary:${primary};--brand-secondary:${secondary};--brand-accent:${accent};}`;
 
+// Globals for client scripts: where the VPS API lives (cross-origin on GitHub
+// Pages; "" = same origin) and this simulation's slug.
+const apiBase = (company as any).apiBaseUrl ?? "";
+const globals = `window.ENSAYO_API_BASE=${JSON.stringify(apiBase)};window.ENSAYO_SIM_SLUG=${JSON.stringify(company.slug)};`;
+
 const nav = [
   { href: `${base}`, label: "Home" },
   { href: `${base}staff`, label: "Staff" },
@@ -31,6 +36,7 @@ const nav = [
     <title>{pageTitle}</title>
     <meta name="description" content={description ?? company.tagline} />
     <style is:inline set:html={css}></style>
+    <script is:inline set:html={globals}></script>
   </head>
   <body>
     <header class="site-header">

@@ -136,6 +136,7 @@ class Document(_Model):
 class Platform(_Model):
     booking_enabled: bool = False
     lecturer_dashboard: bool = False
+    chatbot_requires_booking: bool = False  # gate employee chat behind a booking (CloudCore pattern)
 
 
 class AnythingLLM(_Model):
@@ -166,6 +167,7 @@ class CompanyConfig(_Model):
     theme: str = "tech-modern"
     layout: str = "topnav"
     chatbot_mode: ChatbotMode = ChatbotMode.keyword
+    api_base_url: str = ""  # VPS API origin for cross-origin calls from GitHub Pages ("" = same origin)
     branding: Branding = Field(default_factory=Branding)
     platform: Platform = Field(default_factory=Platform)
     anythingllm: AnythingLLM = Field(default_factory=AnythingLLM)

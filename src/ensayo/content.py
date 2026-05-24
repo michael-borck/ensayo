@@ -82,6 +82,7 @@ def _company_payload(config: CompanyConfig) -> dict:
         "location": c.location,
         "audience": config.audience.value,
         "chatbotMode": config.chatbot_mode.value,
+        "apiBaseUrl": config.api_base_url,
         "theme": config.theme,
         "layout": config.layout,
         "branding": {"colors": config.branding.colors, "logo": config.branding.logo},
@@ -127,6 +128,7 @@ def _employee_payload(config: CompanyConfig, emp: Employee) -> dict:
         "scenarioPerspective": cust.scenario_perspective.strip(),
         "refersTo": emp.refers_to,
         "chatbotMode": config.effective_chatbot_mode(emp).value,
+        "requiresBooking": config.platform.chatbot_requires_booking and config.platform.booking_enabled,
         "chatbotEmbedId": emp.chatbot_embed_id,
         "anythingllm": {
             "baseUrl": config.anythingllm.base_url,

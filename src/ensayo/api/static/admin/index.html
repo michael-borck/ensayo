@@ -159,16 +159,39 @@ documents:
                href="/sims/${s.slug}/" target="_blank">View ↗</a>
             <button class="ghost" data-edit="${s.id}">Edit</button>
             <button class="ghost" data-gen="${s.id}">Regenerate</button>
+            <button class="ghost" data-book="${s.id}">Bookings</button>
             ${s.audience === "minors" ? "" : `<button class="ghost" data-prov="${s.id}">Provision chatbots</button>`}
             <button class="primary" data-pub="${s.id}">${repo}</button>
           </div>
-        </div>`;
+        </div>
+        <div class="bookings" data-bookings="${s.id}" hidden style="margin-top:0.75rem;border-top:1px solid var(--border);padding-top:0.75rem"></div>`;
       $("list").appendChild(el);
     }
     document.querySelectorAll("[data-gen]").forEach(b => b.onclick = () => act(b.dataset.gen, "generate", b));
     document.querySelectorAll("[data-pub]").forEach(b => b.onclick = () => doPublish(b.dataset.pub, b));
     document.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => openEdit(b.dataset.edit));
     document.querySelectorAll("[data-prov]").forEach(b => b.onclick = () => doProvision(b.dataset.prov, b));
+    document.querySelectorAll("[data-book]").forEach(b => b.onclick = () => toggleBookings(b.dataset.book));
+  }
+
+  async function toggleBookings(id) {
+    const panel = document.querySelector(`[data-bookings="${id}"]`);
+    if (!panel.hidden) { panel.hidden = true; return; }
+    panel.hidden = false;
+    panel.innerHTML = '<span class="muted small">Loading…</span>';
+    const r = await api(`/api/v1/simulations/${id}/bookings`);
+    if (!r.ok) { panel.innerHTML = '<span class="err small">Could not load bookings.</span>'; return; }
+    const rows = await r.json();
+    const active = rows.filter(b => b.status === "confirmed");
+    if (!active.length) { panel.innerHTML = '<span class="muted small">No bookings yet.</span>'; return; }
+    const byEmp = {};
+    active.forEach(b => { byEmp[b.employee_slug] = (byEmp[b.employee_slug] || 0) + 1; });
+    const summary = Object.entries(byEmp).map(([e, n]) => `${e}: ${n}`).join(" · ");
+    const items = active.map(b =>
+      `<li class="small">${new Date(b.slot_start).toLocaleString()} — <strong>${b.employee_slug}</strong>`
+      + `${b.student_name ? " · " + b.student_name : ""}</li>`).join("");
+    panel.innerHTML = `<div class="small muted" style="margin-bottom:0.4rem">`
+      + `${active.length} booking(s) — ${summary}</div><ul style="margin:0;padding-left:1.1rem">${items}</ul>`;
   }
 
   async function doProvision(id, btn) {

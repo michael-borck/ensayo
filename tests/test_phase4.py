@@ -1,6 +1,8 @@
 """Phase 4 tests: AnythingLLM provisioning (dry-run mode, no live instance)."""
 
 from ensayo.api.anythingllm import AnythingLLMClient
+from ensayo.content import _company_payload, _employee_payload
+from ensayo.models import CompanyConfig
 
 YAML_TWO = """
 company:
@@ -56,6 +58,26 @@ def test_provision_dry_run(client, auth):
     assert emps["ada-byron"]["chatbot_embed_id"].startswith("dryrun-")
     assert emps["ada-byron"]["chatbot_mode"] == "llm"
     assert cfg["anythingllm"]["base_url"] == "about:dryrun"
+
+
+def test_booking_gate_flags_in_payloads():
+    cfg = CompanyConfig.model_validate({
+        "company": {"name": "Gated Co"},
+        "api_base_url": "https://api.example.edu",
+        "platform": {"booking_enabled": True, "chatbot_requires_booking": True},
+        "employees": [{"name": "Ada Byron", "role": "MD", "archetype": "founder_ceo"}],
+    })
+    assert _company_payload(cfg)["apiBaseUrl"] == "https://api.example.edu"
+    assert _employee_payload(cfg, cfg.employees[0])["requiresBooking"] is True
+
+
+def test_booking_gate_off_when_booking_disabled():
+    cfg = CompanyConfig.model_validate({
+        "company": {"name": "Co"},
+        "platform": {"chatbot_requires_booking": True},  # but booking_enabled False
+        "employees": [{"name": "Ada Byron", "archetype": "staff"}],
+    })
+    assert _employee_payload(cfg, cfg.employees[0])["requiresBooking"] is False
 
 
 def test_provision_refused_for_minors(client, auth):

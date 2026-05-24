@@ -25,6 +25,7 @@ const showLLM =
 const showKeyword =
   d.chatbotMode === "keyword" || (d.chatbotMode === "hybrid" && !showLLM);
 const firstName = d.name.split(" ")[0];
+const requiresBooking = !!d.requiresBooking;
 const kw = JSON.stringify(d.keywords ?? {});
 ---
 
@@ -60,28 +61,42 @@ const kw = JSON.stringify(d.keywords ?? {});
           </section>
         )}
 
-        {showKeyword && (
+        {(showKeyword || showLLM) && (
           <section>
             <h2>Chat with {firstName}</h2>
-            <p class="muted small">
-              Keyword chatbot — deterministic, runs entirely in your browser.
-            </p>
-            <div data-ensayo-chat></div>
-            <script type="application/json" id="ensayo-kw-data" set:html={kw}></script>
-            <script src={`${base}ensayo/keyword-chatbot.js`} is:inline></script>
-          </section>
-        )}
-
-        {showLLM && (
-          <section>
-            <h2>Chat with {firstName}</h2>
-            <p class="muted small">AI chatbot powered by AnythingLLM.</p>
-            <script
-              data-embed-id={embedId}
-              data-base-api-url={allm.baseUrl}
-              src={allm.embedSrc}
-              is:inline
-            ></script>
+            {requiresBooking && (
+              <div
+                data-ensayo-booking-gate
+                data-employee={d.slug}
+                data-employee-name={firstName}
+              ></div>
+            )}
+            <div data-ensayo-chat-wrap hidden={requiresBooking}>
+              {showKeyword && (
+                <>
+                  <p class="muted small">
+                    Keyword chatbot — deterministic, runs entirely in your browser.
+                  </p>
+                  <div data-ensayo-chat></div>
+                  <script type="application/json" id="ensayo-kw-data" set:html={kw}></script>
+                  <script src={`${base}ensayo/keyword-chatbot.js`} is:inline></script>
+                </>
+              )}
+              {showLLM && (
+                <>
+                  <p class="muted small">AI chatbot powered by AnythingLLM.</p>
+                  <script
+                    data-embed-id={embedId}
+                    data-base-api-url={allm.baseUrl}
+                    src={allm.embedSrc}
+                    is:inline
+                  ></script>
+                </>
+              )}
+            </div>
+            {requiresBooking && (
+              <script src={`${base}ensayo/booking-gate.js`} is:inline></script>
+            )}
           </section>
         )}
       </div>

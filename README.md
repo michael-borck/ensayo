@@ -115,8 +115,21 @@ rules** gate content server-side. Configuration: `ENSAYO_DB`, `WORKING_CLONES_DI
 > create/list/edit(Save)/regenerate, **Save-vs-Publish** with GitHub Pages publish,
 > per-simulation locking, shared-password student auth, **booking**, server-enforced
 > **visibility rules**, and the lecturer dashboard. Remaining polish: a guided
-> multi-step wizard UI (today it's a single YAML form) and richer dashboard UIs for
-> booking/visibility (the APIs exist).
+> multi-step wizard UI (today it's a single YAML form).
+
+### LLM chatbots & booking-gated chat (Phase 4)
+
+Click **Provision chatbots** to create an AnythingLLM workspace per employee
+(system prompt from the persona, documents uploaded for RAG, embed widget created);
+the embed ids are written back into the config and the site regenerated. Without an
+AnythingLLM instance (`ANYTHINGLLM_URL` / `ANYTHINGLLM_API_KEY`) it runs in
+**dry-run** mode so the flow is demonstrable.
+
+Set `platform.chatbot_requires_booking: true` (with `booking_enabled`) to **gate an
+employee's chat behind a booking** — students book an appointment and the chat
+unlocks once it begins. Sites on GitHub Pages reach the VPS API via
+`api_base_url` in the config (empty = same origin). The dashboard's **Bookings**
+button shows bookings per simulation.
 
 ## Output layout
 

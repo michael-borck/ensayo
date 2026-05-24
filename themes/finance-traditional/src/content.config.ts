@@ -25,6 +25,7 @@ const employees = defineCollection({
     scenarioPerspective: z.string().default(""),
     refersTo: z.record(z.string()).default({}),
     chatbotMode: z.string().default("keyword"),
+    requiresBooking: z.boolean().default(false),
     chatbotEmbedId: z.string().nullable().optional(),
     anythingllm: z
       .object({ baseUrl: z.string().default(""), embedSrc: z.string().default("") })
