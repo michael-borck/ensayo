@@ -18,6 +18,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from . import conversation as convo
+from . import export as export_svc
 from . import groupchat as gchat
 from . import students as student_mgmt
 from . import studentauth
@@ -711,6 +712,27 @@ def create_app() -> FastAPI:
             return wfr.advance(conn, sim, app, req.event, req.context)
         except wfr.WorkflowRuntimeError as exc:
             raise HTTPException(exc.status, str(exc)) from exc
+
+    # --- external-tool export (UC, stable schema_version contracts) -------
+    @app.get("/api/v1/simulations/{sim_id}/export/applications")
+    def export_applications(sim_id: str, uc: sqlite3.Row = Depends(current_uc),
+                            conn: sqlite3.Connection = Depends(get_conn)):
+        return export_svc.export_applications(conn, _owned_sim(sim_id, uc, conn))
+
+    @app.get("/api/v1/simulations/{sim_id}/export/conversations")
+    def export_conversations(sim_id: str, uc: sqlite3.Row = Depends(current_uc),
+                             conn: sqlite3.Connection = Depends(get_conn)):
+        return export_svc.export_conversations(conn, _owned_sim(sim_id, uc, conn))
+
+    @app.get("/api/v1/simulations/{sim_id}/export/cohort")
+    def export_cohort(sim_id: str, uc: sqlite3.Row = Depends(current_uc),
+                      conn: sqlite3.Connection = Depends(get_conn)):
+        return export_svc.export_cohort(conn, _owned_sim(sim_id, uc, conn))
+
+    @app.get("/api/v1/simulations/{sim_id}/export/journey/{student_id}")
+    def export_journey(sim_id: str, student_id: str, uc: sqlite3.Row = Depends(current_uc),
+                       conn: sqlite3.Connection = Depends(get_conn)):
+        return export_svc.export_journey(conn, _owned_sim(sim_id, uc, conn), student_id)
 
     # --- serve generated sites (local; GitHub Pages in production) ---------
     @app.get("/sims/{slug}")

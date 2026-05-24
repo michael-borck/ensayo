@@ -71,6 +71,6 @@ Phase 4  AnythingLLM + booking            ✅ provisioning + booking-gated chat 
 Phase 5  Individual student accounts      ✅ accounts/email-only/whitelist/reset/mgmt
 Phase 6  Safe mode / audience config      ✅ bundle + override banners + mature filter + privacy notice
 Phase 7  Workflow engine spike (gate)     ✅ GATE PASSED — declarative engine (ADR-0008)
-Phase 8  Multi-site simulations           ◑ generation + workflow runtime + 6 surfaces + student portal done; portal/directory themes + export endpoints pending
+Phase 8  Multi-site simulations           ◑ generation + workflow runtime + 6 surfaces + student portal + exports done; only portal-clean/directory themes pending
 Phase 9  Polish + documentation
 ```
