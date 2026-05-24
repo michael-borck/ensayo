@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ensayo — Student Portal</title>
+  <style>
+    :root { color-scheme: dark; --bg:#0e1118; --surface:#161b26; --surface2:#1e2532;
+      --border:#2a3344; --text:#e7ecf3; --muted:#97a3b6; --accent:#00d4aa; --primary:#4a63e7; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background:var(--bg); color:var(--text); line-height:1.5; }
+    header { display:flex; align-items:center; justify-content:space-between;
+      padding:0.9rem 1.5rem; border-bottom:1px solid var(--border); }
+    .brand { font-weight:800; } .brand span { color:var(--accent); }
+    main { max-width:820px; margin:0 auto; padding:1.5rem; }
+    h1,h2,h3 { letter-spacing:-0.01em; } h2 { font-size:1.2rem; margin-top:1.5rem; }
+    label { display:block; font-size:0.85rem; color:var(--muted); margin:0.6rem 0 0.2rem; }
+    input, textarea, select, button { font-family:inherit; font-size:0.95rem; }
+    input, textarea, select { width:100%; background:var(--bg); border:1px solid var(--border);
+      border-radius:9px; padding:0.55rem 0.7rem; color:var(--text); }
+    textarea { min-height:90px; }
+    button { cursor:pointer; border:1px solid transparent; border-radius:9px; padding:0.5rem 1rem;
+      font-weight:600; background:var(--surface2); color:var(--text); }
+    button.primary { background:linear-gradient(135deg,var(--primary),#6c63ff); color:#fff; }
+    button:disabled { opacity:0.5; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:14px;
+      padding:1rem 1.15rem; margin-bottom:0.8rem; }
+    .row { display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; }
+    .muted { color:var(--muted); } .small { font-size:0.85rem; }
+    .pill { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.05em; padding:0.1rem 0.5rem;
+      border-radius:999px; background:var(--surface2); color:var(--muted); }
+    .hidden { display:none; } a { color:var(--accent); }
+    #msg { min-height:1.2em; margin:0.5rem 0; } .err { color:#ff7a7a; } .ok { color:var(--accent); }
+    .bubble { padding:0.5rem 0.8rem; border-radius:12px; margin:0.3rem 0; max-width:85%; }
+    .bot { background:var(--surface2); } .me { background:linear-gradient(135deg,var(--primary),#6c63ff); margin-left:auto; }
+    .sys { text-align:center; color:var(--muted); font-size:0.85rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">Ensayo<span>·</span>portal</div>
+    <div class="row"><span id="who" class="muted small"></span>
+      <button id="logout" class="hidden">Sign out</button></div>
+  </header>
+  <main>
+    <div id="msg"></div>
+
+    <section id="login" class="card">
+      <h2>Sign in</h2>
+      <label>Simulation</label><input id="slug" placeholder="e.g. workready-mini" />
+      <label>Email</label><input id="email" type="email" />
+      <label>Password <span class="muted small">(leave blank for email-only sims)</span></label>
+      <input id="password" type="password" />
+      <div style="margin-top:0.8rem"><button class="primary" id="loginBtn">Sign in</button>
+        <button id="registerBtn">Register</button></div>
+    </section>
+
+    <section id="app" class="hidden">
+      <h2>My applications</h2>
+      <div class="row" style="margin-bottom:0.5rem">
+        <input id="applyCompany" placeholder="company (optional)" style="max-width:200px" />
+        <button class="primary" id="applyBtn">+ Apply</button>
+      </div>
+      <div id="apps"></div>
+
+      <h2>Inbox</h2>
+      <div id="inbox"></div>
+
+      <h2>Talk to someone</h2>
+      <div class="card">
+        <div class="row">
+          <select id="persona" style="max-width:240px"></select>
+          <select id="kind" style="max-width:180px">
+            <option value="hiring_interview">Interview</option>
+            <option value="coaching">Coaching</option>
+            <option value="consultation">Consultation</option>
+            <option value="exit_interview">Exit interview</option>
+          </select>
+          <button class="primary" id="startConvo">Start</button>
+        </div>
+        <div id="convo" class="hidden" style="margin-top:0.8rem">
+          <div id="transcript" style="max-height:300px; overflow:auto"></div>
+          <div class="row" style="margin-top:0.5rem">
+            <input id="convoText" placeholder="Type a reply…" />
+            <button id="sendConvo">Send</button>
+            <button id="completeConvo">Finish</button>
+          </div>
+        </div>
+      </div>
+
+      <h2>Submit work</h2>
+      <div class="card">
+        <input id="subTitle" placeholder="Task title" />
+        <textarea id="subBody" placeholder="Your submission…"></textarea>
+        <div class="row" style="margin-top:0.5rem"><button class="primary" id="submitBtn">Submit</button></div>
+        <div id="subs" style="margin-top:0.6rem"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+  const $ = (id) => document.getElementById(id);
+  const tok = () => localStorage.getItem("ensayo_stu_token");
+  const slug = () => localStorage.getItem("ensayo_stu_slug");
+  const api = (path, opts = {}) => fetch(`/api/v1/sims/${slug()}${path}`, {
+    ...opts, headers: { "Content-Type": "application/json",
+      ...(tok() ? { Authorization: "Bearer " + tok() } : {}), ...(opts.headers || {}) } });
+  const msg = (t, c = "") => { $("msg").textContent = t; $("msg").className = c; };
+  let convoId = null;
+
+  async function login(register) {
+    localStorage.setItem("ensayo_stu_slug", $("slug").value.trim());
+    const body = JSON.stringify({ email: $("email").value, name: $("email").value,
+      password: $("password").value });
+    const ep = register ? "/students/register" : "/students/login";
+    let r = await api(ep, { method: "POST", body });
+    if (register && r.ok) r = await api("/students/login", { method: "POST", body });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { msg(d.detail || "Sign-in failed", "err"); return; }
+    localStorage.setItem("ensayo_stu_token", d.token);
+    showApp(d.student || {});
+  }
+
+  function showApp(stu) {
+    $("login").classList.add("hidden"); $("app").classList.remove("hidden");
+    $("logout").classList.remove("hidden");
+    $("who").textContent = (stu.email || "") + " @ " + slug();
+    msg(""); loadPersonas(); refresh();
+  }
+
+  async function loadPersonas() {
+    const r = await api("/employees"); if (!r.ok) return;
+    $("persona").innerHTML = (await r.json())
+      .map(e => `<option value="${e.slug}">${e.name}${e.role ? " — " + e.role : ""}</option>`).join("");
+  }
+
+  async function refresh() {
+    const apps = await (await api("/applications")).json();
+    $("apps").innerHTML = apps.length ? apps.map(a =>
+      `<div class="card"><strong>${a.company_slug || "Application"}</strong>
+       <span class="pill">${a.current_stage}</span> <span class="pill">${a.status}</span></div>`).join("")
+      : '<p class="muted small">No applications yet — apply above.</p>';
+    const inbox = await (await api("/messages")).json();
+    $("inbox").innerHTML = inbox.length ? inbox.map(m =>
+      `<div class="card"><strong>${m.subject || "(no subject)"}</strong>
+       ${m.is_read ? "" : '<span class="pill">new</span>'}
+       <div class="muted small">${m.sender_name} · ${new Date(m.deliver_at).toLocaleString()}</div>
+       <div>${m.body}</div></div>`).join("") : '<p class="muted small">Inbox empty.</p>';
+    const subs = await (await api("/submissions")).json();
+    $("subs").innerHTML = subs.map(s =>
+      `<div class="small">${s.title} — ${s.review_available
+        ? (s.outcome + " (" + s.score + ")") : "under review"}</div>`).join("");
+  }
+
+  async function apply() {
+    const r = await api("/applications", { method: "POST",
+      body: JSON.stringify({ company_slug: $("applyCompany").value }) });
+    const d = await r.json().catch(() => ({}));
+    msg(r.ok ? "Applied." : (d.detail || "Failed"), r.ok ? "ok" : "err"); refresh();
+  }
+
+  function render(t) {
+    $("transcript").innerHTML = (t || []).map(m =>
+      m.role === "assistant" ? `<div class="bubble bot">${m.content}</div>`
+                             : `<div class="bubble me">${m.content}</div>`).join("");
+    $("transcript").scrollTop = 1e9;
+  }
+
+  async function startConvo() {
+    const r = await api("/conversations", { method: "POST", body: JSON.stringify({
+      kind: $("kind").value, persona_slug: $("persona").value, target_turns: 3 }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { msg(d.detail || "Failed", "err"); return; }
+    convoId = d.id; $("convo").classList.remove("hidden"); render(d.transcript);
+  }
+  async function sendConvo() {
+    const text = $("convoText").value.trim(); if (!text || !convoId) return;
+    $("convoText").value = "";
+    const cur = await (await api("/conversations/" + convoId)).json();
+    render([...(cur.transcript || []), { role: "user", content: text }]);
+    await api("/conversations/" + convoId + "/message", { method: "POST", body: JSON.stringify({ text }) });
+    render((await (await api("/conversations/" + convoId)).json()).transcript);
+  }
+  async function completeConvo() {
+    if (!convoId) return;
+    const d = await (await api("/conversations/" + convoId + "/complete", { method: "POST" })).json();
+    msg("Assessed: " + (d.assessment ? d.assessment.outcome + " (" + d.assessment.score + ")" : "done"), "ok");
+    $("convo").classList.add("hidden"); convoId = null; refresh();
+  }
+
+  async function submitDoc() {
+    const r = await api("/submissions", { method: "POST", body: JSON.stringify({
+      title: $("subTitle").value, body: $("subBody").value }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { msg(d.detail || "Failed", "err"); return; }
+    $("subBody").value = ""; msg("Submitted.", "ok"); refresh();
+  }
+
+  $("loginBtn").onclick = () => login(false);
+  $("registerBtn").onclick = () => login(true);
+  $("logout").onclick = () => { localStorage.removeItem("ensayo_stu_token"); location.reload(); };
+  $("applyBtn").onclick = apply;
+  $("startConvo").onclick = startConvo;
+  $("sendConvo").onclick = sendConvo;
+  $("completeConvo").onclick = completeConvo;
+  $("submitBtn").onclick = submitDoc;
+
+  if (tok() && slug()) { api("/students/me").then(r => r.ok ? r.json().then(showApp) : null); }
+  </script>
+</body>
+</html>

@@ -7,6 +7,7 @@ serving the dashboard (/admin/) and generated sites (/sims/<slug>/) for local us
 
 from __future__ import annotations
 
+import json
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
@@ -529,6 +530,16 @@ def create_app() -> FastAPI:
         sim = _sim_by_slug(slug, conn)
         return evaluate_visibility(conn, sim, unit_code=unit_code)
 
+    @app.get("/api/v1/sims/{slug}/employees")
+    def sim_employees(slug: str, conn: sqlite3.Connection = Depends(get_conn)):
+        sim = _sim_by_slug(slug, conn)
+        cache = json.loads(sim["config_cache"] or "{}")
+        emps = list(cache.get("employees", []))
+        for c in cache.get("companies", []):  # multi-site: flatten company employees
+            emps.extend(c.get("employees", []))
+        return [{"slug": e.get("id") or e.get("slug"), "name": e.get("name", ""),
+                 "role": e.get("role", "")} for e in emps]
+
     # --- workflow runtime: student applications + inbox -------------------
     def _student_sim(slug: str, student: dict, conn: sqlite3.Connection) -> sqlite3.Row:
         if student["slug"] != slug:
@@ -722,6 +733,7 @@ def create_app() -> FastAPI:
 
     # --- dashboard + root --------------------------------------------------
     app.mount("/admin", StaticFiles(directory=_STATIC / "admin", html=True), name="admin")
+    app.mount("/portal", StaticFiles(directory=_STATIC / "portal", html=True), name="portal")
 
     @app.get("/")
     def root():
