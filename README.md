@@ -8,8 +8,15 @@ scenario-driven tasks — in a safe, controlled environment. A lecturer describe
 the company in `company.yaml` (or, later, through a dashboard) and Ensayo produces
 a complete, deployable static site.
 
-This repository is the platform itself. See [`ENSAYO-SPECIFICATION-v2.md`](../ENSAYO-SPECIFICATION-v2.md)
-for the full design.
+This repository is the platform itself — the generator that *produces*
+simulations, not a single simulation.
+
+## Documentation
+
+- [`docs/SPECIFICATION.md`](docs/SPECIFICATION.md) — the canonical (v2) design.
+- [`docs/architecture.md`](docs/architecture.md) — the short, navigable overview.
+- [`docs/adr/`](docs/adr/) — Architecture Decision Records (why it's built this way).
+- [`CONTEXT.md`](CONTEXT.md) — domain vocabulary used throughout the code.
 
 > **Status: Phase 0 (Foundation).** This is the first slice of a phased build.
 > What works today: the `ensayo` CLI, `company.yaml` loading + validation, content
