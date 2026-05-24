@@ -1,0 +1,11 @@
+type: policy
+label: "Policy"
+structure:
+  - "Purpose and scope"
+  - "Policy statements"
+  - "Roles and responsibilities"
+  - "Compliance, breaches and review"
+prompt_hint: >
+  Write a formal internal company policy. Use clear Markdown headings, a neutral
+  authoritative tone, numbered policy statements where appropriate, and a short
+  review/compliance note at the end. Make it specific to this company.

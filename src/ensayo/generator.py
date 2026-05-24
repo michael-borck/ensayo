@@ -17,6 +17,8 @@ from typing import Callable
 
 from .config import load_company_config
 from .content import write_repo_content, write_theme_data
+from .enrich import enrich_config
+from .llm import get_provider
 from .models import CompanyConfig
 from .themes import default_themes_dir, resolve_theme
 
@@ -50,6 +52,8 @@ def generate(
     theme: str | None = None,
     themes_dir: str | Path | None = None,
     base: str | None = None,
+    with_llm: bool = False,
+    force_llm: bool = False,
     build: bool = True,
     log: Logger = _noop,
 ) -> GenerationResult:
@@ -57,6 +61,10 @@ def generate(
 
     *base* sets the site's base path (e.g. ``/sims/acme/``) for path-based Caddy
     routing and multi-site subpaths. Defaults to ``/``.
+
+    *with_llm* runs bulk content generation (spec §10.6) to fill in missing
+    backstories, opinions, perspectives, the scenario, and document bodies before
+    building. *force_llm* regenerates even content that's already present.
     """
     config = load_company_config(config_path)
     output_dir = Path(output_dir).resolve()
@@ -66,6 +74,9 @@ def generate(
     log(f"Loaded simulation: {config.company.name} ({config.slug})")
     log(f"Theme: {theme_name}  |  audience: {config.audience.value}  |  "
         f"chatbot: {config.chatbot_mode.value}")
+
+    if with_llm:
+        _run_enrichment(config, force_llm, log)
 
     theme_dir = resolve_theme(theme_name, themes_dir)
 
@@ -84,6 +95,37 @@ def generate(
     dist_dir = _build_site(config, theme_dir, output_dir, base, log)
     return GenerationResult(config, output_dir, dist_dir, built=True,
                             content_manifest=manifest)
+
+
+def _run_enrichment(config: CompanyConfig, force: bool, log: Logger) -> None:
+    from .enrich import estimate
+    from .models import Audience
+
+    provider, spec = get_provider(config)
+    if config.audience is Audience.minors and spec.provider != "stub":
+        log("⚠ audience=minors: LLM generation is off by default for minors "
+            "audiences — proceeding because it was explicitly requested.")
+
+    est = estimate(config, force=force)
+    if est["items"] == 0:
+        log("LLM generation: nothing to generate (content already present; use "
+            "--force-llm to regenerate).")
+        return
+    log(f"LLM generation via '{spec.provider}'"
+        f"{(' (' + spec.model + ')') if spec.model and spec.provider != 'stub' else ''}: "
+        f"{est['items']} items, ~{est['input_tokens']:,} in / "
+        f"~{est['output_tokens']:,} out tokens (estimate).")
+
+    def progress(item, phase):
+        if phase == "done":
+            mark = "✓" if item.status == "generated" else "✗"
+            log(f"  {mark} {item.label}" + (f" — {item.error}" if item.error else ""))
+
+    result = enrich_config(config, provider, spec, force=force, on_progress=progress)
+    tok = ""
+    if result.input_tokens or result.output_tokens:
+        tok = f"  ({result.input_tokens:,} in / {result.output_tokens:,} out tokens used)"
+    log(f"LLM generation done: {result.generated} generated, {result.failed} failed.{tok}")
 
 
 def _build_site(

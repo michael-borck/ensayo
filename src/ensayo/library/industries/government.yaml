@@ -1,0 +1,9 @@
+name: government
+label: "Government & Public Sector"
+context: >
+  A public-sector or local-government organisation accountable to the community.
+  Decisions follow due process, are documented, and must balance many stakeholders
+  fairly and transparently.
+norms:
+  - "Be transparent, fair, and procedurally correct"
+  - "Acknowledge accountability to the public and to process"

@@ -1,0 +1,10 @@
+name: crisis
+label: "Crisis / Turnaround"
+summary: "The organisation faces an acute threat to its survival or reputation."
+default_tensions:
+  - "Short-term survival moves vs. long-term health"
+  - "Decisive action vs. keeping people informed and on side"
+prompt_hint: >
+  Write a realistic workplace scenario about an organisation in crisis: something
+  urgent threatens the business, hard decisions are needed quickly, and the
+  pressure is testing the team and its leadership.

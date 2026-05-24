@@ -1,0 +1,10 @@
+name: growth
+label: "Growth / Expansion"
+summary: "The organisation is scaling fast and feeling the strain of its own success."
+default_tensions:
+  - "Speed of growth vs. quality, culture, and team capacity"
+  - "Chasing new opportunities vs. protecting existing commitments"
+prompt_hint: >
+  Write a realistic workplace scenario about an organisation under growth
+  pressure: a big opportunity has appeared, but pursuing it strains the existing
+  team. Keep it grounded and specific to this company.

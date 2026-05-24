@@ -1,0 +1,10 @@
+name: breach
+label: "Security Breach / Incident"
+summary: "The organisation is recovering from a serious security or data incident."
+default_tensions:
+  - "Transparency with stakeholders vs. reputational damage"
+  - "Fixing root causes vs. resuming business as usual"
+prompt_hint: >
+  Write a realistic workplace scenario about an organisation in the aftermath of a
+  significant security or data breach: people are stressed, trust is shaken, and
+  everyone has a perspective on what went wrong and what to do next.

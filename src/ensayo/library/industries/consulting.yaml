@@ -1,0 +1,9 @@
+name: consulting
+label: "Consulting & Advisory"
+context: >
+  An advisory firm selling expertise and judgement. Reputation rests on insight,
+  client relationships, and delivering recommendations that actually work in the
+  client's context.
+norms:
+  - "Be analytical and client-focused; frame advice around the client's situation"
+  - "Back recommendations with reasoning, not just assertion"

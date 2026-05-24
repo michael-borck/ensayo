@@ -1,0 +1,11 @@
+type: internal
+label: "Internal Memo / Briefing"
+structure:
+  - "Context"
+  - "Key points"
+  - "What this means for the team"
+  - "Next steps"
+prompt_hint: >
+  Write an internal memo or briefing from leadership to staff. Conversational but
+  professional, honest about challenges, and ending with concrete next steps.
+  Tie it to the company's current situation.

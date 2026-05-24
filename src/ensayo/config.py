@@ -37,6 +37,12 @@ def load_company_config(path: str | Path) -> CompanyConfig:
         raise ConfigError(_format_validation_error(path, exc)) from exc
 
 
+def dump_config_yaml(config: CompanyConfig) -> str:
+    """Serialise a (possibly enriched) config back to clean YAML."""
+    data = config.model_dump(mode="json", exclude_defaults=True)
+    return yaml.safe_dump(data, sort_keys=False, allow_unicode=True, width=100)
+
+
 def _format_validation_error(path: Path, exc: ValidationError) -> str:
     lines = [f"{path}: {exc.error_count()} validation error(s)"]
     for err in exc.errors():

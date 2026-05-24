@@ -70,6 +70,26 @@ Scaffold a new simulation from a template:
 uv run ensayo init -o my-company.yaml --name "Acme Corp"
 ```
 
+## LLM-assisted generation
+
+Give a sparse config (names, roles, archetypes, a scenario *type*) and let the
+engine write the rest — backstories, opinions, perspectives, the scenario
+narrative, and document bodies:
+
+```bash
+# Preview what would be generated + a token estimate (no generation):
+uv run ensayo enrich -c examples/sparse/company.yaml --estimate-only
+
+# Generate content + build, in one step:
+uv run ensayo generate -c examples/sparse/company.yaml -o ./out --with-llm
+```
+
+The provider is chosen from `LLM_PROVIDER` / `LLM_MODEL` / `*_API_KEY` (or a per-sim
+`llm:` config), falling back to **stub** — which produces grounded draft skeletons
+with no keys and no network. Supported: `stub`, `ollama`, `lmstudio`, `openai`,
+`openrouter`, `gemini`, `anthropic`. `ensayo enrich -o enriched.yaml` writes the
+filled-in YAML back out for review.
+
 ## Output layout
 
 `ensayo generate` produces a directory shaped like a simulation repo:

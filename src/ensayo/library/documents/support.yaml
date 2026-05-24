@@ -1,0 +1,11 @@
+type: support
+label: "Support / Procedure"
+structure:
+  - "When to use this"
+  - "Step-by-step procedure"
+  - "Who owns each step"
+  - "Common problems and escalation"
+prompt_hint: >
+  Write a practical internal support or procedure document — the kind a new hire
+  could follow without supervision. Use numbered steps, note who owns each step,
+  and call out common mistakes. Specific to this company.

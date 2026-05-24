@@ -1,0 +1,11 @@
+type: press
+label: "Press Release / Statement"
+structure:
+  - "Headline"
+  - "Opening statement"
+  - "Detail and quotes"
+  - "About the company / contact"
+prompt_hint: >
+  Write a public-facing press release or statement. Headline, dateline-style
+  opening, a quote from a named leader, and a short boilerplate "about the company"
+  paragraph. Polished and reputation-aware. Specific to this company.

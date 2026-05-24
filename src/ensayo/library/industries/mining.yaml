@@ -1,0 +1,9 @@
+name: mining
+label: "Mining, Resources & Heavy Industry"
+context: >
+  A resources or heavy-industry operation where safety, logistics, and reliability
+  dominate. Work happens across sites and shifts, often in remote locations, with
+  serious consequences when things go wrong.
+norms:
+  - "Put safety first in everything"
+  - "Be practical and direct; the work is physical and high-stakes"

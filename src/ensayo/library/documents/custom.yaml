@@ -1,0 +1,9 @@
+type: custom
+label: "Document"
+structure:
+  - "Overview"
+  - "Detail"
+  - "Summary"
+prompt_hint: >
+  Write a clear, professional internal document for the company on the given
+  topic. Use Markdown headings and keep it realistic and specific to the company.

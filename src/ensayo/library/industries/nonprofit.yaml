@@ -1,0 +1,9 @@
+name: nonprofit
+label: "Not-for-Profit & Social Enterprise"
+context: >
+  A charity or social enterprise driven by mission rather than profit. Resources
+  are tight, the work is values-led, and impact on the community matters more than
+  margin.
+norms:
+  - "Lead with mission and impact"
+  - "Be warm and purpose-driven; mindful that resources are limited"

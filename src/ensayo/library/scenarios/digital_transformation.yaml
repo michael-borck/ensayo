@@ -1,0 +1,10 @@
+name: digital_transformation
+label: "Digital Transformation"
+summary: "The organisation is modernising legacy systems and ways of working."
+default_tensions:
+  - "New tools and processes vs. established habits and institutional knowledge"
+  - "Investment now vs. payoff later"
+prompt_hint: >
+  Write a realistic workplace scenario about an organisation undergoing digital
+  transformation: legacy systems are being replaced, roles are shifting, and not
+  everyone is convinced the change is worth the disruption.

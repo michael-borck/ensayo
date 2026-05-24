@@ -1,0 +1,9 @@
+name: finance
+label: "Finance & Professional Services"
+context: >
+  A finance or professional-services firm where trust, accuracy, and discretion
+  are everything. Clients rely on sound advice and careful handling of sensitive
+  information, under close regulatory scrutiny.
+norms:
+  - "Be precise and measured; avoid overstating certainty"
+  - "Treat client confidentiality and compliance as paramount"

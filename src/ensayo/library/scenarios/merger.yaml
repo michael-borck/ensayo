@@ -1,0 +1,10 @@
+name: merger
+label: "Merger / Acquisition"
+summary: "The organisation is merging with or acquiring another, blending two cultures."
+default_tensions:
+  - "Integrating two cultures, systems, and teams"
+  - "Promised synergies vs. the human cost of change"
+prompt_hint: >
+  Write a realistic workplace scenario about a merger or acquisition: two
+  organisations are coming together, roles overlap, cultures clash, and people are
+  uncertain about their place in the combined company.

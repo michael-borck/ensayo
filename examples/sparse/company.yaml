@@ -1,0 +1,51 @@
+# A deliberately minimal config — names, roles, archetypes, and a scenario type.
+# Everything else (backstories, opinions, perspectives, the scenario narrative,
+# and document bodies) is filled in by:
+#
+#   ensayo generate -c examples/sparse/company.yaml -o ./out --with-llm
+#
+# With no LLM provider configured it uses per-surface stubs; with a provider
+# (LLM_PROVIDER=anthropic, etc.) it writes real content. This is the "minimal
+# input -> complete simulation" path (spec §10.6).
+
+company:
+  name: "BriteLeaf Organics"
+  tagline: "Good food, grown well"
+  industry: "general"
+  location: "Margaret River, Western Australia"
+  profile:
+    employees: 24
+    description: |
+      A regional organic food producer and distributor supplying cafes and
+      grocers across the South West.
+  scenario:
+    type: "growth"      # scenario narrative will be generated from this type
+    name: "The Big Supermarket Deal"
+
+theme: tech-modern
+audience: adults
+
+# No llm: section here, so the provider comes from the environment
+# (LLM_PROVIDER / LLM_MODEL / *_API_KEY), falling back to stub.
+
+employees:
+  - name: "Grace Tran"
+    role: "Founder & Managing Director"
+    archetype: founder_ceo
+  - name: "Hemi Walker"
+    role: "Operations Manager"
+    archetype: operations_manager
+  - name: "Sofia Russo"
+    role: "Finance Manager"
+    archetype: finance_manager
+  - name: "Ben Carter"
+    role: "Sales & Accounts Lead"
+    archetype: sales_lead
+
+documents:
+  - type: policy
+    title: "Food Safety & Handling Policy"
+    brief: "How we keep produce safe from farm to delivery."
+  - type: internal
+    title: "Memo: Scaling Up for the Supermarket Contract"
+    brief: "Leadership briefing on what the new contract means for the team."

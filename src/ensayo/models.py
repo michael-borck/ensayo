@@ -145,6 +145,19 @@ class AnythingLLM(_Model):
     embed_src: str = ""  # e.g. https://anythingllm.example.com/embed/anythingllm-chat.min.js
 
 
+class LLMConfig(_Model):
+    """Per-simulation LLM selection for content generation (spec §7.4).
+
+    The API key is *never* stored here — only the name of the env var to read it
+    from. Resolution precedence is config > environment > stub (see llm.py).
+    """
+
+    provider: str = ""  # stub | ollama | lmstudio | openai | openrouter | gemini | anthropic
+    model: str = ""
+    base_url: str = ""
+    api_key_env: str = ""
+
+
 class CompanyConfig(_Model):
     """Top-level single-company simulation configuration."""
 
@@ -156,6 +169,7 @@ class CompanyConfig(_Model):
     branding: Branding = Field(default_factory=Branding)
     platform: Platform = Field(default_factory=Platform)
     anythingllm: AnythingLLM = Field(default_factory=AnythingLLM)
+    llm: LLMConfig = Field(default_factory=LLMConfig)
     employees: list[Employee] = Field(default_factory=list)
     documents: list[Document] = Field(default_factory=list)
 

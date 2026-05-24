@@ -20,6 +20,7 @@ _LIBRARY_DIR = Path(__file__).resolve().parent / "library"
 
 GENERIC_ARCHETYPE = "staff"
 GENERIC_INDUSTRY = "general"
+GENERIC_DOCUMENT = "custom"
 
 
 class KeywordSeed(_Model):
@@ -44,6 +45,21 @@ class Industry(_Model):
     label: str = ""
     context: str = ""
     norms: list[str] = Field(default_factory=list)
+
+
+class ScenarioTemplate(_Model):
+    name: str
+    label: str = ""
+    summary: str = ""
+    default_tensions: list[str] = Field(default_factory=list)
+    prompt_hint: str = ""
+
+
+class DocumentTemplate(_Model):
+    type: str
+    label: str = ""
+    structure: list[str] = Field(default_factory=list)
+    prompt_hint: str = ""
 
 
 def _load_yaml(path: Path) -> dict:
@@ -86,6 +102,41 @@ def load_industry(name: str, library_dir: Path | None = None) -> Industry:
     if name in index:
         return index[name]
     return index.get(GENERIC_INDUSTRY, Industry(name=GENERIC_INDUSTRY, label="General Business"))
+
+
+@lru_cache(maxsize=None)
+def _scenario_index(library_dir: Path) -> dict[str, ScenarioTemplate]:
+    out: dict[str, ScenarioTemplate] = {}
+    d = library_dir / "scenarios"
+    if d.exists():
+        for f in d.glob("*.yaml"):
+            s = ScenarioTemplate.model_validate(_load_yaml(f))
+            out[s.name] = s
+    return out
+
+
+@lru_cache(maxsize=None)
+def _document_index(library_dir: Path) -> dict[str, DocumentTemplate]:
+    out: dict[str, DocumentTemplate] = {}
+    d = library_dir / "documents"
+    if d.exists():
+        for f in d.glob("*.yaml"):
+            t = DocumentTemplate.model_validate(_load_yaml(f))
+            out[t.type] = t
+    return out
+
+
+def load_scenario_template(name: str, library_dir: Path | None = None) -> ScenarioTemplate | None:
+    """Return the scenario template for *name*, or ``None`` if there's no match."""
+    return _scenario_index(library_dir or _LIBRARY_DIR).get(name)
+
+
+def load_document_template(doc_type: str, library_dir: Path | None = None) -> DocumentTemplate:
+    """Return the document template for *doc_type*, or the generic ``custom`` fallback."""
+    index = _document_index(library_dir or _LIBRARY_DIR)
+    if doc_type in index:
+        return index[doc_type]
+    return index.get(GENERIC_DOCUMENT, DocumentTemplate(type=GENERIC_DOCUMENT, label="Document"))
 
 
 def list_archetypes(library_dir: Path | None = None) -> list[Archetype]:
