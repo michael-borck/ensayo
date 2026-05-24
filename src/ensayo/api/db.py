@@ -176,6 +176,51 @@ def migrate(conn: sqlite3.Connection) -> None:
             completed_at      TEXT,
             FOREIGN KEY (simulation_id) REFERENCES simulations(id)
         );
+
+        CREATE TABLE IF NOT EXISTS doc_submissions (
+            id                TEXT PRIMARY KEY,
+            simulation_id     TEXT NOT NULL,
+            student_id        TEXT NOT NULL,
+            application_id    TEXT,
+            title             TEXT DEFAULT '',
+            body              TEXT DEFAULT '',
+            score             INTEGER,
+            feedback          TEXT DEFAULT '',
+            focus_areas       TEXT DEFAULT '[]',
+            outcome           TEXT DEFAULT '',
+            status            TEXT NOT NULL DEFAULT 'submitted',
+            on_complete_event TEXT DEFAULT '',
+            review_deliver_at TEXT NOT NULL,
+            created_at        TEXT NOT NULL,
+            reviewed_at       TEXT,
+            FOREIGN KEY (simulation_id) REFERENCES simulations(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS group_chat_sessions (
+            id                 TEXT PRIMARY KEY,
+            simulation_id      TEXT NOT NULL,
+            student_id         TEXT NOT NULL,
+            application_id     TEXT,
+            occasion           TEXT DEFAULT '',
+            participants_json  TEXT DEFAULT '[]',
+            status             TEXT NOT NULL DEFAULT 'active',
+            participation_notes TEXT DEFAULT '',
+            created_at         TEXT NOT NULL,
+            completed_at       TEXT,
+            FOREIGN KEY (simulation_id) REFERENCES simulations(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS group_chat_posts (
+            id          TEXT PRIMARY KEY,
+            session_id  TEXT NOT NULL,
+            sequence    INTEGER NOT NULL,
+            author_kind TEXT NOT NULL DEFAULT 'character',
+            author_name TEXT DEFAULT '',
+            content     TEXT DEFAULT '',
+            deliver_at  TEXT NOT NULL,
+            created_at  TEXT NOT NULL,
+            FOREIGN KEY (session_id) REFERENCES group_chat_sessions(id)
+        );
         """
     )
     # Idempotent column additions for existing databases (spec §15.1 pattern).

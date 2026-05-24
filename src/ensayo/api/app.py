@@ -17,8 +17,10 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from . import conversation as convo
+from . import groupchat as gchat
 from . import students as student_mgmt
 from . import studentauth
+from . import submission as subm
 from . import workflow_runtime as wfr
 
 from .. import __version__
@@ -92,6 +94,26 @@ class ConversationStartReq(BaseModel):
 
 
 class ConversationMessageReq(BaseModel):
+    text: str
+
+
+class SubmissionReq(BaseModel):
+    title: str = ""
+    body: str
+    application_id: str | None = None
+    on_complete_event: str = ""
+    review_delay_seconds: int = 0
+
+
+class GroupChatStartReq(BaseModel):
+    occasion: str = ""
+    participants: list = []
+    beats: list = []
+    application_id: str | None = None
+    beat_interval_seconds: int = 0
+
+
+class GroupChatPostReq(BaseModel):
     text: str
 
 
@@ -591,6 +613,75 @@ def create_app() -> FastAPI:
         try:
             return convo.complete(conn, sim, sid, student["id"])
         except convo.ConversationError as exc:
+            raise HTTPException(exc.status, str(exc)) from exc
+
+    # --- document submission surface --------------------------------------
+    @app.post("/api/v1/sims/{slug}/submissions", status_code=201)
+    def submit_doc(slug: str, req: SubmissionReq,
+                   student: dict = Depends(studentauth.current_student),
+                   conn: sqlite3.Connection = Depends(get_conn)):
+        sim = _student_sim(slug, student, conn)
+        try:
+            return subm.submit(conn, sim, student["id"], title=req.title, body=req.body,
+                               application_id=req.application_id,
+                               on_complete_event=req.on_complete_event,
+                               review_delay_seconds=req.review_delay_seconds)
+        except subm.SubmissionError as exc:
+            raise HTTPException(exc.status, str(exc)) from exc
+
+    @app.get("/api/v1/sims/{slug}/submissions")
+    def list_docs(slug: str, student: dict = Depends(studentauth.current_student),
+                  conn: sqlite3.Connection = Depends(get_conn)):
+        sim = _student_sim(slug, student, conn)
+        return subm.list_submissions(conn, sim, student["id"])
+
+    @app.get("/api/v1/sims/{slug}/submissions/{sid}")
+    def get_doc(slug: str, sid: str, student: dict = Depends(studentauth.current_student),
+                conn: sqlite3.Connection = Depends(get_conn)):
+        sim = _student_sim(slug, student, conn)
+        try:
+            return subm.get_submission(conn, sim, student["id"], sid)
+        except subm.SubmissionError as exc:
+            raise HTTPException(exc.status, str(exc)) from exc
+
+    # --- group chat surface -----------------------------------------------
+    @app.post("/api/v1/sims/{slug}/group-chats", status_code=201)
+    def group_start(slug: str, req: GroupChatStartReq,
+                    student: dict = Depends(studentauth.current_student),
+                    conn: sqlite3.Connection = Depends(get_conn)):
+        sim = _student_sim(slug, student, conn)
+        return gchat.start(conn, sim, student["id"], occasion=req.occasion,
+                           participants=req.participants, beats=req.beats,
+                           application_id=req.application_id,
+                           beat_interval_seconds=req.beat_interval_seconds)
+
+    @app.get("/api/v1/sims/{slug}/group-chats/{gid}")
+    def group_get(slug: str, gid: str, student: dict = Depends(studentauth.current_student),
+                  conn: sqlite3.Connection = Depends(get_conn)):
+        sim = _student_sim(slug, student, conn)
+        try:
+            return gchat.get(conn, sim, gid, student["id"])
+        except gchat.GroupChatError as exc:
+            raise HTTPException(exc.status, str(exc)) from exc
+
+    @app.post("/api/v1/sims/{slug}/group-chats/{gid}/post")
+    def group_post(slug: str, gid: str, req: GroupChatPostReq,
+                   student: dict = Depends(studentauth.current_student),
+                   conn: sqlite3.Connection = Depends(get_conn)):
+        sim = _student_sim(slug, student, conn)
+        try:
+            return gchat.post(conn, sim, gid, student["id"], req.text)
+        except gchat.GroupChatError as exc:
+            raise HTTPException(exc.status, str(exc)) from exc
+
+    @app.post("/api/v1/sims/{slug}/group-chats/{gid}/complete")
+    def group_complete(slug: str, gid: str,
+                       student: dict = Depends(studentauth.current_student),
+                       conn: sqlite3.Connection = Depends(get_conn)):
+        sim = _student_sim(slug, student, conn)
+        try:
+            return gchat.complete(conn, sim, gid, student["id"])
+        except gchat.GroupChatError as exc:
             raise HTTPException(exc.status, str(exc)) from exc
 
     # --- workflow runtime: UC view + advance ------------------------------
