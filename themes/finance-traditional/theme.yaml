@@ -1,0 +1,16 @@
+name: finance-traditional
+description: Conservative, trustworthy theme for finance and professional services.
+derived_from: southern-cross-financial
+supports:
+  chatbot_modes: [keyword, llm, hybrid]
+  layouts: [topnav, sidebar]
+  audience: [adults, minors]
+features:
+  - employee_directory
+  - document_library
+  - keyword_chatbot
+  - scenario_intro
+content_props:
+  - company
+  - employees
+  - documents

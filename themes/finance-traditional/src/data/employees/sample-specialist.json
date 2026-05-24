@@ -1,0 +1,29 @@
+{
+  "slug": "sample-specialist",
+  "name": "Sample Specialist",
+  "role": "Operations Lead",
+  "title": null,
+  "tier": "specialist",
+  "department": null,
+  "archetype": "operations_manager",
+  "yearsAtCompany": 4,
+  "yearsInIndustry": 9,
+  "background": "Fixture employee for standalone theme development.",
+  "priorExperience": [],
+  "personality": ["Organised", "Protective of the team"],
+  "knowledge": ["Service delivery", "Capacity planning"],
+  "opinions": ["You don't break promises to clients"],
+  "scenarioPerspective": "Worried that growth is stretching the team thin.",
+  "refersTo": { "strategy": "Sample Lead" },
+  "chatbotMode": "keyword",
+  "keywords": {
+    "employee": "Sample Specialist",
+    "role": "Operations Lead",
+    "greeting": "Hi, I'm Sample Specialist. Ask me about operations.",
+    "fallback": "Not my area — try asking about delivery or operations.",
+    "rules": [
+      { "keywords": ["operations", "delivery", "service"], "response": "I run service delivery — keeping our promises to clients." },
+      { "keywords": ["strategy"], "response": "For strategy, talk to Sample Lead." }
+    ]
+  }
+}

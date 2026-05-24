@@ -1,0 +1,16 @@
+name: advisory-cool
+description: Sophisticated, modern theme for consulting and advisory firms.
+derived_from: meridian-advisory
+supports:
+  chatbot_modes: [keyword, llm, hybrid]
+  layouts: [topnav, sidebar]
+  audience: [adults, minors]
+features:
+  - employee_directory
+  - document_library
+  - keyword_chatbot
+  - scenario_intro
+content_props:
+  - company
+  - employees
+  - documents

@@ -1,0 +1,30 @@
+{
+  "slug": "sample-lead",
+  "name": "Sample Lead",
+  "role": "Managing Director",
+  "title": null,
+  "tier": "executive",
+  "department": null,
+  "archetype": "founder_ceo",
+  "yearsAtCompany": 8,
+  "yearsInIndustry": 16,
+  "background": "Fixture employee for standalone theme development. The generator replaces this file with real personas at build time.",
+  "priorExperience": ["Prior role one"],
+  "personality": ["Calm under pressure", "Direct communicator"],
+  "knowledge": ["Business strategy", "Vendor management"],
+  "opinions": ["We grow by keeping our reputation intact"],
+  "scenarioPerspective": "Excited about growth but mindful of team capacity.",
+  "refersTo": { "operations": "Sample Specialist" },
+  "chatbotMode": "keyword",
+  "keywords": {
+    "employee": "Sample Lead",
+    "role": "Managing Director",
+    "greeting": "Hi, I'm Sample Lead, Managing Director. What would you like to know?",
+    "fallback": "I'm not sure about that — ask me about strategy or my role.",
+    "rules": [
+      { "keywords": ["who", "role", "job"], "response": "I'm the Managing Director — I set direction and look after key relationships." },
+      { "keywords": ["strategy", "growth"], "response": "We grow by keeping our reputation intact." },
+      { "keywords": ["operations"], "response": "For operations, talk to Sample Specialist." }
+    ]
+  }
+}

@@ -135,9 +135,18 @@ out/
 
 ## Themes
 
-| Theme         | For                              | Source (reference) |
-|---------------|----------------------------------|--------------------|
-| `tech-modern` | Technology / SaaS companies      | nexuspoint-systems |
+| Theme | For | Source (reference) |
+|-------|-----|--------------------|
+| `tech-modern` | Technology / SaaS companies | nexuspoint-systems |
+| `finance-traditional` | Finance & professional services | southern-cross-financial |
+| `mining-rugged` | Mining, resources & heavy industry | ironvale-resources |
+| `nfp-warm` | Charities, NFPs & social enterprise | horizon-foundation |
+| `government-formal` | Government & public sector | metro-council-wa |
+| `advisory-cool` | Consulting & advisory | meridian-advisory |
+
+Two further themes — `portal-clean` (student portal) and `directory` (job
+board / hub) — are *multi-site* surfaces and ship with **Phase 8** (multi-site),
+where the portal/jobs data they render exists.
 
 Develop a theme standalone (uses committed fixtures in `src/data/`):
 

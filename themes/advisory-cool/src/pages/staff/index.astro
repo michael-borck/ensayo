@@ -1,0 +1,31 @@
+---
+import { getCollection } from "astro:content";
+import Base from "../../layouts/Base.astro";
+import EmployeeCard from "../../components/EmployeeCard.astro";
+
+const tierOrder = ["executive", "manager", "specialist", "staff"];
+const employees = (await getCollection("employees")).sort(
+  (a, b) =>
+    tierOrder.indexOf(a.data.tier) - tierOrder.indexOf(b.data.tier) ||
+    a.data.name.localeCompare(b.data.name),
+);
+---
+
+<Base title="Staff" description="The people you can talk to.">
+  <section class="page-head">
+    <h1>Staff directory</h1>
+    <p class="muted">Pick a colleague to read their background and chat with them.</p>
+  </section>
+
+  <div class="emp-grid">
+    {employees.map((e) => (
+      <EmployeeCard
+        slug={e.data.slug}
+        name={e.data.name}
+        role={e.data.role}
+        tier={e.data.tier}
+        background={e.data.background}
+      />
+    ))}
+  </div>
+</Base>

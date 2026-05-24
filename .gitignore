@@ -5,8 +5,9 @@ __pycache__/
 .venv/
 .pytest_cache/
 
-# Node / Astro (themes vendor these; not committed)
-node_modules/
+# Node / Astro (themes vendor these; not committed). Bare form also ignores the
+# per-theme node_modules symlinks used for fast local builds.
+node_modules
 .astro/
 
 # Generator output

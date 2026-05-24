@@ -1,0 +1,115 @@
+---
+import { getCollection } from "astro:content";
+import Base from "../../layouts/Base.astro";
+
+export async function getStaticPaths() {
+  const employees = await getCollection("employees");
+  return employees.map((e) => ({ params: { slug: e.data.slug }, props: { e } }));
+}
+
+const { e } = Astro.props;
+const d = e.data;
+const base = import.meta.env.BASE_URL;
+const initials = d.name
+  .split(/\s+/)
+  .map((p: string) => p.charAt(0))
+  .slice(0, 2)
+  .join("");
+const embedId = d.chatbotEmbedId ?? "";
+const allm = d.anythingllm ?? { baseUrl: "", embedSrc: "" };
+// LLM chat (AnythingLLM embed) is shown when the mode allows it AND the employee
+// has been provisioned with an embed widget (Phase 4). Otherwise keyword mode.
+const showLLM =
+  (d.chatbotMode === "llm" || d.chatbotMode === "hybrid") &&
+  !!embedId && !!allm.embedSrc;
+const showKeyword =
+  d.chatbotMode === "keyword" || (d.chatbotMode === "hybrid" && !showLLM);
+const firstName = d.name.split(" ")[0];
+const kw = JSON.stringify(d.keywords ?? {});
+---
+
+<Base title={d.name} description={`${d.role} at the company.`}>
+  <a class="back-link" href={`${base}staff`}>← All staff</a>
+
+  <article class="profile">
+    <header class="profile-head">
+      <span class="profile-avatar">{initials}</span>
+      <div>
+        <h1>{d.name}</h1>
+        <p class="profile-role">{d.role}</p>
+        <p class="muted">
+          <span class={`emp-tier tier-${d.tier}`}>{d.tier}</span>
+          {d.yearsAtCompany != null && <span> · {d.yearsAtCompany} yrs at the company</span>}
+        </p>
+      </div>
+    </header>
+
+    <div class="profile-grid">
+      <div class="profile-main">
+        {d.background && (
+          <section>
+            <h2>Background</h2>
+            {d.background.split(/\n\n+/).map((p: string) => <p>{p}</p>)}
+          </section>
+        )}
+
+        {d.scenarioPerspective && (
+          <section class="panel">
+            <h2>On the current situation</h2>
+            <p>{d.scenarioPerspective}</p>
+          </section>
+        )}
+
+        {showKeyword && (
+          <section>
+            <h2>Chat with {firstName}</h2>
+            <p class="muted small">
+              Keyword chatbot — deterministic, runs entirely in your browser.
+            </p>
+            <div data-ensayo-chat></div>
+            <script type="application/json" id="ensayo-kw-data" set:html={kw}></script>
+            <script src={`${base}ensayo/keyword-chatbot.js`} is:inline></script>
+          </section>
+        )}
+
+        {showLLM && (
+          <section>
+            <h2>Chat with {firstName}</h2>
+            <p class="muted small">AI chatbot powered by AnythingLLM.</p>
+            <script
+              data-embed-id={embedId}
+              data-base-api-url={allm.baseUrl}
+              src={allm.embedSrc}
+              is:inline
+            ></script>
+          </section>
+        )}
+      </div>
+
+      <aside class="profile-side">
+        {d.personality?.length > 0 && (
+          <section class="card">
+            <h3>Personality</h3>
+            <ul>{d.personality.map((p: string) => <li>{p}</li>)}</ul>
+          </section>
+        )}
+        {d.knowledge?.length > 0 && (
+          <section class="card">
+            <h3>Knows about</h3>
+            <ul>{d.knowledge.map((k: string) => <li>{k}</li>)}</ul>
+          </section>
+        )}
+        {Object.keys(d.refersTo ?? {}).length > 0 && (
+          <section class="card">
+            <h3>Talk to others about</h3>
+            <ul>
+              {Object.entries(d.refersTo).map(([topic, who]) => (
+                <li><strong>{topic}:</strong> {who}</li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </aside>
+    </div>
+  </article>
+</Base>

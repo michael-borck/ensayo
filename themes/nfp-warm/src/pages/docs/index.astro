@@ -1,0 +1,32 @@
+---
+import { getCollection } from "astro:content";
+import Base from "../../layouts/Base.astro";
+
+const docs = (await getCollection("docs")).sort((a, b) =>
+  a.data.title.localeCompare(b.data.title),
+);
+const base = import.meta.env.BASE_URL;
+---
+
+<Base title="Documents" description="Company policies, procedures and references.">
+  <section class="page-head">
+    <h1>Document library</h1>
+    <p class="muted">Internal policies, procedures and references.</p>
+  </section>
+
+  {docs.length === 0 ? (
+    <p class="muted">No documents yet.</p>
+  ) : (
+    <ul class="doc-list">
+      {docs.map((doc) => (
+        <li class="doc-item">
+          <a href={`${base}docs/${doc.id}`}>
+            <span class={`doc-tag tag-${doc.data.type}`}>{doc.data.type}</span>
+            <strong>{doc.data.title}</strong>
+            {doc.data.brief && <span class="muted">{doc.data.brief}</span>}
+          </a>
+        </li>
+      ))}
+    </ul>
+  )}
+</Base>

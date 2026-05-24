@@ -1,0 +1,26 @@
+{
+  "name": "Fixture Tech Co",
+  "slug": "fixture-tech-co",
+  "tagline": "Theme development fixtures",
+  "industry": "cloud_services",
+  "location": "Perth, Western Australia",
+  "audience": "adults",
+  "chatbotMode": "keyword",
+  "theme": "tech-modern",
+  "layout": "topnav",
+  "branding": { "colors": { "primary": "#4a63e7", "accent": "#00d4aa", "secondary": "#6c63ff" } },
+  "profile": {
+    "founded": 2018,
+    "employees": 30,
+    "description": "Fixture data used when developing the tech-modern theme standalone with `npm run dev`. The Ensayo generator overwrites this at build time.",
+    "keyFacts": ["Fixture fact one", "Fixture fact two"],
+    "services": ["Service A", "Service B"]
+  },
+  "scenario": {
+    "type": "growth",
+    "name": "Fixture scenario",
+    "description": "A placeholder scenario for theme development.",
+    "keyTensions": ["Tension one", "Tension two"]
+  },
+  "platform": { "bookingEnabled": false, "lecturerDashboard": false }
+}

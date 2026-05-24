@@ -1,0 +1,16 @@
+name: nfp-warm
+description: Warm, approachable theme for charities, NFPs and social enterprises.
+derived_from: horizon-foundation
+supports:
+  chatbot_modes: [keyword, llm, hybrid]
+  layouts: [topnav, sidebar]
+  audience: [adults, minors]
+features:
+  - employee_directory
+  - document_library
+  - keyword_chatbot
+  - scenario_intro
+content_props:
+  - company
+  - employees
+  - documents

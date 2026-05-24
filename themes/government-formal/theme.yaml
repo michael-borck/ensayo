@@ -1,0 +1,16 @@
+name: government-formal
+description: Clean, accessible theme for government and public-sector organisations.
+derived_from: metro-council-wa
+supports:
+  chatbot_modes: [keyword, llm, hybrid]
+  layouts: [topnav, sidebar]
+  audience: [adults, minors]
+features:
+  - employee_directory
+  - document_library
+  - keyword_chatbot
+  - scenario_intro
+content_props:
+  - company
+  - employees
+  - documents

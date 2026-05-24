@@ -1,0 +1,70 @@
+---
+import { getCollection } from "astro:content";
+import Base from "../layouts/Base.astro";
+import EmployeeCard from "../components/EmployeeCard.astro";
+import company from "../data/company.json";
+
+const employees = await getCollection("employees");
+const featured = employees.slice(0, 4);
+const profile = (company as any).profile ?? {};
+const scenario = (company as any).scenario ?? {};
+const base = import.meta.env.BASE_URL;
+---
+
+<Base>
+  <section class="hero">
+    <p class="eyebrow">{company.industry?.replace(/_/g, " ")}</p>
+    <h1>{company.name}</h1>
+    <p class="tagline">{company.tagline}</p>
+    {profile.description && <p class="lede">{profile.description}</p>}
+    <div class="hero-actions">
+      <a class="btn btn-primary" href={`${base}staff`}>Meet the team</a>
+      <a class="btn btn-ghost" href={`${base}docs`}>Browse documents</a>
+    </div>
+  </section>
+
+  {profile.keyFacts?.length > 0 && (
+    <section class="facts">
+      {profile.keyFacts.map((f: string) => <div class="fact">{f}</div>)}
+    </section>
+  )}
+
+  {scenario.description && (
+    <section class="panel scenario">
+      <h2>{scenario.name || "The situation"}</h2>
+      <p>{scenario.description}</p>
+      {scenario.keyTensions?.length > 0 && (
+        <ul class="tensions">
+          {scenario.keyTensions.map((t: string) => <li>{t}</li>)}
+        </ul>
+      )}
+    </section>
+  )}
+
+  {profile.services?.length > 0 && (
+    <section>
+      <h2>What we do</h2>
+      <ul class="services">
+        {profile.services.map((s: string) => <li>{s}</li>)}
+      </ul>
+    </section>
+  )}
+
+  <section>
+    <div class="section-head">
+      <h2>The team</h2>
+      <a class="link" href={`${base}staff`}>See all {employees.length} →</a>
+    </div>
+    <div class="emp-grid">
+      {featured.map((e) => (
+        <EmployeeCard
+          slug={e.data.slug}
+          name={e.data.name}
+          role={e.data.role}
+          tier={e.data.tier}
+          background={e.data.background}
+        />
+      ))}
+    </div>
+  </section>
+</Base>

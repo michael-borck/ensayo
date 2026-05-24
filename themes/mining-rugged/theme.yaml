@@ -1,0 +1,16 @@
+name: mining-rugged
+description: Bold, industrial theme for mining, resources and heavy industry.
+derived_from: ironvale-resources
+supports:
+  chatbot_modes: [keyword, llm, hybrid]
+  layouts: [topnav, sidebar]
+  audience: [adults, minors]
+features:
+  - employee_directory
+  - document_library
+  - keyword_chatbot
+  - scenario_intro
+content_props:
+  - company
+  - employees
+  - documents
