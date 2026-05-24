@@ -168,6 +168,7 @@ class CompanyConfig(_Model):
     layout: str = "topnav"
     chatbot_mode: ChatbotMode = ChatbotMode.keyword
     api_base_url: str = ""  # VPS API origin for cross-origin calls from GitHub Pages ("" = same origin)
+    audience_overrides: list[str] = Field(default_factory=list)  # acknowledged minors-safe deviations (see safemode.py)
     branding: Branding = Field(default_factory=Branding)
     platform: Platform = Field(default_factory=Platform)
     anythingllm: AnythingLLM = Field(default_factory=AnythingLLM)
@@ -188,8 +189,9 @@ class CompanyConfig(_Model):
 
     @model_validator(mode="after")
     def _enforce_audience_defaults(self) -> CompanyConfig:
-        # Minors-safe bundle (spec §7.2): keyword chatbots only.
-        if self.audience is Audience.minors:
+        # Minors-safe bundle (spec §7.2): keyword chatbots only — unless the UC
+        # has explicitly acknowledged the "llm_chatbots" override (spec §7.3).
+        if self.audience is Audience.minors and "llm_chatbots" not in self.audience_overrides:
             self.chatbot_mode = ChatbotMode.keyword
             for emp in self.employees:
                 emp.chatbot_mode = ChatbotMode.keyword

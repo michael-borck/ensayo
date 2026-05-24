@@ -20,6 +20,7 @@ const css = `:root{--brand-primary:${primary};--brand-secondary:${secondary};--b
 // Pages; "" = same origin) and this simulation's slug.
 const apiBase = (company as any).apiBaseUrl ?? "";
 const globals = `window.ENSAYO_API_BASE=${JSON.stringify(apiBase)};window.ENSAYO_SIM_SLUG=${JSON.stringify(company.slug)};`;
+const minors = (company as any).audience === "minors";
 
 const nav = [
   { href: `${base}`, label: "Home" },
@@ -58,6 +59,12 @@ const nav = [
     <footer class="site-footer">
       <div class="container">
         <p>{company.name} — {company.location}</p>
+        {minors && (
+          <p class="muted">
+            🛡 This is a safe learning environment. No personal information is
+            collected, and chatbots are restricted to pre-set responses.
+          </p>
+        )}
         <p class="muted">
           A teaching simulation generated with Ensayo. Fictional organisation;
           all people and events are invented for educational use.

@@ -27,14 +27,16 @@ Logger = "callable"
 
 def provision_chatbots(conn: sqlite3.Connection, sim: sqlite3.Row, *,
                        build: bool = True, log=lambda m: None) -> dict:
-    if sim["audience"] == "minors":
-        raise ServiceError("LLM chatbots are disabled for minors-audience simulations")
-
     clone = Path(sim["working_clone_path"])
     cfg_path = clone / "company.yaml"
     if not cfg_path.exists():
         raise ServiceError(f"working clone missing company.yaml: {clone}")
     config = load_company_config(cfg_path)
+
+    if sim["audience"] == "minors" and "llm_chatbots" not in config.audience_overrides:
+        raise ServiceError(
+            "LLM chatbots are disabled for minors audiences; acknowledge the "
+            "'llm_chatbots' override to enable them")
     client = AnythingLLMClient.from_env()
     mode = "configured" if client.configured else "dry-run"
     log(f"AnythingLLM provisioning ({mode}) for {config.slug}")

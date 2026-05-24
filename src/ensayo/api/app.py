@@ -20,7 +20,8 @@ from . import students as student_mgmt
 from . import studentauth
 
 from .. import __version__
-from ..config import ConfigError
+from ..config import ConfigError, load_company_config
+from ..safemode import audience_report
 from .auth import (
     create_token,
     current_uc,
@@ -220,6 +221,18 @@ def create_app() -> FastAPI:
         if not path.exists():
             raise HTTPException(404, "company.yaml not found")
         return {"company_yaml": path.read_text(encoding="utf-8")}
+
+    @app.get("/api/v1/simulations/{sim_id}/audience")
+    def sim_audience(sim_id: str, uc: sqlite3.Row = Depends(current_uc),
+                     conn: sqlite3.Connection = Depends(get_conn)):
+        sim = _owned_sim(sim_id, uc, conn)
+        path = Path(sim["working_clone_path"]) / "company.yaml"
+        if not path.exists():
+            raise HTTPException(404, "company.yaml not found")
+        try:
+            return audience_report(load_company_config(path))
+        except ConfigError as exc:
+            raise HTTPException(422, str(exc)) from exc
 
     @app.post("/api/v1/simulations/{sim_id}/generate")
     def generate_sim(sim_id: str, req: GenerateReq,

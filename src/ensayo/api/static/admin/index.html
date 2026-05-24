@@ -176,9 +176,11 @@ documents:
           </div>
         </div>
         <div class="muted small" style="margin-top:0.3rem">auth: ${s.auth_mode || "shared_password"}</div>
+        <div data-audience="${s.id}"></div>
         <div class="students" data-students-panel="${s.id}" hidden style="margin-top:0.75rem;border-top:1px solid var(--border);padding-top:0.75rem"></div>
         <div class="bookings" data-bookings="${s.id}" hidden style="margin-top:0.75rem;border-top:1px solid var(--border);padding-top:0.75rem"></div>`;
       $("list").appendChild(el);
+      if (s.audience === "minors") loadAudienceBanner(s.id);
     }
     document.querySelectorAll("[data-gen]").forEach(b => b.onclick = () => act(b.dataset.gen, "generate", b));
     document.querySelectorAll("[data-pub]").forEach(b => b.onclick = () => doPublish(b.dataset.pub, b));
@@ -186,6 +188,28 @@ documents:
     document.querySelectorAll("[data-prov]").forEach(b => b.onclick = () => doProvision(b.dataset.prov, b));
     document.querySelectorAll("[data-book]").forEach(b => b.onclick = () => toggleBookings(b.dataset.book));
     document.querySelectorAll("[data-students]").forEach(b => b.onclick = () => toggleStudents(b.dataset.students));
+  }
+
+  async function loadAudienceBanner(id) {
+    const el = document.querySelector(`[data-audience="${id}"]`);
+    if (!el) return;
+    const r = await api(`/api/v1/simulations/${id}/audience`);
+    if (!r.ok) return;
+    const rep = await r.json();
+    if (rep.audience !== "minors") return;
+    if (rep.safe) {
+      el.innerHTML = `<div class="pill" style="margin-top:0.4rem;color:#06281f;background:#00d4aa">`
+        + `🛡 minors-safe — no overrides</div>`;
+      return;
+    }
+    const items = rep.overrides.map(o =>
+      `<li>${o.label} <span class="muted">(safe default: ${o.safe})</span></li>`).join("");
+    el.innerHTML = `<div style="margin-top:0.5rem;border:1px solid #b8860b;`
+      + `background:rgba(184,134,11,0.12);border-radius:9px;padding:0.6rem 0.85rem">`
+      + `⚠ Marked for a <strong>minors</strong> audience but has ${rep.overrides.length} `
+      + `non-default setting(s):<ul style="margin:0.3rem 0 0;padding-left:1.1rem">${items}</ul>`
+      + `<div class="muted small" style="margin-top:0.3rem">Revert these in company.yaml, `
+      + `or keep them as acknowledged overrides.</div></div>`;
   }
 
   async function toggleStudents(id) {

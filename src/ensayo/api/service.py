@@ -22,6 +22,7 @@ import httpx
 
 from ..config import load_company_config_from_text
 from ..generator import generate
+from .audit import audit
 from .auth import hash_password
 
 
@@ -96,9 +97,16 @@ def create_simulation(
 
     if auth_mode not in _AUTH_MODES:
         raise ServiceError(f"auth_mode must be one of {_AUTH_MODES}")
-    # Minors-safe bundle (spec §7.2): shared password only, no PII accounts.
-    if config.audience.value == "minors":
+    # Minors-safe bundle (spec §7.2/§7.3): shared password and no LLM-assist
+    # unless the UC has acknowledged the override.
+    minors = config.audience.value == "minors"
+    overrides = set(config.audience_overrides)
+    if minors and "individual_accounts" not in overrides:
         auth_mode = "shared_password"
+    if with_llm and minors and "llm_assist" not in overrides:
+        raise ServiceError(
+            "LLM-assisted generation is off by default for minors audiences; "
+            "acknowledge the 'llm_assist' override to enable it")
 
     if conn.execute("SELECT 1 FROM simulations WHERE slug = ?", (slug,)).fetchone():
         raise ServiceError(f"a simulation with slug {slug!r} already exists")
@@ -131,6 +139,9 @@ def create_simulation(
          json.dumps(config.model_dump(mode="json")), now, now),
     )
     conn.commit()
+    audit("simulation.created", audience=config.audience.value, sim=slug,
+          uc=owner_uc_id, auth_mode=auth_mode,
+          overrides=[k for k in config.audience_overrides if k])
     return row_to_dict(conn.execute("SELECT * FROM simulations WHERE id = ?", (sim_id,)).fetchone())
 
 

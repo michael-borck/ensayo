@@ -38,6 +38,7 @@ class Archetype(_Model):
     prompt_fragment: str = ""
     keyword_seeds: list[KeywordSeed] = Field(default_factory=list)
     referral_topics: list[str] = Field(default_factory=list)
+    mature: bool = False  # filtered out of minors-audience simulations (spec §7.6)
 
 
 class Industry(_Model):
@@ -139,8 +140,14 @@ def load_document_template(doc_type: str, library_dir: Path | None = None) -> Do
     return index.get(GENERIC_DOCUMENT, DocumentTemplate(type=GENERIC_DOCUMENT, label="Document"))
 
 
-def list_archetypes(library_dir: Path | None = None) -> list[Archetype]:
-    return sorted(_archetype_index(library_dir or _LIBRARY_DIR).values(), key=lambda a: a.name)
+def filter_mature(archetypes: list[Archetype]) -> list[Archetype]:
+    """Drop archetypes flagged mature (for minors audiences, spec §7.6)."""
+    return [a for a in archetypes if not a.mature]
+
+
+def list_archetypes(library_dir: Path | None = None, *, include_mature: bool = True) -> list[Archetype]:
+    items = sorted(_archetype_index(library_dir or _LIBRARY_DIR).values(), key=lambda a: a.name)
+    return items if include_mature else filter_mature(items)
 
 
 def list_industries(library_dir: Path | None = None) -> list[Industry]:

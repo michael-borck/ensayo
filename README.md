@@ -117,6 +117,17 @@ rules** gate content server-side. Configuration: `ENSAYO_DB`, `WORKING_CLONES_DI
 > **visibility rules**, and the lecturer dashboard. Remaining polish: a guided
 > multi-step wizard UI (today it's a single YAML form).
 
+### Safe Mode / audience (Phase 6)
+
+Each simulation has an audience: `adults` or `minors`. `minors` is a **bundle of
+safe defaults** (spec §7), not one flag — keyword chatbots only, shared-password
+auth (no PII), LLM-assist off, single-company, plus a privacy notice on every page
+and aggregate-only audit logging. A UC may deviate, but only by acknowledging the
+override in `audience_overrides:`; the dashboard then shows a persistent banner
+listing the non-default settings, and `GET /api/v1/simulations/{id}/audience`
+reports whether the simulation is still minors-safe. Archetypes flagged `mature`
+are filtered out of minors simulations.
+
 ### Student accounts (Phase 5)
 
 Each simulation picks an auth mode: **shared password**, **individual accounts**
