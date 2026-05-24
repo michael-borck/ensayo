@@ -156,6 +156,26 @@ def migrate(conn: sqlite3.Connection) -> None:
             created_at     TEXT NOT NULL,
             FOREIGN KEY (simulation_id) REFERENCES simulations(id)
         );
+
+        CREATE TABLE IF NOT EXISTS conversation_sessions (
+            id                TEXT PRIMARY KEY,
+            simulation_id     TEXT NOT NULL,
+            student_id        TEXT NOT NULL,
+            application_id    TEXT,
+            kind              TEXT NOT NULL DEFAULT 'conversation',
+            persona_slug      TEXT DEFAULT '',
+            persona_name      TEXT DEFAULT '',
+            system_prompt     TEXT DEFAULT '',
+            transcript        TEXT DEFAULT '[]',
+            status            TEXT NOT NULL DEFAULT 'active',
+            turn_count        INTEGER NOT NULL DEFAULT 0,
+            target_turns      INTEGER NOT NULL DEFAULT 4,
+            on_complete_event TEXT DEFAULT '',
+            assessment_json   TEXT DEFAULT '',
+            created_at        TEXT NOT NULL,
+            completed_at      TEXT,
+            FOREIGN KEY (simulation_id) REFERENCES simulations(id)
+        );
         """
     )
     # Idempotent column additions for existing databases (spec §15.1 pattern).

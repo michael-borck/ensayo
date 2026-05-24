@@ -16,6 +16,7 @@ from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from . import conversation as convo
 from . import students as student_mgmt
 from . import studentauth
 from . import workflow_runtime as wfr
@@ -79,6 +80,19 @@ class ApplicationReq(BaseModel):
 class AdvanceReq(BaseModel):
     event: str
     context: dict = {}
+
+
+class ConversationStartReq(BaseModel):
+    kind: str = "conversation"
+    persona_slug: str
+    persona_name: str = ""
+    application_id: str | None = None
+    on_complete_event: str = ""
+    target_turns: int = 4
+
+
+class ConversationMessageReq(BaseModel):
+    text: str
 
 
 class AuthModeReq(BaseModel):
@@ -532,6 +546,51 @@ def create_app() -> FastAPI:
         try:
             return wfr.mark_read(conn, sim, student["id"], message_id)
         except wfr.WorkflowRuntimeError as exc:
+            raise HTTPException(exc.status, str(exc)) from exc
+
+    # --- 1-on-1 conversation surface --------------------------------------
+    @app.post("/api/v1/sims/{slug}/conversations", status_code=201)
+    def conversation_start(slug: str, req: ConversationStartReq,
+                           student: dict = Depends(studentauth.current_student),
+                           conn: sqlite3.Connection = Depends(get_conn)):
+        sim = _student_sim(slug, student, conn)
+        try:
+            return convo.start(conn, sim, student["id"], kind=req.kind,
+                               persona_slug=req.persona_slug, persona_name=req.persona_name,
+                               application_id=req.application_id,
+                               on_complete_event=req.on_complete_event,
+                               target_turns=req.target_turns)
+        except convo.ConversationError as exc:
+            raise HTTPException(exc.status, str(exc)) from exc
+
+    @app.get("/api/v1/sims/{slug}/conversations/{sid}")
+    def conversation_get(slug: str, sid: str,
+                         student: dict = Depends(studentauth.current_student),
+                         conn: sqlite3.Connection = Depends(get_conn)):
+        sim = _student_sim(slug, student, conn)
+        try:
+            return convo.get(conn, sim, sid, student["id"])
+        except convo.ConversationError as exc:
+            raise HTTPException(exc.status, str(exc)) from exc
+
+    @app.post("/api/v1/sims/{slug}/conversations/{sid}/message")
+    def conversation_message(slug: str, sid: str, req: ConversationMessageReq,
+                             student: dict = Depends(studentauth.current_student),
+                             conn: sqlite3.Connection = Depends(get_conn)):
+        sim = _student_sim(slug, student, conn)
+        try:
+            return convo.send_message(conn, sim, sid, student["id"], req.text)
+        except convo.ConversationError as exc:
+            raise HTTPException(exc.status, str(exc)) from exc
+
+    @app.post("/api/v1/sims/{slug}/conversations/{sid}/complete")
+    def conversation_complete(slug: str, sid: str,
+                              student: dict = Depends(studentauth.current_student),
+                              conn: sqlite3.Connection = Depends(get_conn)):
+        sim = _student_sim(slug, student, conn)
+        try:
+            return convo.complete(conn, sim, sid, student["id"])
+        except convo.ConversationError as exc:
             raise HTTPException(exc.status, str(exc)) from exc
 
     # --- workflow runtime: UC view + advance ------------------------------
