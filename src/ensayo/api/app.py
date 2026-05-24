@@ -26,6 +26,7 @@ from .auth import (
     verify_password,
 )
 from .db import init_db
+from .provision import provision_chatbots
 from .service import (
     ServiceError,
     add_visibility_rule,
@@ -65,6 +66,10 @@ class CreateSimReq(BaseModel):
 
 class GenerateReq(BaseModel):
     with_llm: bool = False
+    build: bool = True
+
+
+class ProvisionReq(BaseModel):
     build: bool = True
 
 
@@ -216,6 +221,16 @@ def create_app() -> FastAPI:
         sim = _owned_sim(sim_id, uc, conn)
         try:
             return publish(conn, sim)
+        except ServiceError as exc:
+            raise HTTPException(400, str(exc)) from exc
+
+    @app.post("/api/v1/simulations/{sim_id}/provision-chatbots")
+    def provision_sim(sim_id: str, req: ProvisionReq,
+                      uc: sqlite3.Row = Depends(current_uc),
+                      conn: sqlite3.Connection = Depends(get_conn)):
+        sim = _owned_sim(sim_id, uc, conn)
+        try:
+            return provision_chatbots(conn, sim, build=req.build)
         except ServiceError as exc:
             raise HTTPException(400, str(exc)) from exc
 
