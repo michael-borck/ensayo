@@ -275,6 +275,17 @@ def create_app() -> FastAPI:
         return [{"name": a.name, "label": a.label, "tier": a.default_tier,
                  "mature": a.mature} for a in list_archetypes()]
 
+    @app.get("/api/v1/workflows")
+    def list_workflow_catalog(uc: sqlite3.Row = Depends(current_uc)):
+        from ..workflow import list_workflows, load_workflow
+        out = []
+        for name in list_workflows():
+            try:
+                out.append({"name": name, "description": load_workflow(name).description})
+            except Exception:
+                out.append({"name": name, "description": ""})
+        return out
+
     @app.get("/api/v1/simulations")
     def list_sims(uc: sqlite3.Row = Depends(current_uc),
                   conn: sqlite3.Connection = Depends(get_conn)):

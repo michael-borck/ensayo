@@ -89,7 +89,8 @@
               <option value="email_only">Email only</option>
             </select>
           </div>
-          <div></div>
+          <div><label>Workflow (student lifecycle)</label>
+            <select id="simWorkflow" class="ensayo-chat-input"></select></div>
         </div>
         <label>company.yaml</label>
         <textarea id="simYaml"></textarea>
@@ -131,7 +132,11 @@
               </select></div>
             <div><label>Shared password (optional)</label><input id="wPw" /></div>
           </div>
-          <label>Theme</label><select id="wTheme"></select>
+          <div class="field-row">
+            <div><label>Theme</label><select id="wTheme"></select></div>
+            <div><label>Workflow <span class="muted small">(student lifecycle)</span></label>
+              <select id="wWorkflow"></select></div>
+          </div>
         </div>
 
         <div data-step="1" hidden>
@@ -428,6 +433,17 @@ documents:
     showApp(data.uc);
   }
 
+  let wfLoaded = false;
+  async function loadWorkflows() {
+    if (wfLoaded) return;
+    const wfs = await (await api("/api/v1/workflows")).json().catch(() => []);
+    const opts = '<option value="">None (browse-only)</option>'
+      + (wfs || []).map(w => `<option value="${w.name}">${w.name}</option>`).join("");
+    if ($("wWorkflow")) $("wWorkflow").innerHTML = opts;
+    if ($("simWorkflow")) $("simWorkflow").innerHTML = opts;
+    wfLoaded = true;
+  }
+
   function showApp(uc) {
     $("login").classList.add("hidden");
     $("app").classList.remove("hidden");
@@ -435,6 +451,7 @@ documents:
     $("who").textContent = uc.email + " (" + uc.role + ")";
     $("simYaml").value = TEMPLATE;
     msg("");
+    loadWorkflows();
     refresh();
   }
 
@@ -480,7 +497,8 @@ documents:
       ? { company_yaml: $("simYaml").value, with_llm: $("simLlm").checked, build: $("simBuild").checked }
       : { name: $("simName").value, company_yaml: $("simYaml").value,
           shared_password: $("simPw").value || null, auth_mode: $("simAuth").value,
-          with_llm: $("simLlm").checked, build: $("simBuild").checked });
+          workflow: $("simWorkflow").value, with_llm: $("simLlm").checked,
+          build: $("simBuild").checked });
     const url = editing ? `/api/v1/simulations/${editingId}` : "/api/v1/simulations";
     const r = await api(url, { method: editing ? "PUT" : "POST", body });
     const data = await r.json().catch(() => ({}));
@@ -596,7 +614,8 @@ documents:
     $("wMsg").textContent = "Creating… (build can take a few seconds)";
     const body = JSON.stringify({
       name: $("wName").value, config: wAssemble(), auth_mode: $("wAuth").value,
-      shared_password: $("wPw").value || null, with_llm: $("wLlm").checked, build: $("wBuild").checked,
+      shared_password: $("wPw").value || null, workflow: $("wWorkflow").value,
+      with_llm: $("wLlm").checked, build: $("wBuild").checked,
     });
     const r = await api("/api/v1/simulations", { method: "POST", body });
     const d = await r.json().catch(() => ({}));

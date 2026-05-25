@@ -26,8 +26,8 @@ uv run ensayo serve                                             # http://127.0.0
 > - **Multi-site sims** are created with the CLI (`ensayo generate`), not the
 >   dashboard. The dashboard create flow is single-company.
 > - **Workflow-driven student journeys** (applications/interviews/etc.) need a sim
->   created with a `workflow` set. The wizard doesn't expose `workflow` yet, so
->   scenario F1 uses the API to create one. *(Known gap — see "Gaps" at the end.)*
+>   created with a **Workflow** chosen — pick one in the wizard's *Basics* step
+>   (scenario F1).
 
 ---
 
@@ -157,18 +157,12 @@ target_id:"x", action:"hide"}`. Then `GET /api/v1/sims/{slug}/visibility`.
 roles, filterable), and two company sites each in a different theme.
 
 ### F1 — Workflow-driven journey ☐
-*Create a workflow-enabled sim via the API (the runtime needs a DB sim with a
-workflow):*
-```bash
-TOKEN=… # from POST /api/v1/auth/login
-curl -s -X POST localhost:8000/api/v1/simulations -H "Authorization: Bearer $TOKEN" \
-  -H 'content-type: application/json' -d '{"name":"Internship Test",
-   "company_yaml":"company:\n  name: Flow Co\nemployees:\n  - {name: Ada Byron, role: Manager, archetype: founder_ceo}",
-   "auth_mode":"individual_account","workflow":"internship","build":false}'
-```
-Then in the **portal** (slug `flow-co`): register → **Apply**.
+**Steps:** in the wizard's **Basics** step, choose auth *individual accounts* and
+**Workflow: internship**; add a company + a person; Create. Then in the **portal**
+(that sim's slug): register → **Apply**.
 **Expected:** an application appears at stage *application*; the inbox shows a
-"submit your application" message.
+"submit your application" message. *(Power users can still create one via the API
+with `"workflow":"internship"`.)*
 
 ### F2 — Interview advances the workflow ☐
 **Steps:** (instructor/system) advance the application past *application_submitted*
@@ -224,10 +218,9 @@ workflow trace ends at *complete*.
 
 ## Known gaps to be aware of while testing
 
-- **Workflow selection isn't in the dashboard wizard yet** — set `workflow` via the
-  API/CLI (scenario F1). The static multi-site `simulation.yaml` carries `workflow`,
-  but the *runtime* application state lives in a DB sim.
-- **Multi-site creation is CLI-only** (no dashboard "new multi-site" screen).
+- **Multi-site creation is CLI-only** (no dashboard "new multi-site" screen). The
+  dashboard create flow — wizard or YAML — is single-company (you can still set a
+  workflow on it for the student-journey surfaces).
 - **LLM/AnythingLLM** features show stub/dry-run output unless real providers are
   configured.
 - **Publish** needs a GitHub repo + `GITHUB_TOKEN`; otherwise it reports the missing

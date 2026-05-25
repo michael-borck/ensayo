@@ -19,7 +19,8 @@ Click **+ New simulation** to open the **guided wizard** — you never have to w
 YAML. It steps through:
 
 1. **Basics** — simulation name, audience (adults/minors), student sign-in
-   (shared password / individual accounts / email only), and theme.
+   (shared password / individual accounts / email only), theme, and an optional
+   **workflow** (e.g. `internship`) that drives the student's stage-by-stage journey.
 2. **Company** — name, industry, location, description.
 3. **Scenario** — the central challenge (pick a type; name + description optional).
 4. **People** — add the employees students can interview (name, role, archetype).

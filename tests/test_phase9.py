@@ -54,6 +54,17 @@ def test_wizard_catalog_endpoints(client, auth):
     assert not any(t["name"] in ("portal-clean", "directory") for t in themes)
     archetypes = client.get("/api/v1/archetypes", headers=auth).json()
     assert any(a["name"] == "founder_ceo" for a in archetypes)
+    workflows = client.get("/api/v1/workflows", headers=auth).json()
+    assert {"internship", "medical_network"} <= {w["name"] for w in workflows}
+
+
+def test_create_with_workflow(client, auth):
+    """The wizard sends a chosen workflow; it's stored on the simulation."""
+    r = client.post("/api/v1/simulations", headers=auth, json={
+        "name": "Workflow Sim", "config": WIZ_CONFIG, "auth_mode": "individual_account",
+        "workflow": "internship", "build": False})
+    assert r.status_code == 201, r.text
+    assert r.json()["workflow"] == "internship"
 
 
 def test_docs_guides_present():
