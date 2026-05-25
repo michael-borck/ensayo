@@ -43,11 +43,11 @@ const types = [...new Set(jobs.map((j: any) => j.employment_type).filter(Boolean
       <p class="muted">{jobs.length} role(s) across {companies.length} organisation(s).</p>
 
       <div class="filters">
-        <select id="fCompany">
+        <select id="fCompany" aria-label="Filter by organisation">
           <option value="">All organisations</option>
           {companies.map((c) => <option value={c}>{c}</option>)}
         </select>
-        <select id="fType">
+        <select id="fType" aria-label="Filter by employment type">
           <option value="">All types</option>
           {types.map((t) => <option value={t}>{t}</option>)}
         </select>

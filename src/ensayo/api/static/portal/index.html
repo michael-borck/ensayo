@@ -48,9 +48,9 @@
 
     <section id="login" class="card">
       <h2>Sign in</h2>
-      <label>Simulation</label><input id="slug" placeholder="e.g. workready-mini" />
-      <label>Email</label><input id="email" type="email" />
-      <label>Password <span class="muted small">(leave blank for email-only sims)</span></label>
+      <label for="slug">Simulation</label><input id="slug" placeholder="e.g. workready-mini" />
+      <label for="email">Email</label><input id="email" type="email" />
+      <label for="password">Password <span class="muted small">(leave blank for email-only sims)</span></label>
       <input id="password" type="password" />
       <div style="margin-top:0.8rem"><button class="primary" id="loginBtn">Sign in</button>
         <button id="registerBtn">Register</button></div>
@@ -59,7 +59,7 @@
     <section id="app" class="hidden">
       <h2>My applications</h2>
       <div class="row" style="margin-bottom:0.5rem">
-        <input id="applyCompany" placeholder="company (optional)" style="max-width:200px" />
+        <input id="applyCompany" aria-label="Company to apply to (optional)" placeholder="company (optional)" style="max-width:200px" />
         <button class="primary" id="applyBtn">+ Apply</button>
       </div>
       <div id="apps"></div>
@@ -70,8 +70,8 @@
       <h2>Talk to someone</h2>
       <div class="card">
         <div class="row">
-          <select id="persona" style="max-width:240px"></select>
-          <select id="kind" style="max-width:180px">
+          <select id="persona" aria-label="Person to talk to" style="max-width:240px"></select>
+          <select id="kind" aria-label="Conversation type" style="max-width:180px">
             <option value="hiring_interview">Interview</option>
             <option value="coaching">Coaching</option>
             <option value="consultation">Consultation</option>
@@ -82,7 +82,7 @@
         <div id="convo" class="hidden" style="margin-top:0.8rem">
           <div id="transcript" style="max-height:300px; overflow:auto"></div>
           <div class="row" style="margin-top:0.5rem">
-            <input id="convoText" placeholder="Type a reply…" />
+            <input id="convoText" aria-label="Your message" placeholder="Type a reply…" />
             <button id="sendConvo">Send</button>
             <button id="completeConvo">Finish</button>
           </div>
@@ -91,8 +91,8 @@
 
       <h2>Submit work</h2>
       <div class="card">
-        <input id="subTitle" placeholder="Task title" />
-        <textarea id="subBody" placeholder="Your submission…"></textarea>
+        <input id="subTitle" aria-label="Task title" placeholder="Task title" />
+        <textarea id="subBody" aria-label="Your submission" placeholder="Your submission…"></textarea>
         <div class="row" style="margin-top:0.5rem"><button class="primary" id="submitBtn">Submit</button></div>
         <div id="subs" style="margin-top:0.6rem"></div>
       </div>

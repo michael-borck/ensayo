@@ -23,5 +23,9 @@ out/
 .env
 instance.env
 
+# A11y audit deps (created by running scripts/a11y/audit.mjs)
+scripts/a11y/package.json
+scripts/a11y/package-lock.json
+
 # OS
 .DS_Store

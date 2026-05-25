@@ -59,9 +59,9 @@
       <h2>Sign in</h2>
       <p class="muted small">Use the UC account created with
         <code>ensayo admin create-uc</code>.</p>
-      <label>Email</label>
+      <label for="email">Email</label>
       <input id="email" type="email" autocomplete="username" />
-      <label>Password</label>
+      <label for="password">Password</label>
       <input id="password" type="password" autocomplete="current-password" />
       <div style="margin-top:1rem"><button class="primary" id="loginBtn">Sign in</button></div>
     </section>
@@ -531,20 +531,20 @@ documents:
   function wEmpRow() {
     const div = document.createElement("div"); div.className = "row"; div.style.marginBottom = "0.4rem";
     const opts = wArchetypes.map(a => `<option value="${a.name}">${a.label || a.name}</option>`).join("");
-    div.innerHTML = `<input class="wEmpName" placeholder="Name" style="flex:2">
-      <input class="wEmpRole" placeholder="Role" style="flex:2">
-      <select class="wEmpArch" style="flex:2">${opts}</select>
-      <button class="ghost wEmpDel" type="button">✕</button>`;
+    div.innerHTML = `<input class="wEmpName" aria-label="Employee name" placeholder="Name" style="flex:2">
+      <input class="wEmpRole" aria-label="Employee role" placeholder="Role" style="flex:2">
+      <select class="wEmpArch" aria-label="Employee archetype" style="flex:2">${opts}</select>
+      <button class="ghost wEmpDel" type="button" aria-label="Remove employee">✕</button>`;
     div.querySelector(".wEmpDel").onclick = () => div.remove();
     return div;
   }
   function wDocRow() {
     const div = document.createElement("div"); div.className = "row"; div.style.marginBottom = "0.4rem";
-    div.innerHTML = `<select class="wDocType" style="flex:1">
+    div.innerHTML = `<select class="wDocType" aria-label="Document type" style="flex:1">
         ${["policy", "support", "internal", "press", "custom"].map(t => `<option>${t}</option>`).join("")}</select>
-      <input class="wDocTitle" placeholder="Title" style="flex:2">
-      <input class="wDocBrief" placeholder="One-line brief" style="flex:3">
-      <button class="ghost wDocDel" type="button">✕</button>`;
+      <input class="wDocTitle" aria-label="Document title" placeholder="Title" style="flex:2">
+      <input class="wDocBrief" aria-label="Document brief" placeholder="One-line brief" style="flex:3">
+      <button class="ghost wDocDel" type="button" aria-label="Remove document">✕</button>`;
     div.querySelector(".wDocDel").onclick = () => div.remove();
     return div;
   }
