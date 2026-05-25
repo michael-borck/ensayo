@@ -14,7 +14,12 @@ const accent = colors.accent ?? "#00d4aa";
 const secondary = colors.secondary ?? primary;
 
 const pageTitle = title ? `${title} · ${company.name}` : company.name;
-const css = `:root{--brand-primary:${primary};--brand-secondary:${secondary};--brand-accent:${accent};}`;
+// Brand vars + a baseline accessibility layer (skip link + visible focus) shared
+// by every company theme via this layout (WCAG 2.1 AA).
+const css = `:root{--brand-primary:${primary};--brand-secondary:${secondary};--brand-accent:${accent};}
+a.skip-link{position:absolute;left:-999px;top:0;z-index:100;padding:0.6rem 1rem;border-radius:0 0 8px 0;background:var(--brand-accent,#00d4aa);color:#04201a;font-weight:700;}
+a.skip-link:focus{left:0;}
+:focus-visible{outline:3px solid var(--brand-accent,#00d4aa);outline-offset:2px;}`;
 
 // Globals for client scripts: where the VPS API lives (cross-origin on GitHub
 // Pages; "" = same origin) and this simulation's slug.
@@ -40,6 +45,7 @@ const nav = [
     <script is:inline set:html={globals}></script>
   </head>
   <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
     <header class="site-header">
       <div class="container header-inner">
         <a class="brand" href={base}>
@@ -52,7 +58,7 @@ const nav = [
       </div>
     </header>
 
-    <main class="container site-main">
+    <main id="main-content" class="container site-main">
       <slot />
     </main>
 

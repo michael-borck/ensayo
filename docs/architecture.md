@@ -72,5 +72,7 @@ Phase 5  Individual student accounts      ✅ accounts/email-only/whitelist/rese
 Phase 6  Safe mode / audience config      ✅ bundle + override banners + mature filter + privacy notice
 Phase 7  Workflow engine spike (gate)     ✅ GATE PASSED — declarative engine (ADR-0008)
 Phase 8  Multi-site simulations           ✅ generation + workflow runtime + 6 surfaces + student portal + exports + portal-clean/directory themes
-Phase 9  Polish + documentation            ← last phase
+Phase 9  Polish + documentation            ✅ guides, security review, a11y pass, theme gallery
 ```
+
+**All 9 phases complete (v0.1.0).**

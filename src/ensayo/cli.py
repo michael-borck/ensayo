@@ -154,6 +154,49 @@ def list_cmd(themes_dir: Path | None) -> None:
 
 
 @main.command()
+@click.option("--output", "-o", default="./gallery", type=click.Path(path_type=Path),
+              help="Output directory for the theme gallery.")
+@click.option("--config", "-c", default=None, type=click.Path(path_type=Path),
+              help="Company config to render (default: bundled NexusPoint example).")
+@_THEMES_OPT
+@click.option("--no-build", is_flag=True, default=False, help="Content only; skip Astro builds.")
+def gallery(output: Path, config: Path | None, themes_dir: Path | None,
+            no_build: bool) -> None:
+    """Render one demo company across every company theme for visual comparison."""
+    tdir = themes_dir or default_themes_dir()
+    cfg = config or (default_themes_dir().parent / "examples" / "nexuspoint" / "company.yaml")
+    if not Path(cfg).exists():
+        raise click.ClickException(f"demo config not found: {cfg}")
+    names = [m.name for m in list_themes(tdir) if "company" in m.content_props]
+    if not names:
+        raise click.ClickException("no company themes found")
+    output.mkdir(parents=True, exist_ok=True)
+    log = lambda m: click.echo(click.style("  " + m, dim=True))
+    built = []
+    for name in names:
+        click.secho(f"→ {name}", fg="cyan")
+        try:
+            res = generate(cfg, output / ".work" / name, theme=name, themes_dir=tdir,
+                           base=f"/{name}/", build=not no_build, log=log)
+        except (ConfigError, ThemeError, GenerationError) as exc:
+            raise click.ClickException(str(exc)) from exc
+        if res.built and res.dist_dir:
+            import shutil
+            site = output / name
+            if site.exists():
+                shutil.rmtree(site)
+            shutil.copytree(res.dist_dir, site)
+        built.append(name)
+    links = "\n".join(f'    <li><a href="./{n}/">{n}</a></li>' for n in built)
+    (output / "index.html").write_text(
+        f"<!doctype html><meta charset=utf-8><title>Ensayo theme gallery</title>"
+        f"<h1>Ensayo theme gallery</h1><ul>\n{links}\n</ul>", encoding="utf-8")
+    click.secho(f"✓ Gallery of {len(built)} themes → {output}", fg="green", bold=True)
+    if not no_build:
+        click.echo(f"  Preview: python3 -m http.server -d {output} 8000")
+
+
+@main.command()
 @click.option("--output", "-o", default="./company.yaml", type=click.Path(path_type=Path))
 @click.option("--name", default="Acme Corp", help="Company name to seed the file with.")
 def init(output: Path, name: str) -> None:

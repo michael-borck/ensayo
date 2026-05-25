@@ -13,17 +13,23 @@ simulations, not a single simulation.
 
 ## Documentation
 
-- [`docs/SPECIFICATION.md`](docs/SPECIFICATION.md) — the canonical (v2) design.
-- [`docs/architecture.md`](docs/architecture.md) — the short, navigable overview.
-- [`docs/adr/`](docs/adr/) — Architecture Decision Records (why it's built this way).
-- [`CONTEXT.md`](CONTEXT.md) — domain vocabulary used throughout the code.
+**Guides** (in [`docs/guides/`](docs/guides/)):
+- [Getting Started](docs/guides/getting-started.md) — UC walkthrough, nothing → running sim.
+- [Configuration Reference](docs/guides/configuration-reference.md) — every `company.yaml` / `simulation.yaml` field.
+- [Deployment](docs/guides/deployment.md) — Docker, GitHub Pages, AnythingLLM, custom domains.
+- [Theme Authoring](docs/guides/theme-authoring.md) · [Archetype Authoring](docs/guides/archetype-authoring.md) · [Safe Mode](docs/guides/safe-mode.md).
 
-> **Status: Phase 0 (Foundation).** This is the first slice of a phased build.
-> What works today: the `ensayo` CLI, `company.yaml` loading + validation, content
-> generation (employee personas, prompts, documents), one Astro theme
-> (`tech-modern`), and a deterministic keyword chatbot. The FastAPI dashboard,
-> LLM-assisted generation, AnythingLLM, multi-site, and the rest follow in later
-> phases (see the roadmap in the spec, §14).
+**Design & reference:**
+- [`docs/SPECIFICATION.md`](docs/SPECIFICATION.md) — the canonical (v2) design.
+- [`docs/architecture.md`](docs/architecture.md) — navigable overview · [`docs/adr/`](docs/adr/) — decision records.
+- [`docs/security-review.md`](docs/security-review.md) · [`docs/accessibility.md`](docs/accessibility.md) · [`CHANGELOG.md`](CHANGELOG.md) · [`CONTEXT.md`](CONTEXT.md).
+
+> **Status: all 9 phases complete (v0.1.0).** The `ensayo` CLI + generator, 8 Astro
+> themes, LLM-assisted content generation, the FastAPI service + lecturer dashboard,
+> GitHub Pages publishing, AnythingLLM chatbots, student accounts, safe mode, the
+> declarative workflow engine, and full multi-site simulations (portal + companies +
+> six interaction surfaces + student portal + exports) are all built and tested. See
+> the [CHANGELOG](CHANGELOG.md) and the roadmap in [`docs/architecture.md`](docs/architecture.md).
 
 ## Architecture (current)
 
