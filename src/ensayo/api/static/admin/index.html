@@ -100,7 +100,88 @@
         <div class="row" style="margin-top:1rem">
           <button class="primary" id="createBtn">Create</button>
           <button class="ghost" id="cancelBtn">Cancel</button>
+          <a href="#" id="toWizard" class="small" style="margin-left:auto">← Guided wizard</a>
           <span id="createMsg" class="small muted"></span>
+        </div>
+      </div>
+
+      <div id="wizard" class="card hidden" style="margin-top:1rem">
+        <div class="row" style="justify-content:space-between">
+          <h2 id="wizTitle" style="margin:0">New simulation</h2>
+          <a href="#" id="toYaml" class="small">Advanced: paste YAML →</a>
+        </div>
+        <div id="wizSteps" class="small muted" style="margin:0.4rem 0 0.8rem"></div>
+
+        <div data-step="0">
+          <div class="field-row">
+            <div><label>Simulation name</label>
+              <input id="wName" placeholder="CloudCore — ISYS6018 Sem1 2026" /></div>
+            <div><label>Audience</label>
+              <select id="wAudience">
+                <option value="adults">Adults (university)</option>
+                <option value="minors">Minors (school — safe mode)</option>
+              </select></div>
+          </div>
+          <div class="field-row">
+            <div><label>Student sign-in</label>
+              <select id="wAuth">
+                <option value="shared_password">Shared password</option>
+                <option value="individual_account">Individual accounts</option>
+                <option value="email_only">Email only</option>
+              </select></div>
+            <div><label>Shared password (optional)</label><input id="wPw" /></div>
+          </div>
+          <label>Theme</label><select id="wTheme"></select>
+        </div>
+
+        <div data-step="1" hidden>
+          <div class="field-row">
+            <div><label>Company name</label><input id="wCoName" placeholder="CloudCore Networks" /></div>
+            <div><label>Industry</label><select id="wIndustry"></select></div>
+          </div>
+          <div class="field-row">
+            <div><label>Tagline</label><input id="wTagline" /></div>
+            <div><label>Location</label><input id="wLocation" placeholder="Perth, WA" /></div>
+          </div>
+          <label>Description <span class="muted small">(optional; LLM can write it)</span></label>
+          <textarea id="wDesc" style="min-height:70px"></textarea>
+        </div>
+
+        <div data-step="2" hidden>
+          <div class="field-row">
+            <div><label>Scenario type</label><select id="wScenType"></select></div>
+            <div><label>Scenario name</label><input id="wScenName" placeholder="The central challenge" /></div>
+          </div>
+          <label>Scenario description <span class="muted small">(optional; LLM can write it)</span></label>
+          <textarea id="wScenDesc"></textarea>
+        </div>
+
+        <div data-step="3" hidden>
+          <p class="muted small">Add the people students can interview. Backstories can be LLM-generated.</p>
+          <div id="wEmps"></div>
+          <button class="ghost" id="wAddEmp">+ Add person</button>
+        </div>
+
+        <div data-step="4" hidden>
+          <p class="muted small">Add documents (policies, guides). Bodies can be LLM-generated.</p>
+          <div id="wDocs"></div>
+          <button class="ghost" id="wAddDoc">+ Add document</button>
+        </div>
+
+        <div data-step="5" hidden>
+          <div class="checks">
+            <label><input type="checkbox" id="wLlm" /> Generate content with LLM (backstories, docs, scenario)</label>
+            <label><input type="checkbox" id="wBuild" checked /> Build the site now</label>
+          </div>
+          <p id="wReview" class="small muted" style="margin-top:0.6rem"></p>
+        </div>
+
+        <div class="row" style="margin-top:1rem">
+          <button class="ghost" id="wBack">Back</button>
+          <button class="primary" id="wNext">Next</button>
+          <button class="primary hidden" id="wCreate">Create simulation</button>
+          <button class="ghost" id="wCancel">Cancel</button>
+          <span id="wMsg" class="small muted"></span>
         </div>
       </div>
 
@@ -391,7 +472,6 @@ documents:
     $("newForm").classList.remove("hidden");
     $("newForm").scrollIntoView({ behavior: "smooth" });
   }
-  $("newBtn").onclick = openNew;
   $("cancelBtn").onclick = () => $("newForm").classList.add("hidden");
   $("createBtn").onclick = async () => {
     const editing = !!editingId;
@@ -407,6 +487,122 @@ documents:
     if (!r.ok) { $("createMsg").textContent = ""; msg(data.detail || "Failed", "err"); return; }
     $("createMsg").textContent = ""; $("newForm").classList.add("hidden");
     msg(editing ? "Saved." : ("Created " + data.slug), "ok"); refresh();
+  };
+
+  // --- guided wizard ---
+  const INDUSTRIES = ["general", "cloud_services", "software_development", "finance",
+    "mining", "government", "nonprofit", "consulting"];
+  const SCENARIOS = ["growth", "breach", "digital_transformation", "crisis", "merger", "custom"];
+  let wStep = 0, wArchetypes = [], wCatalogsLoaded = false;
+
+  async function wLoadCatalogs() {
+    if (wCatalogsLoaded) return;
+    $("wIndustry").innerHTML = INDUSTRIES.map(i => `<option value="${i}">${i.replace(/_/g, " ")}</option>`).join("");
+    $("wScenType").innerHTML = SCENARIOS.map(s => `<option value="${s}">${s.replace(/_/g, " ")}</option>`).join("");
+    const themes = await (await api("/api/v1/themes")).json().catch(() => []);
+    $("wTheme").innerHTML = (themes && themes.length ? themes : [{ name: "tech-modern" }])
+      .map(t => `<option value="${t.name}">${t.name}</option>`).join("");
+    wArchetypes = await (await api("/api/v1/archetypes")).json().catch(() => []);
+    wCatalogsLoaded = true;
+  }
+
+  function wStepIndicator() {
+    const labels = ["Basics", "Company", "Scenario", "People", "Documents", "Finish"];
+    $("wizSteps").innerHTML = labels.map((l, i) =>
+      i === wStep ? `<strong style="color:var(--accent)">${i + 1}. ${l}</strong>` : `${i + 1}. ${l}`)
+      .join("  ·  ");
+  }
+
+  function wShow(n) {
+    wStep = n;
+    document.querySelectorAll("#wizard [data-step]").forEach(el => { el.hidden = (+el.dataset.step !== n); });
+    $("wBack").style.visibility = n === 0 ? "hidden" : "visible";
+    $("wNext").classList.toggle("hidden", n >= 5);
+    $("wCreate").classList.toggle("hidden", n < 5);
+    wStepIndicator();
+    if (n === 5) {
+      const emps = document.querySelectorAll("#wEmps .row").length;
+      const docs = document.querySelectorAll("#wDocs .row").length;
+      $("wReview").textContent = `${$("wCoName").value || "(company)"} · ${emps} people · `
+        + `${docs} documents · theme ${$("wTheme").value} · audience ${$("wAudience").value}`;
+    }
+  }
+
+  function wEmpRow() {
+    const div = document.createElement("div"); div.className = "row"; div.style.marginBottom = "0.4rem";
+    const opts = wArchetypes.map(a => `<option value="${a.name}">${a.label || a.name}</option>`).join("");
+    div.innerHTML = `<input class="wEmpName" placeholder="Name" style="flex:2">
+      <input class="wEmpRole" placeholder="Role" style="flex:2">
+      <select class="wEmpArch" style="flex:2">${opts}</select>
+      <button class="ghost wEmpDel" type="button">✕</button>`;
+    div.querySelector(".wEmpDel").onclick = () => div.remove();
+    return div;
+  }
+  function wDocRow() {
+    const div = document.createElement("div"); div.className = "row"; div.style.marginBottom = "0.4rem";
+    div.innerHTML = `<select class="wDocType" style="flex:1">
+        ${["policy", "support", "internal", "press", "custom"].map(t => `<option>${t}</option>`).join("")}</select>
+      <input class="wDocTitle" placeholder="Title" style="flex:2">
+      <input class="wDocBrief" placeholder="One-line brief" style="flex:3">
+      <button class="ghost wDocDel" type="button">✕</button>`;
+    div.querySelector(".wDocDel").onclick = () => div.remove();
+    return div;
+  }
+
+  async function openWizard() {
+    await wLoadCatalogs();
+    $("newForm").classList.add("hidden");
+    ["wName", "wPw", "wCoName", "wTagline", "wLocation", "wDesc", "wScenName", "wScenDesc"]
+      .forEach(id => { $(id).value = ""; });
+    $("wEmps").innerHTML = ""; $("wDocs").innerHTML = "";
+    $("wEmps").appendChild(wEmpRow()); $("wDocs").appendChild(wDocRow());
+    $("wMsg").textContent = "";
+    $("wizard").classList.remove("hidden");
+    wShow(0);
+  }
+
+  function wAssemble() {
+    const emps = Array.prototype.map.call(document.querySelectorAll("#wEmps .row"), r => ({
+      name: r.querySelector(".wEmpName").value, role: r.querySelector(".wEmpRole").value,
+      archetype: r.querySelector(".wEmpArch").value || "staff",
+    })).filter(e => e.name.trim());
+    const docs = Array.prototype.map.call(document.querySelectorAll("#wDocs .row"), r => ({
+      type: r.querySelector(".wDocType").value, title: r.querySelector(".wDocTitle").value,
+      brief: r.querySelector(".wDocBrief").value,
+    })).filter(d => d.title.trim());
+    return {
+      company: {
+        name: $("wCoName").value, tagline: $("wTagline").value, industry: $("wIndustry").value,
+        location: $("wLocation").value, profile: { description: $("wDesc").value },
+        scenario: { type: $("wScenType").value, name: $("wScenName").value, description: $("wScenDesc").value },
+      },
+      audience: $("wAudience").value, theme: $("wTheme").value, employees: emps, documents: docs,
+    };
+  }
+
+  $("wBack").onclick = () => wShow(Math.max(0, wStep - 1));
+  $("wNext").onclick = () => {
+    if (wStep === 0 && !$("wName").value.trim()) { $("wMsg").textContent = "Give the simulation a name."; return; }
+    if (wStep === 1 && !$("wCoName").value.trim()) { $("wMsg").textContent = "Give the company a name."; return; }
+    $("wMsg").textContent = ""; wShow(Math.min(5, wStep + 1));
+  };
+  $("wAddEmp").onclick = () => $("wEmps").appendChild(wEmpRow());
+  $("wAddDoc").onclick = () => $("wDocs").appendChild(wDocRow());
+  $("wCancel").onclick = () => $("wizard").classList.add("hidden");
+  $("toYaml").onclick = (e) => { e.preventDefault(); $("wizard").classList.add("hidden"); openNew(); };
+  $("toWizard").onclick = (e) => { e.preventDefault(); openWizard(); };
+  $("newBtn").onclick = openWizard;
+  $("wCreate").onclick = async () => {
+    $("wMsg").textContent = "Creating… (build can take a few seconds)";
+    const body = JSON.stringify({
+      name: $("wName").value, config: wAssemble(), auth_mode: $("wAuth").value,
+      shared_password: $("wPw").value || null, with_llm: $("wLlm").checked, build: $("wBuild").checked,
+    });
+    const r = await api("/api/v1/simulations", { method: "POST", body });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { $("wMsg").textContent = ""; msg(d.detail || "Failed", "err"); return; }
+    $("wMsg").textContent = ""; $("wizard").classList.add("hidden");
+    msg("Created " + d.slug, "ok"); refresh();
   };
 
   boot();

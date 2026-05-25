@@ -68,7 +68,8 @@ class LoginReq(BaseModel):
 
 class CreateSimReq(BaseModel):
     name: str
-    company_yaml: str
+    company_yaml: str = ""          # raw YAML (advanced) …
+    config: dict | None = None      # … or structured fields (the wizard)
     shared_password: str | None = None
     auth_mode: str = "shared_password"
     workflow: str = ""
@@ -240,15 +241,39 @@ def create_app() -> FastAPI:
     @app.post("/api/v1/simulations", status_code=201)
     def create_sim(req: CreateSimReq, uc: sqlite3.Row = Depends(current_uc),
                    conn: sqlite3.Connection = Depends(get_conn)):
+        company_yaml = req.company_yaml
+        if req.config is not None:  # wizard sends structured fields → build the YAML server-side
+            from ..config import dump_config_yaml
+            from ..models import CompanyConfig
+            try:
+                company_yaml = dump_config_yaml(CompanyConfig.model_validate(req.config))
+            except Exception as exc:  # pydantic ValidationError → 422
+                raise HTTPException(422, f"invalid configuration: {exc}") from exc
+        if not company_yaml.strip():
+            raise HTTPException(422, "provide company_yaml or config")
         try:
             return create_simulation(
-                conn, uc["id"], req.name, req.company_yaml,
+                conn, uc["id"], req.name, company_yaml,
                 shared_password=req.shared_password, auth_mode=req.auth_mode,
                 workflow=req.workflow, with_llm=req.with_llm, build=req.build)
         except ConfigError as exc:
             raise HTTPException(422, f"invalid company.yaml:\n{exc}") from exc
         except ServiceError as exc:
             raise HTTPException(400, str(exc)) from exc
+
+    # --- catalogs for the wizard (themes + archetypes) --------------------
+    @app.get("/api/v1/themes")
+    def list_theme_catalog(uc: sqlite3.Row = Depends(current_uc)):
+        from ..themes import default_themes_dir, list_themes
+        return [{"name": m.name, "description": m.description}
+                for m in list_themes(default_themes_dir())
+                if "company" in m.content_props]
+
+    @app.get("/api/v1/archetypes")
+    def list_archetype_catalog(uc: sqlite3.Row = Depends(current_uc)):
+        from ..library import list_archetypes
+        return [{"name": a.name, "label": a.label, "tier": a.default_tier,
+                 "mature": a.mature} for a in list_archetypes()]
 
     @app.get("/api/v1/simulations")
     def list_sims(uc: sqlite3.Row = Depends(current_uc),

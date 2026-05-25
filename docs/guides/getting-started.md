@@ -15,26 +15,26 @@ created for you. (Admins create accounts with
 
 ## 2. Create a simulation
 
-Click **+ New simulation**. You'll provide:
+Click **+ New simulation** to open the **guided wizard** — you never have to write
+YAML. It steps through:
 
-- **Name** — e.g. *"CloudCore Networks — ISYS6018 Sem 1 2026"*.
-- **Student authentication** — pick one:
-  - *Shared password* — one password for the whole class, no student data collected.
-  - *Individual accounts* — each student registers with email + password.
-  - *Email only* — students sign in with just an email.
-- **company.yaml** — the simulation's content. Start from the pre-filled template
-  and edit it, or paste your own. The full schema is in the
-  [Configuration Reference](configuration-reference.md).
-- **Generate content with LLM** (optional) — if a provider is configured, this
-  writes the employee backstories, documents, and scenario for you. Leave it off
-  to use exactly what you wrote (or stub drafts).
+1. **Basics** — simulation name, audience (adults/minors), student sign-in
+   (shared password / individual accounts / email only), and theme.
+2. **Company** — name, industry, location, description.
+3. **Scenario** — the central challenge (pick a type; name + description optional).
+4. **People** — add the employees students can interview (name, role, archetype).
+5. **Documents** — policies/guides (type, title, brief).
+6. **Finish** — tick *Generate content with LLM* (writes backstories/docs/scenario
+   if a provider is configured) and *Build the site*, then **Create**.
 
-Click **Create**. The server validates your config, generates the site into a git
-working clone, and lists it.
+The wizard sends your answers to the server, which builds and validates the
+`company.yaml`, generates the site into a git working clone, and lists it. Leave
+optional fields blank and tick *Generate content with LLM* to let the engine fill
+them in.
 
-> **Tip — start sparse.** You can give just names, roles, and `archetype`s for each
-> employee and a scenario `type`, then tick *Generate content with LLM*. See
-> `examples/sparse/company.yaml`.
+> **Prefer YAML?** Click **Advanced: paste YAML** in the wizard to edit the raw
+> `company.yaml` directly (full schema in the
+> [Configuration Reference](configuration-reference.md)).
 
 ## 3. Edit and iterate
 
