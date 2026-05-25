@@ -28,6 +28,7 @@ simulations, not a single simulation.
 **Design & reference:**
 - [`docs/SPECIFICATION.md`](docs/SPECIFICATION.md) — the canonical (v2) design.
 - [`docs/architecture.md`](docs/architecture.md) — navigable overview · [`docs/adr/`](docs/adr/) — decision records.
+- [`docs/acceptance-testing.md`](docs/acceptance-testing.md) — manual UAT walkthrough (user stories).
 - [`docs/security-review.md`](docs/security-review.md) · [`docs/accessibility.md`](docs/accessibility.md) · [`CHANGELOG.md`](CHANGELOG.md) · [`CONTEXT.md`](CONTEXT.md).
 
 > **Status: all 9 phases complete (v0.1.0).** The `ensayo` CLI + generator, 8 Astro
