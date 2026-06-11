@@ -7,7 +7,8 @@ from pathlib import Path
 import click
 
 from . import __version__
-from .config import ConfigError, dump_config_yaml, is_multisite, load_company_config
+from .config import (ConfigError, dump_config_yaml, is_multisite,
+                     load_company_config, load_simulation_config)
 from .enrich import enrich_config, estimate
 from .generator import GenerationError, generate, generate_multisite
 from .llm import get_provider
@@ -76,8 +77,18 @@ def generate_cmd(config: Path, output: Path, theme: str | None,
 @main.command()
 @click.option("--config", "-c", required=True, type=click.Path(path_type=Path))
 def validate(config: Path) -> None:
-    """Validate a company.yaml without generating anything."""
+    """Validate a company.yaml or simulation.yaml (multi-site auto-detected)."""
     try:
+        if is_multisite(config):
+            sim = load_simulation_config(config)
+            click.secho("✓ Config is valid (multi-site)", fg="green", bold=True)
+            click.echo(f"  Simulation: {sim.name} ({sim.slug})")
+            click.echo(f"  Audience:   {sim.audience.value}")
+            click.echo(f"  Workflow:   {sim.workflow or '—'}")
+            click.echo(f"  Companies:  {len(sim.companies)}")
+            for c in sim.companies:
+                click.echo(f"    - {c.company.name} ({c.slug}, theme: {c.theme})")
+            return
         cfg = load_company_config(config)
     except ConfigError as exc:
         raise click.ClickException(str(exc)) from exc

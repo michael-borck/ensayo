@@ -71,6 +71,12 @@ def export_cohort(conn: sqlite3.Connection, sim: sqlite3.Row) -> dict:
     sid = sim["id"]
 
     def counts(table: str, col: str) -> dict:
+        # Identifiers can't be bound parameters; whitelist them so no refactor
+        # can ever route caller input into this f-string.
+        allowed = {("applications", "current_stage"), ("applications", "status"),
+                   ("conversation_sessions", "status"), ("doc_submissions", "outcome")}
+        if (table, col) not in allowed:
+            raise ValueError(f"unsupported export aggregate: {table}.{col}")
         rows = conn.execute(f"SELECT {col} k, COUNT(*) n FROM {table} "
                             f"WHERE simulation_id = ? GROUP BY {col}", (sid,)).fetchall()
         return {r["k"]: r["n"] for r in rows}

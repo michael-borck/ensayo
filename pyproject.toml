@@ -23,6 +23,13 @@ dev = [
     "pytest>=8.0",
 ]
 
+# uv installs this group by default on `uv sync` / `uv run`, so `uv run pytest`
+# gets the project venv's pytest (a global pytest can't import ensayo).
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+]
+
 [project.scripts]
 ensayo = "ensayo.cli:main"
 

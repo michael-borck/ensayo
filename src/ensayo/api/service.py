@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import sqlite3
 import subprocess
@@ -63,12 +64,18 @@ def simulation_lock(slug: str):
         lock.release()
 
 
+def _redact_tokens(text: str) -> str:
+    """Strip credentials from authed remote URLs before they reach logs/errors."""
+    return re.sub(r"x-access-token:[^@\s]+@", "x-access-token:***@", text)
+
+
 def _git(args: list[str], cwd: Path) -> None:
     cmd = ["git", "-c", "user.email=ensayo@localhost", "-c", "user.name=Ensayo",
            *args]
     proc = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True)
     if proc.returncode != 0:
-        raise ServiceError(f"git {' '.join(args)} failed: {proc.stderr.strip()}")
+        raise ServiceError(_redact_tokens(
+            f"git {' '.join(args)} failed: {proc.stderr.strip()}"))
 
 
 def row_to_dict(row: sqlite3.Row) -> dict:
@@ -154,6 +161,17 @@ def update_simulation(conn: sqlite3.Connection, sim: sqlite3.Row, company_yaml: 
     This is **Save** — it does not push. The simulation is marked as having
     unpublished changes (unless auto_publish is on, in which case it publishes)."""
     config = load_company_config_from_text(company_yaml)  # validate first
+    # Overrides are audited at creation; edits must be too, or a minors sim
+    # could gain e.g. llm_chatbots mid-semester with no audit trail (spec §7.3).
+    try:
+        old_overrides = set(json.loads(sim["config_cache"]).get("audience_overrides") or [])
+    except (json.JSONDecodeError, TypeError):
+        old_overrides = set()
+    new_overrides = {k for k in config.audience_overrides if k}
+    if new_overrides != old_overrides:
+        audit("simulation.overrides_changed", audience=config.audience.value,
+              sim=sim["slug"], added=sorted(new_overrides - old_overrides),
+              removed=sorted(old_overrides - new_overrides))
     clone = Path(sim["working_clone_path"])
     with simulation_lock(sim["slug"]):
         (clone / "company.yaml").write_text(company_yaml, encoding="utf-8")
@@ -377,13 +395,19 @@ def create_booking(conn: sqlite3.Connection, sim: sqlite3.Row, employee_slug: st
         raise ServiceError("slot_start must be ISO datetime") from exc
     step = timedelta(minutes=_business_hours(sim)["slot_minutes"])
     bid = str(uuid.uuid4())
-    conn.execute(
-        "INSERT INTO bookings (id, simulation_id, employee_slug, student_name, "
-        "student_email, slot_start, slot_end, status, created_at) "
-        "VALUES (?,?,?,?,?,?,?, 'confirmed', ?)",
-        (bid, sim["id"], employee_slug, student_name, student_email, slot_start,
-         (start_dt + step).isoformat(), _now()))
-    conn.commit()
+    try:
+        conn.execute(
+            "INSERT INTO bookings (id, simulation_id, employee_slug, student_name, "
+            "student_email, slot_start, slot_end, status, created_at) "
+            "VALUES (?,?,?,?,?,?,?, 'confirmed', ?)",
+            (bid, sim["id"], employee_slug, student_name, student_email, slot_start,
+             (start_dt + step).isoformat(), _now()))
+        conn.commit()
+    except sqlite3.IntegrityError as exc:
+        # idx_booking_slot: a concurrent request won the slot between our
+        # availability check and this insert.
+        conn.rollback()
+        raise ServiceError("that slot is already booked") from exc
     return dict(conn.execute("SELECT * FROM bookings WHERE id = ?", (bid,)).fetchone())
 
 

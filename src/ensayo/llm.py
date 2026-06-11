@@ -196,8 +196,9 @@ class GeminiProvider:
         self.api_key = api_key
 
     def generate(self, prompt, *, system="", max_tokens=1024, temperature=0.7):
+        # Key goes in a header, not the query string — URLs end up in proxy logs.
         url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
-               f"{self.model}:generateContent?key={self.api_key}")
+               f"{self.model}:generateContent")
         body = {
             "contents": [{"parts": [{"text": prompt}]}],
             "generationConfig": {"temperature": temperature,
@@ -206,7 +207,8 @@ class GeminiProvider:
         if system:
             body["systemInstruction"] = {"parts": [{"text": system}]}
         try:
-            r = httpx.post(url, json=body, timeout=_TIMEOUT)
+            r = httpx.post(url, json=body, timeout=_TIMEOUT,
+                           headers={"x-goog-api-key": self.api_key})
             r.raise_for_status()
             data = r.json()
         except (httpx.HTTPError, ValueError) as exc:

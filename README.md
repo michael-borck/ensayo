@@ -2,7 +2,7 @@
 
 ![license](https://img.shields.io/badge/license-MIT-blue)
 ![python](https://img.shields.io/badge/python-3.12%2B-3776ab)
-![tests](https://img.shields.io/badge/tests-105%20passing-brightgreen)
+![tests](https://img.shields.io/badge/tests-112%20passing-brightgreen)
 ![status](https://img.shields.io/badge/status-v0.1.0-success)
 ![stack](https://img.shields.io/badge/stack-FastAPI%20%2B%20Astro-111)
 

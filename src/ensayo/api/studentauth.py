@@ -9,6 +9,7 @@ relay it (or reset manually).
 
 from __future__ import annotations
 
+import logging
 import os
 import secrets
 import smtplib
@@ -22,9 +23,12 @@ from fastapi import Header, HTTPException
 
 from .auth import hash_password, jwt_secret, verify_password
 
+logger = logging.getLogger("ensayo.api")
+
 _ALGO = "HS256"
 _TOKEN_TTL = timedelta(hours=12)
 _RESET_TTL = timedelta(hours=1)
+_MAX_RESET_ATTEMPTS = 5
 
 
 class StudentError(Exception):
@@ -155,8 +159,9 @@ def request_reset(conn: sqlite3.Connection, sim: sqlite3.Row, email: str) -> dic
     # Don't reveal whether the email exists.
     if s is None or s["deleted_at"] is not None or sim["auth_mode"] != "individual_account":
         return {"sent": False, "message": "If that account exists, a reset code was issued."}
-    code = f"{secrets.randbelow(1_000_000):06d}"
-    conn.execute("UPDATE student_access SET reset_code = ?, reset_expires = ? WHERE id = ?",
+    code = f"{secrets.randbelow(100_000_000):08d}"
+    conn.execute("UPDATE student_access SET reset_code = ?, reset_expires = ?, "
+                 "reset_attempts = 0 WHERE id = ?",
                  (code, (_now() + _RESET_TTL).isoformat(), s["id"]))
     conn.commit()
     sent = send_email(s["email"], f"Password reset — {sim['name']}",
@@ -170,14 +175,25 @@ def request_reset(conn: sqlite3.Connection, sim: sqlite3.Row, email: str) -> dic
 def reset(conn: sqlite3.Connection, sim: sqlite3.Row, email: str, code: str,
           new_password: str) -> dict:
     s = get_student(conn, sim["id"], email.strip().lower())
-    if s is None or not s["reset_code"] or s["reset_code"] != code:
+    if s is None or not s["reset_code"]:
+        raise StudentError("invalid reset code", status=400)
+    if not secrets.compare_digest(s["reset_code"], code):
+        # Brute-force guard: a handful of wrong guesses burns the code.
+        attempts = (s["reset_attempts"] or 0) + 1
+        if attempts >= _MAX_RESET_ATTEMPTS:
+            conn.execute("UPDATE student_access SET reset_code = '', reset_expires = '', "
+                         "reset_attempts = 0 WHERE id = ?", (s["id"],))
+        else:
+            conn.execute("UPDATE student_access SET reset_attempts = ? WHERE id = ?",
+                         (attempts, s["id"]))
+        conn.commit()
         raise StudentError("invalid reset code", status=400)
     if not s["reset_expires"] or _now() > datetime.fromisoformat(s["reset_expires"]):
         raise StudentError("reset code has expired", status=400)
     if not new_password:
         raise StudentError("new password is required")
     conn.execute("UPDATE student_access SET password_hash = ?, reset_code = '', "
-                 "reset_expires = '' WHERE id = ?",
+                 "reset_expires = '', reset_attempts = 0 WHERE id = ?",
                  (hash_password(new_password), s["id"]))
     conn.commit()
     return {"reset": True}
@@ -204,5 +220,6 @@ def send_email(to: str, subject: str, body: str) -> bool:
                 smtp.login(user, pw)
             smtp.send_message(msg)
         return True
-    except (smtplib.SMTPException, OSError):
+    except (smtplib.SMTPException, OSError) as exc:
+        logger.warning("email to %s failed: %s", to, exc)
         return False

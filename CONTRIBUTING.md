@@ -12,7 +12,7 @@ Requirements: **Python 3.12+** ([uv](https://docs.astral.sh/uv/) recommended) an
 git clone https://github.com/michael-borck/ensayo.git
 cd ensayo
 uv run ensayo --version          # installs deps into a venv on first run
-uv run --with pytest pytest -q   # run the test suite (105 tests)
+uv run pytest -q                 # run the test suite (dev deps install automatically)
 ```
 
 Useful commands:

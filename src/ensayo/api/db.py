@@ -8,6 +8,7 @@ migration tool. New schema changes follow the same add-column pattern.
 from __future__ import annotations
 
 import os
+import re
 import sqlite3
 from pathlib import Path
 
@@ -28,9 +29,17 @@ def connect() -> sqlite3.Connection:
     return conn
 
 
+_IDENT = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+
+
 def _add_column(conn: sqlite3.Connection, table: str, coldef: str) -> None:
-    """Add a column if it isn't there yet (the idempotent migration primitive)."""
+    """Add a column if it isn't there yet (the idempotent migration primitive).
+
+    Identifiers can't be bound parameters, so reject anything that isn't a bare
+    identifier before it reaches the f-strings below."""
     col = coldef.split()[0]
+    if not _IDENT.match(table) or not _IDENT.match(col):
+        raise ValueError(f"invalid identifier in migration: {table}.{col}")
     cols = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
     if col not in cols:
         conn.execute(f"ALTER TABLE {table} ADD COLUMN {coldef}")
@@ -82,6 +91,11 @@ def migrate(conn: sqlite3.Connection) -> None:
             created_at    TEXT NOT NULL,
             FOREIGN KEY (simulation_id) REFERENCES simulations(id)
         );
+        -- The check-then-insert in create_booking() is not atomic; this closes
+        -- the double-booking race. Partial so cancelled slots can be rebooked.
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_booking_slot
+            ON bookings (simulation_id, employee_slug, slot_start)
+            WHERE status = 'confirmed';
 
         CREATE TABLE IF NOT EXISTS visibility_rules (
             id            TEXT PRIMARY KEY,
@@ -227,6 +241,7 @@ def migrate(conn: sqlite3.Connection) -> None:
     _add_column(conn, "simulations", "last_published_at TEXT")
     _add_column(conn, "simulations", "auth_mode TEXT NOT NULL DEFAULT 'shared_password'")
     _add_column(conn, "simulations", "workflow TEXT DEFAULT ''")
+    _add_column(conn, "student_access", "reset_attempts INTEGER NOT NULL DEFAULT 0")
     conn.commit()
 
 

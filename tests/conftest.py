@@ -1,5 +1,15 @@
 """Shared fixtures for API tests."""
 
+from pathlib import Path
+
+# A stray ensayo/ directory at the repo root shadows the installed package as an
+# empty namespace package and every import of ensayo.* fails cryptically.
+_shadow = Path(__file__).resolve().parent.parent / "ensayo"
+if _shadow.is_dir():
+    raise RuntimeError(
+        f"stray directory {_shadow} shadows the ensayo package — remove it "
+        "(e.g. `rm -r ensayo/`) and re-run the tests")
+
 import pytest
 from fastapi.testclient import TestClient
 
