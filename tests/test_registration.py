@@ -199,10 +199,21 @@ def test_admin_sees_pending_codes_and_users(client, auth):
 
 
 # --- build concurrency cap -------------------------------------------------
+# The cap logic (semaphore + build_deferred) is what matters here, not the
+# Astro build itself, so ``generate`` is stubbed to a fast no-op that honours
+# the ``build`` flag (creating dist/ only when it actually runs).
+def _stub_generate(config_path, output_dir, *, base=None, with_llm=False,
+                   build=True, log=None, **kw):
+    from pathlib import Path
+    if build:
+        (Path(output_dir) / "dist").mkdir(parents=True, exist_ok=True)
+    return None
+
 
 def test_build_defers_when_concurrency_cap_reached(client, auth, monkeypatch):
     """With a cap of 1 and the single slot occupied, a build is deferred."""
     monkeypatch.setenv("MAX_CONCURRENT_BUILDS", "1")
+    monkeypatch.setattr(service, "generate", _stub_generate)
     service._BUILD_SEM = None  # force re-init at the new size
     service._build_semaphore().acquire()  # occupy the only slot
     try:
@@ -215,7 +226,8 @@ def test_build_defers_when_concurrency_cap_reached(client, auth, monkeypatch):
         service._BUILD_SEM = None  # let later tests re-init from their env
 
 
-def test_build_runs_when_slot_free(client, auth):
+def test_build_runs_when_slot_free(client, auth, monkeypatch):
+    monkeypatch.setattr(service, "generate", _stub_generate)
     r = client.post("/api/v1/simulations", headers=auth,
                     json={"name": "Built Co", "company_yaml": SMALL_YAML, "build": True})
     assert r.status_code == 201, r.text

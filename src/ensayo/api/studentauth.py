@@ -10,17 +10,15 @@ relay it (or reset manually).
 from __future__ import annotations
 
 import logging
-import os
 import secrets
-import smtplib
 import sqlite3
 import uuid
 from datetime import datetime, timedelta, timezone
-from email.message import EmailMessage
 
 import jwt
 from fastapi import Header, HTTPException
 
+from . import email as email_svc
 from .auth import hash_password, jwt_secret, verify_password
 
 logger = logging.getLogger("ensayo.api")
@@ -202,24 +200,9 @@ def reset(conn: sqlite3.Connection, sim: sqlite3.Row, email: str, code: str,
 # --- SMTP ------------------------------------------------------------------
 
 def send_email(to: str, subject: str, body: str) -> bool:
-    """Send via SMTP if configured (SMTP_HOST/PORT/USER/PASSWORD/FROM). Else False."""
-    host = os.environ.get("SMTP_HOST")
-    if not host:
+    """Delegate to the shared email provider (console/smtp/resend). Kept as a
+    thin wrapper so existing call sites read naturally; password reset only
+    reports 'sent' when a real provider delivered the code."""
+    if not email_svc.configured():
         return False
-    msg = EmailMessage()
-    msg["From"] = os.environ.get("SMTP_FROM", os.environ.get("SMTP_USER", "ensayo@localhost"))
-    msg["To"] = to
-    msg["Subject"] = subject
-    msg.set_content(body)
-    try:
-        port = int(os.environ.get("SMTP_PORT", "587"))
-        with smtplib.SMTP(host, port, timeout=20) as smtp:
-            smtp.starttls()
-            user, pw = os.environ.get("SMTP_USER"), os.environ.get("SMTP_PASSWORD")
-            if user and pw:
-                smtp.login(user, pw)
-            smtp.send_message(msg)
-        return True
-    except (smtplib.SMTPException, OSError) as exc:
-        logger.warning("email to %s failed: %s", to, exc)
-        return False
+    return email_svc.send_email(to, subject, body)

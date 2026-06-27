@@ -297,7 +297,7 @@ def create_app() -> FastAPI:
         # Public — lets the sign-up UI show/hide itself and warn when closed/email-less.
         return {"registration_open": reg.registration_open(conn),
                 "allowed_domains": reg.allowed_domains(),
-                "email_configured": bool(os.environ.get("SMTP_HOST"))}
+                "email_configured": reg.email_svc.configured()}
 
     # --- instance admin: users + registration control ---------------------
     def _require_admin(uc: sqlite3.Row) -> sqlite3.Row:

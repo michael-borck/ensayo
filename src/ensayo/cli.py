@@ -261,6 +261,26 @@ def create_uc(email: str, password: str | None, name: str, is_admin: bool) -> No
     click.secho(f"✓ Created {uc['role']} account: {uc['email']}", fg="green")
     click.echo("  Log in at /admin/ after starting the server with: ensayo serve")
 
+@admin.command(name="send-test-email")
+@click.option("--to", "to_email", required=True, help="Recipient address.")
+def send_test_email(to_email: str) -> None:
+    """Send a test email to verify the configured provider delivers."""
+    from .api import email as email_svc
+
+    prov = email_svc.provider()
+    if not email_svc.configured():
+        click.secho(f"EMAIL_PROVIDER={prov or 'console'} — no real provider configured. "
+                    f"Set EMAIL_PROVIDER (smtp|resend) and its credentials in .env.",
+                    fg="yellow")
+        return
+    ok = email_svc.send_email(to_email, "Ensayo test email",
+                              "If you can read this, Ensayo's email is wired correctly.")
+    if ok:
+        click.secho(f"\u2713 Sent test email to {to_email} via '{prov}'.", fg="green")
+    else:
+        click.secho(f"\u2717 Send failed via '{prov}' — check credentials/env.", fg="red")
+        raise SystemExit(1)
+
 
 @main.group(name="workflow")
 def workflow_group() -> None:

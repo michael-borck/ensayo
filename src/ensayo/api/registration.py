@@ -23,7 +23,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 from .auth import create_token, create_uc, get_uc_by_email
-from .studentauth import send_email
+from . import email as email_svc
 
 _CODE_TTL = timedelta(minutes=60)
 _CODE_CHARSET = string.ascii_uppercase + string.digits  # no ambiguous? keep simple
@@ -111,7 +111,11 @@ def _send_code(email: str, code: str) -> bool:
         "Your Ensayo verification code is:\n\n"
         f"    {code}\n\n"
         "It expires in 1 hour. If you didn't request this, ignore this email.")
-    return send_email(email, "Your Ensayo verification code", body)
+    # Only claim "sent" when a real provider delivered it; otherwise the code
+    # stays in the DB for the admin panel fallback (and resend_code can retry).
+    if not email_svc.configured():
+        return False
+    return email_svc.send_email(email, "Your Ensayo verification code", body)
 
 
 # --- operations ------------------------------------------------------------
