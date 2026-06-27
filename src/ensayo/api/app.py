@@ -8,11 +8,12 @@ serving the dashboard (/admin/) and generated sites (/sims/<slug>/) for local us
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -36,6 +37,8 @@ from .auth import (
     verify_password,
 )
 from .db import init_db
+from . import registration as reg
+from .ratelimit import check as rate_check
 from .provision import provision_chatbots
 from .service import (
     ServiceError,
@@ -64,6 +67,25 @@ _STATIC = Path(__file__).resolve().parent / "static"
 class LoginReq(BaseModel):
     email: str
     password: str
+
+
+class RegisterReq(BaseModel):
+    email: str
+    password: str
+    display_name: str = ""
+
+
+class VerifyEmailReq(BaseModel):
+    email: str
+    code: str
+
+
+class ResendReq(BaseModel):
+    email: str
+
+
+class RegistrationToggleReq(BaseModel):
+    open: bool
 
 
 class CreateSimReq(BaseModel):
@@ -221,10 +243,19 @@ def create_app() -> FastAPI:
 
     # --- UC auth -----------------------------------------------------------
     @app.post("/api/v1/auth/login")
-    def login(req: LoginReq, conn: sqlite3.Connection = Depends(get_conn)):
+    def login(req: LoginReq, request: Request,
+              conn: sqlite3.Connection = Depends(get_conn)):
+        ip = request.client.host if request.client else None
+        # Login is not IP-rate-limited (cohort NAT) — per-account lockout covers brute force.
+        if reg.is_locked_out(conn, req.email):
+            raise HTTPException(429, "account temporarily locked after repeated failures")
         uc = get_uc_by_email(conn, req.email)
-        if uc is None or not verify_password(req.password, uc["password_hash"]):
+        ok = uc is not None and verify_password(req.password, uc["password_hash"])
+        reg.record_login_attempt(conn, req.email, ok, ip)
+        if not ok:
             raise HTTPException(401, "invalid email or password")
+        if not uc["is_verified"]:
+            raise HTTPException(403, "email not verified — enter the code we sent, or request a new one")
         conn.execute("UPDATE uc_accounts SET last_login_at = ? WHERE id = ?",
                      (datetime.now(timezone.utc).isoformat(), uc["id"]))
         conn.commit()
@@ -236,6 +267,62 @@ def create_app() -> FastAPI:
     def me(uc: sqlite3.Row = Depends(current_uc)):
         return {"id": uc["id"], "email": uc["email"],
                 "display_name": uc["display_name"], "role": uc["role"]}
+    @app.post("/api/v1/auth/register", status_code=201)
+    def register(req: RegisterReq,
+                 conn: sqlite3.Connection = Depends(get_conn)):
+        try:
+            return reg.register(conn, req.email, req.password, req.display_name)
+        except reg.RegistrationError as exc:
+            raise HTTPException(exc.status, exc.message) from exc
+
+    @app.post("/api/v1/auth/verify-email")
+    def verify_email(req: VerifyEmailReq,
+                     conn: sqlite3.Connection = Depends(get_conn)):
+        if not rate_check("verify", req.email):
+            raise HTTPException(429, "too many attempts — try again shortly")
+        try:
+            return reg.verify_email(conn, req.email, req.code)
+        except reg.RegistrationError as exc:
+            raise HTTPException(exc.status, exc.message) from exc
+
+    @app.post("/api/v1/auth/resend-verification")
+    def resend_verification(req: ResendReq,
+                            conn: sqlite3.Connection = Depends(get_conn)):
+        if not rate_check("resend", req.email):
+            raise HTTPException(429, "too many resend attempts — try again shortly")
+        return reg.resend_code(conn, req.email)
+
+    @app.get("/api/v1/auth/registration-status")
+    def registration_status(conn: sqlite3.Connection = Depends(get_conn)):
+        # Public — lets the sign-up UI show/hide itself and warn when closed/email-less.
+        return {"registration_open": reg.registration_open(conn),
+                "allowed_domains": reg.allowed_domains(),
+                "email_configured": bool(os.environ.get("SMTP_HOST"))}
+
+    # --- instance admin: users + registration control ---------------------
+    def _require_admin(uc: sqlite3.Row) -> sqlite3.Row:
+        if uc["role"] != "instance_admin":
+            raise HTTPException(403, "instance admin only")
+        return uc
+
+    @app.get("/api/v1/admin/users")
+    def admin_users(uc: sqlite3.Row = Depends(current_uc),
+                    conn: sqlite3.Connection = Depends(get_conn)):
+        _require_admin(uc)
+        return reg.list_users(conn)
+
+    @app.get("/api/v1/admin/pending-codes")
+    def admin_pending_codes(uc: sqlite3.Row = Depends(current_uc),
+                            conn: sqlite3.Connection = Depends(get_conn)):
+        _require_admin(uc)
+        return reg.pending_codes(conn)
+
+    @app.put("/api/v1/admin/registration")
+    def admin_toggle_registration(req: RegistrationToggleReq,
+                                  uc: sqlite3.Row = Depends(current_uc),
+                                  conn: sqlite3.Connection = Depends(get_conn)):
+        _require_admin(uc)
+        return {"registration_open": reg.set_registration_open(conn, req.open)}
 
     # --- simulations -------------------------------------------------------
     @app.post("/api/v1/simulations", status_code=201)

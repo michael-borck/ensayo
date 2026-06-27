@@ -63,7 +63,33 @@
       <input id="email" type="email" autocomplete="username" />
       <label for="password">Password</label>
       <input id="password" type="password" autocomplete="current-password" />
-      <div style="margin-top:1rem"><button class="primary" id="loginBtn">Sign in</button></div>
+        <div style="margin-top:1rem"><button class="primary" id="loginBtn">Sign in</button></div>
+        <p class="small muted" style="margin-top:0.8rem"><a href="#" id="toSignup">Create a new account →</a></p>
+    </section>
+
+    <!-- Sign up (self-registration) -->
+    <section id="signup" class="card hidden">
+      <h2>Create an account</h2>
+      <p class="muted small" id="signupDomains"></p>
+      <label for="suName">Display name</label>
+      <input id="suName" type="text" autocomplete="name" />
+      <label for="suEmail">Email</label>
+      <input id="suEmail" type="email" autocomplete="email" />
+      <label for="suPassword">Password <span class="muted small">(min 8 characters)</span></label>
+      <input id="suPassword" type="password" autocomplete="new-password" />
+      <div class="row" style="margin-top:1rem">
+        <button class="primary" id="signupBtn">Create account</button>
+        <button class="ghost" id="signupCancel">Back to sign in</button>
+      </div>
+      <div id="verifyStep" class="hidden" style="margin-top:1rem;border-top:1px solid var(--border);padding-top:1rem">
+        <p class="small" id="verifyHint"></p>
+        <label for="suCode">Verification code</label>
+        <input id="suCode" type="text" autocomplete="one-time-code" placeholder="8-character code" style="text-transform:uppercase" />
+        <div class="row" style="margin-top:0.6rem">
+          <button class="primary" id="verifyBtn">Verify &amp; sign in</button>
+          <button class="ghost" id="resendBtn">Resend code</button>
+        </div>
+      </div>
     </section>
 
     <!-- App -->
@@ -191,6 +217,14 @@
       </div>
 
       <div id="list" style="margin-top:1rem"></div>
+      <div id="adminPanel" class="hidden" style="margin-top:1.5rem;border-top:1px solid var(--border);padding-top:1rem">
+        <div class="row" style="justify-content:space-between">
+          <h2 style="margin:0">Instance admin</h2>
+          <label class="checks" style="margin:0"><input type="checkbox" id="regOpenChk" /> Registration open</label>
+        </div>
+        <details style="margin-top:0.75rem"><summary class="small">Users &amp; pending verification codes</summary>
+          <div id="usersList" style="margin-top:0.5rem"></div></details>
+      </div>
     </section>
   </main>
 
@@ -244,10 +278,12 @@ documents:
       el.className = "card";
       const unpub = s.has_unpublished_changes
         ? '<span class="pill" style="color:#ffd5a8">unpublished changes</span>' : "";
+      const deferred = s.build_deferred
+        ? '<span class="pill" style="color:#ffd5a8">build deferred — click Regenerate</span>' : "";
       const repo = s.repo_url ? "Publish" : "Connect repo + publish";
       el.innerHTML = `
         <div class="row" style="justify-content:space-between">
-          <div><strong>${s.name}</strong> <span class="pill">${s.status}</span> ${unpub}
+          <div><strong>${s.name}</strong> <span class="pill">${s.status}</span> ${unpub} ${deferred}
             <div class="muted small">${s.slug} · ${s.audience} · ${s.type}
               ${s.repo_url ? "· " + s.repo_url : ""}</div></div>
           <div class="row">
@@ -428,9 +464,53 @@ documents:
     const r = await api("/api/v1/auth/login", { method: "POST",
       body: JSON.stringify({ email: $("email").value, password: $("password").value }) });
     const data = await r.json().catch(() => ({}));
-    if (!r.ok) { msg(data.detail || "Login failed", "err"); return; }
+    if (!r.ok) {
+      if (r.status === 403) {  // unverified — jump to the code step for this account
+        $("signup").classList.remove("hidden"); $("login").classList.add("hidden");
+        $("suEmail").value = $("email").value; $("suPassword").value = $("password").value;
+        $("verifyStep").classList.remove("hidden");
+        $("verifyHint").textContent = "This account isn't verified yet — enter the code we sent.";
+      }
+      msg(data.detail || "Login failed", "err"); return;
+    }
     localStorage.setItem("ensayo_token", data.token);
     showApp(data.uc);
+  }
+
+  // --- self-registration --------------------------------------------------
+  async function loadRegStatus() {
+    return await (await fetch("/api/v1/auth/registration-status")).json().catch(() => null);
+  }
+  async function showSignup(status) {
+    msg(""); $("login").classList.add("hidden"); $("signup").classList.remove("hidden");
+    $("verifyStep").classList.add("hidden"); $("suCode").value = "";
+    $("signupDomains").textContent = (status && status.allowed_domains && status.allowed_domains.length)
+      ? "Open to email domains: " + status.allowed_domains.join(", ") : "";
+  }
+  async function signup() {
+    msg("");
+    const r = await api("/api/v1/auth/register", { method: "POST", body: JSON.stringify({
+      email: $("suEmail").value, password: $("suPassword").value, display_name: $("suName").value }) });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) { msg(data.detail || "Sign-up failed", "err"); return; }
+    $("verifyStep").classList.remove("hidden");
+    $("verifyHint").textContent = data.verification_sent
+      ? "We emailed a verification code to " + data.email + " — enter it below."
+      : "Enter the verification code for " + data.email + " (an admin can provide it if email isn't set up).";
+    msg("Account created — verify your email to continue.", "ok");
+  }
+  async function verifySignup() {
+    const r = await api("/api/v1/auth/verify-email", { method: "POST", body: JSON.stringify({
+      email: $("suEmail").value, code: $("suCode").value }) });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) { msg(data.detail || "Verification failed", "err"); return; }
+    localStorage.setItem("ensayo_token", data.token);
+    showApp(data.uc);
+  }
+  async function resendSignup() {
+    await api("/api/v1/auth/resend-verification", { method: "POST",
+      body: JSON.stringify({ email: $("suEmail").value }) });
+    msg("If that account exists, a new code is on its way.", "");
   }
 
   let wfLoaded = false;
@@ -445,17 +525,41 @@ documents:
   }
 
   function showApp(uc) {
-    $("login").classList.add("hidden");
-    $("app").classList.remove("hidden");
-    $("logout").classList.remove("hidden");
+    $("login").classList.add("hidden"); $("signup").classList.add("hidden");
+    $("app").classList.remove("hidden"); $("logout").classList.remove("hidden");
     $("who").textContent = uc.email + " (" + uc.role + ")";
-    $("simYaml").value = TEMPLATE;
-    msg("");
-    loadWorkflows();
-    refresh();
+    $("simYaml").value = TEMPLATE; msg("");
+    if (uc.role === "instance_admin") { $("adminPanel").classList.remove("hidden"); loadAdmin(); }
+    else { $("adminPanel").classList.add("hidden"); }
+    loadWorkflows(); refresh();
+  }
+
+  async function loadAdmin() {
+    const st = await loadRegStatus();
+    $("regOpenChk").checked = !!(st && st.registration_open);
+    $("regOpenChk").onchange = async () => {
+      const r = await api("/api/v1/admin/registration", { method: "PUT",
+        body: JSON.stringify({ open: $("regOpenChk").checked }) });
+      msg(r.ok ? ("Registration " + ($("regOpenChk").checked ? "opened" : "closed")) : "Failed",
+          r.ok ? "ok" : "err");
+    };
+    const [users, pending] = await Promise.all([
+      (await api("/api/v1/admin/users")).json().catch(() => []),
+      (await api("/api/v1/admin/pending-codes")).json().catch(() => []),
+    ]);
+    const codeBy = {}; pending.forEach(p => { codeBy[p.email] = p.code; });
+    const rows = users.map(u => {
+      const code = codeBy[u.email];
+      return `<li class="small">${u.email} <span class="muted">· ${u.role} · `
+        + `${u.is_verified ? "verified" : "pending"}${u.display_name ? " · " + u.display_name : ""}</span>`
+        + (code ? ` <span class="pill" style="color:#ffd5a8">code: <strong>${code}</strong></span>` : "") + `</li>`;
+    }).join("");
+    $("usersList").innerHTML = `<ul style="margin:0;padding-left:1.1rem">${rows || '<li class="muted small">No users.</li>'}</ul>`;
   }
 
   async function boot() {
+    const status = await loadRegStatus();
+    if (status && !status.registration_open) $("toSignup").style.display = "none";
     if (!localStorage.getItem("ensayo_token")) return;
     const r = await api("/api/v1/auth/me");
     if (r.ok) showApp(await r.json());
@@ -465,6 +569,12 @@ documents:
   $("loginBtn").onclick = login;
   $("password").addEventListener("keydown", e => { if (e.key === "Enter") login(); });
   $("logout").onclick = () => { localStorage.removeItem("ensayo_token"); location.reload(); };
+  $("toSignup").onclick = async (e) => { e.preventDefault(); showSignup(await loadRegStatus()); };
+  $("signupCancel").onclick = () => { $("signup").classList.add("hidden"); $("login").classList.remove("hidden"); };
+  $("signupBtn").onclick = signup;
+  $("verifyBtn").onclick = verifySignup;
+  $("resendBtn").onclick = resendSignup;
+  $("suCode").addEventListener("keydown", e => { if (e.key === "Enter") verifySignup(); });
   let editingId = null;
   function openNew() {
     editingId = null;

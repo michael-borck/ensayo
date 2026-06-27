@@ -51,6 +51,34 @@ _locks: dict[str, threading.Lock] = {}
 def _lock_for(slug: str) -> threading.Lock:
     with _locks_guard:
         return _locks.setdefault(slug, threading.Lock())
+# --- global build concurrency cap ------------------------------------------
+# A sim build runs npm + Astro (~90s, hundreds of MB). N concurrent builds of
+# *different* sims would otherwise exhaust the box (the per-sim lock doesn't
+# help here). This caps how many builds run at once; the rest defer. Sized from
+# MAX_CONCURRENT_BUILDS (default 2). Demo-load protection (spec §15.5).
+_BUILD_SEM: threading.BoundedSemaphore | None = None
+
+
+def _build_semaphore() -> threading.BoundedSemaphore:
+    global _BUILD_SEM
+    if _BUILD_SEM is None:
+        _BUILD_SEM = threading.BoundedSemaphore(
+            max(1, int(os.environ.get("MAX_CONCURRENT_BUILDS", "2"))))
+    return _BUILD_SEM
+
+
+@contextmanager
+def build_slot(build: bool):
+    """Yield True if a build slot was acquired (caller builds), else False (defer).
+
+    Non-blocking so a busy box never queues blocked workers; the caller defers
+    the build and surfaces that to the dashboard for a manual rebuild."""
+    acquired = bool(build) and _build_semaphore().acquire(blocking=False)
+    try:
+        yield acquired
+    finally:
+        if acquired:
+            _build_semaphore().release()
 
 
 @contextmanager
@@ -125,11 +153,14 @@ def create_simulation(
         (clone / "company.yaml").write_text(company_yaml, encoding="utf-8")
         if not (clone / ".git").exists():
             _git(["init", "-q"], clone)
-        try:
-            generate(clone / "company.yaml", clone, base=base, with_llm=with_llm,
-                     build=build, log=log)
-        except Exception as exc:  # surface generator/build errors to the API caller
-            raise ServiceError(f"generation failed: {exc}") from exc
+        can_build = True
+        with build_slot(build) as slot:
+            can_build = slot
+            try:
+                generate(clone / "company.yaml", clone, base=base, with_llm=with_llm,
+                         build=can_build, log=log)
+            except Exception as exc:  # surface generator/build errors to the API caller
+                raise ServiceError(f"generation failed: {exc}") from exc
         _git(["add", "-A"], clone)
         _git(["commit", "-q", "-m", "Create simulation"], clone)
 
@@ -150,7 +181,9 @@ def create_simulation(
     audit("simulation.created", audience=config.audience.value, sim=slug,
           uc=owner_uc_id, auth_mode=auth_mode,
           overrides=[k for k in config.audience_overrides if k])
-    return row_to_dict(conn.execute("SELECT * FROM simulations WHERE id = ?", (sim_id,)).fetchone())
+    out = row_to_dict(conn.execute("SELECT * FROM simulations WHERE id = ?", (sim_id,)).fetchone())
+    out["build_deferred"] = build and not can_build
+    return out
 
 
 def update_simulation(conn: sqlite3.Connection, sim: sqlite3.Row, company_yaml: str, *,
@@ -173,11 +206,14 @@ def update_simulation(conn: sqlite3.Connection, sim: sqlite3.Row, company_yaml: 
               sim=sim["slug"], added=sorted(new_overrides - old_overrides),
               removed=sorted(old_overrides - new_overrides))
     clone = Path(sim["working_clone_path"])
+    can_build = True
     with simulation_lock(sim["slug"]):
         (clone / "company.yaml").write_text(company_yaml, encoding="utf-8")
         try:
-            generate(clone / "company.yaml", clone, base=sim["site_url"],
-                     with_llm=with_llm, build=build, log=log)
+            with build_slot(build) as slot:
+                can_build = slot
+                generate(clone / "company.yaml", clone, base=sim["site_url"],
+                         with_llm=with_llm, build=can_build, log=log)
         except Exception as exc:
             raise ServiceError(f"generation failed: {exc}") from exc
         _git(["add", "-A"], clone)
@@ -189,9 +225,10 @@ def update_simulation(conn: sqlite3.Connection, sim: sqlite3.Row, company_yaml: 
          sim["id"]))
     conn.commit()
     sim = conn.execute("SELECT * FROM simulations WHERE id = ?", (sim["id"],)).fetchone()
+    deferred = build and not can_build
     if sim["auto_publish"] and sim["repo_url"]:
-        return {**row_to_dict(sim), "publish": publish(conn, sim)}
-    return row_to_dict(sim)
+        return {**row_to_dict(sim), "publish": publish(conn, sim), "build_deferred": deferred}
+    return {**row_to_dict(sim), "build_deferred": deferred}
 
 
 def regenerate(conn: sqlite3.Connection, sim: sqlite3.Row, *, with_llm: bool = False,
@@ -200,10 +237,13 @@ def regenerate(conn: sqlite3.Connection, sim: sqlite3.Row, *, with_llm: bool = F
     cfg_path = clone / "company.yaml"
     if not cfg_path.exists():
         raise ServiceError(f"working clone missing company.yaml: {clone}")
+    can_build = True
     with simulation_lock(sim["slug"]):
         try:
-            generate(cfg_path, clone, base=sim["site_url"], with_llm=with_llm,
-                     build=build, log=log)
+            with build_slot(build) as slot:
+                can_build = slot
+                generate(cfg_path, clone, base=sim["site_url"], with_llm=with_llm,
+                         build=can_build, log=log)
         except Exception as exc:
             raise ServiceError(f"generation failed: {exc}") from exc
         _git(["add", "-A"], clone)
@@ -211,8 +251,10 @@ def regenerate(conn: sqlite3.Connection, sim: sqlite3.Row, *, with_llm: bool = F
     conn.execute("UPDATE simulations SET has_unpublished_changes = 1, updated_at = ? "
                  "WHERE id = ?", (_now(), sim["id"]))
     conn.commit()
-    return row_to_dict(conn.execute("SELECT * FROM simulations WHERE id = ?",
-                                    (sim["id"],)).fetchone())
+    out = row_to_dict(conn.execute("SELECT * FROM simulations WHERE id = ?",
+                                   (sim["id"],)).fetchone())
+    out["build_deferred"] = build and not can_build
+    return out
 
 
 # --- repo connection + publishing -----------------------------------------

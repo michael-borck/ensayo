@@ -53,19 +53,24 @@ def decode_token(token: str) -> str:
 # --- account helpers -------------------------------------------------------
 
 def create_uc(conn: sqlite3.Connection, email: str, password: str,
-              display_name: str = "", role: str = "uc") -> dict:
+              display_name: str = "", role: str = "uc",
+              verified: bool = True) -> dict:
+    """Create a UC account. CLI/admin-created accounts are verified by default;
+    self-registered accounts pass ``verified=False`` pending email confirmation."""
     if get_uc_by_email(conn, email):
         raise ValueError(f"a UC account already exists for {email}")
     uc_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
     conn.execute(
-        "INSERT INTO uc_accounts (id, email, password_hash, display_name, role, created_at) "
-        "VALUES (?, ?, ?, ?, ?, ?)",
-        (uc_id, email.lower(), hash_password(password), display_name or email, role, now),
+        "INSERT INTO uc_accounts "
+        "(id, email, password_hash, display_name, role, is_verified, created_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (uc_id, email.lower(), hash_password(password), display_name or email, role,
+         1 if verified else 0, now),
     )
     conn.commit()
     return {"id": uc_id, "email": email.lower(), "display_name": display_name or email,
-            "role": role}
+            "role": role, "is_verified": 1 if verified else 0}
 
 
 def get_uc_by_email(conn: sqlite3.Connection, email: str) -> sqlite3.Row | None:

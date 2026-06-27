@@ -91,6 +91,30 @@ external) and set `ANYTHINGLLM_URL` + `ANYTHINGLLM_API_KEY`. Then **Provision
 chatbots** from the dashboard. Without it, provisioning runs in dry-run mode and
 employees use the keyword chatbot. Pin the AnythingLLM version.
 
+## Lecturer self-registration
+
+Lecturers can create their own accounts (no admin CLI needed). Set
+`ALLOWED_DOMAINS` to the permitted email domains (e.g.
+`ALLOWED_DOMAINS=curtin.edu.au`); empty means open to any domain. A lecturer
+visits the dashboard, clicks **Create a new account**, and receives a 6-digit
+verification code. With SMTP configured (`SMTP_HOST`…) the code is emailed;
+without it the code appears in the dashboard's **Instance admin → Users &
+pending verification codes** panel for an admin to relay by hand.
+
+Registration is open by default. An instance admin can close it live from the
+dashboard (a panic switch during a flood) — no restart needed. Login is
+email + password after one-time verification; accounts lock for 15 minutes after
+5 failed logins.
+
+## Build load (concurrency cap)
+
+Each simulation build runs npm + Astro (~15-90s of CPU). To keep a cohort of
+lecturers from exhausting the box, builds are capped at `MAX_CONCURRENT_BUILDS`
+(default 2). Builds beyond the cap defer and show as **build deferred — click
+Regenerate**; the lecturer retries once traffic clears. Pre-install theme deps
+on the VPS (`cd themes/<name> && npm install`) so builds reuse vendored
+`node_modules` and finish in seconds.
+
 ## What Ensayo deliberately doesn't include
 
 No background workers/queues (lazy delivery instead — ADR-0007), no multi-process

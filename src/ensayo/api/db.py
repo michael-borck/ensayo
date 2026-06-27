@@ -235,6 +235,31 @@ def migrate(conn: sqlite3.Connection) -> None:
             created_at  TEXT NOT NULL,
             FOREIGN KEY (session_id) REFERENCES group_chat_sessions(id)
         );
+
+        CREATE TABLE IF NOT EXISTS uc_verifications (
+            id          TEXT PRIMARY KEY,
+            uc_id       TEXT NOT NULL,
+            code        TEXT NOT NULL,
+            expires_at  TEXT NOT NULL,
+            used        INTEGER NOT NULL DEFAULT 0,
+            created_at  TEXT NOT NULL,
+            FOREIGN KEY (uc_id) REFERENCES uc_accounts(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS uc_login_attempts (
+            id          TEXT PRIMARY KEY,
+            email       TEXT NOT NULL,
+            ip          TEXT DEFAULT '',
+            success     INTEGER NOT NULL DEFAULT 0,
+            created_at  TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_uc_login_attempts_email
+            ON uc_login_attempts (email, created_at);
+
+        CREATE TABLE IF NOT EXISTS instance_settings (
+            key   TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        );
         """
     )
     # Idempotent column additions for existing databases (spec §15.1 pattern).
@@ -242,6 +267,10 @@ def migrate(conn: sqlite3.Connection) -> None:
     _add_column(conn, "simulations", "auth_mode TEXT NOT NULL DEFAULT 'shared_password'")
     _add_column(conn, "simulations", "workflow TEXT DEFAULT ''")
     _add_column(conn, "student_access", "reset_attempts INTEGER NOT NULL DEFAULT 0")
+    _add_column(conn, "uc_accounts", "is_verified INTEGER NOT NULL DEFAULT 1")
+    conn.execute(
+        "INSERT OR IGNORE INTO instance_settings (key, value) "
+        "VALUES ('registration_open', '1')")
     conn.commit()
 
 
