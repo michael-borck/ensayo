@@ -1,6 +1,11 @@
 """``ensayo`` command-line interface."""
 
 from __future__ import annotations
+try:  # Load .env from CWD if present (override=False → real env wins).
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:  # python-dotenv optional; env can be supplied directly
+    pass
 
 from pathlib import Path
 
