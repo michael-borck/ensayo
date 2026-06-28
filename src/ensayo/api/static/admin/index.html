@@ -99,120 +99,88 @@
         <button class="primary" id="newBtn">+ New simulation</button>
       </div>
 
-      <div id="newForm" class="card hidden" style="margin-top:1rem">
-        <h2>New simulation</h2>
-        <div class="field-row">
-          <div><label>Name</label><input id="simName" type="text"
-               placeholder="Acme Corp — ISYS6018 Sem1 2026" /></div>
-          <div><label>Shared password (optional)</label>
-               <input id="simPw" type="text" placeholder="students enter this" /></div>
+      <div id="editor" class="card hidden" style="margin-top:1rem">
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <h2 id="edTitle" style="margin:0">New simulation</h2>
+          <button class="ghost" id="edCancel" type="button">Close</button>
         </div>
-        <div class="field-row">
-          <div><label>Student authentication</label>
-            <select id="simAuth" class="ensayo-chat-input">
-              <option value="shared_password">Shared password</option>
-              <option value="individual_account">Individual accounts</option>
-              <option value="email_only">Email only</option>
-            </select>
-          </div>
-          <div><label>Workflow (student lifecycle)</label>
-            <select id="simWorkflow" class="ensayo-chat-input"></select></div>
+        <div id="edSafeBanner" class="hidden" style="margin:0.6rem 0;padding:0.5rem 0.75rem;border:1px solid #b8860b;background:rgba(184,134,11,0.12);border-radius:9px">
+          <span class="small">🛡 <strong>Minors (safe mode)</strong> — chatbots are keyword-only, sign-in is shared password, LLM-assist off. These are safe defaults; the tabs enforce them.</span>
         </div>
-        <label>company.yaml</label>
-        <textarea id="simYaml"></textarea>
-        <div class="checks">
-          <label><input type="checkbox" id="simLlm" /> Generate content with LLM</label>
-          <label><input type="checkbox" id="simBuild" checked /> Build site (needs Node)</label>
-        </div>
-        <div class="row" style="margin-top:1rem">
-          <button class="primary" id="createBtn">Create</button>
-          <button class="ghost" id="cancelBtn">Cancel</button>
-          <a href="#" id="toWizard" class="small" style="margin-left:auto">← Guided wizard</a>
-          <span id="createMsg" class="small muted"></span>
-        </div>
-      </div>
+        <div id="edTabs" class="row" style="gap:0.3rem;flex-wrap:wrap;margin:0.6rem 0;border-bottom:1px solid var(--border)"></div>
+        <div id="edMsg" class="small err"></div>
 
-      <div id="wizard" class="card hidden" style="margin-top:1rem">
-        <div class="row" style="justify-content:space-between">
-          <h2 id="wizTitle" style="margin:0">New simulation</h2>
-          <a href="#" id="toYaml" class="small">Advanced: paste YAML →</a>
-        </div>
-        <div id="wizSteps" class="small muted" style="margin:0.4rem 0 0.8rem"></div>
-
-        <div data-step="0">
+        <div data-etab="basics">
           <div class="field-row">
-            <div><label>Simulation name</label>
-              <input id="wName" placeholder="CloudCore — ISYS6018 Sem1 2026" /></div>
+            <div><label>Simulation name</label><input id="edName" placeholder="CloudCore — ISYS6018 Sem1 2026" /></div>
             <div><label>Audience</label>
-              <select id="wAudience">
-                <option value="adults">Adults (university)</option>
-                <option value="minors">Minors (school — safe mode)</option>
-              </select></div>
+              <select id="edAudience"><option value="adults">Adults (university)</option><option value="minors">Minors (school — safe mode)</option></select></div>
           </div>
           <div class="field-row">
             <div><label>Student sign-in</label>
-              <select id="wAuth">
-                <option value="shared_password">Shared password</option>
-                <option value="individual_account">Individual accounts</option>
-                <option value="email_only">Email only</option>
-              </select></div>
-            <div><label>Shared password (optional)</label><input id="wPw" /></div>
+              <select id="edAuth"><option value="shared_password">Shared password</option><option value="individual_account">Individual accounts</option><option value="email_only">Email only</option></select></div>
+            <div><label>Shared password</label><input id="edPw" placeholder="students enter this" /></div>
           </div>
           <div class="field-row">
-            <div><label>Theme</label><select id="wTheme"></select></div>
-            <div><label>Workflow <span class="muted small">(student lifecycle)</span></label>
-              <select id="wWorkflow"></select></div>
+            <div><label>Theme</label><select id="edTheme"></select></div>
+            <div><label>Workflow <span class="muted small">(student lifecycle)</span></label><select id="edWorkflow"></select></div>
           </div>
         </div>
 
-        <div data-step="1" hidden>
+        <div data-etab="company" hidden>
           <div class="field-row">
-            <div><label>Company name</label><input id="wCoName" placeholder="CloudCore Networks" /></div>
-            <div><label>Industry</label><select id="wIndustry"></select></div>
+            <div><label>Company name</label><input id="edCoName" placeholder="CloudCore Networks" /></div>
+            <div><label>Industry</label><select id="edIndustry"></select></div>
           </div>
           <div class="field-row">
-            <div><label>Tagline</label><input id="wTagline" /></div>
-            <div><label>Location</label><input id="wLocation" placeholder="Perth, WA" /></div>
+            <div><label>Tagline</label><input id="edTagline" /></div>
+            <div><label>Location</label><input id="edLocation" placeholder="Perth, WA" /></div>
           </div>
           <label>Description <span class="muted small">(optional; LLM can write it)</span></label>
-          <textarea id="wDesc" style="min-height:70px"></textarea>
+          <textarea id="edDesc" style="min-height:70px"></textarea>
         </div>
 
-        <div data-step="2" hidden>
+        <div data-etab="scenario" hidden>
           <div class="field-row">
-            <div><label>Scenario type</label><select id="wScenType"></select></div>
-            <div><label>Scenario name</label><input id="wScenName" placeholder="The central challenge" /></div>
+            <div><label>Scenario type</label><select id="edScenType"></select></div>
+            <div><label>Scenario name</label><input id="edScenName" placeholder="The central challenge" /></div>
           </div>
-          <label>Scenario description <span class="muted small">(optional; LLM can write it)</span></label>
-          <textarea id="wScenDesc"></textarea>
+ <label>Scenario description <span class="muted small">(optional; LLM can write it)</span></label>
+ <textarea id="edScenDesc"></textarea>
         </div>
 
-        <div data-step="3" hidden>
+        <div data-etab="people" hidden>
           <p class="muted small">Add the people students can interview. Backstories can be LLM-generated.</p>
-          <div id="wEmps"></div>
-          <button class="ghost" id="wAddEmp">+ Add person</button>
+          <div id="edEmps"></div>
+          <button class="ghost" id="edAddEmp" type="button">+ Add person</button>
         </div>
 
-        <div data-step="4" hidden>
+        <div data-etab="documents" hidden>
           <p class="muted small">Add documents (policies, guides). Bodies can be LLM-generated.</p>
-          <div id="wDocs"></div>
-          <button class="ghost" id="wAddDoc">+ Add document</button>
+          <div id="edDocs"></div>
+          <button class="ghost" id="edAddDoc" type="button">+ Add document</button>
         </div>
 
-        <div data-step="5" hidden>
-          <div class="checks">
-            <label><input type="checkbox" id="wLlm" /> Generate content with LLM (backstories, docs, scenario)</label>
-            <label><input type="checkbox" id="wBuild" checked /> Build the site now</label>
+        <div data-etab="features" hidden>
+          <label>Chatbot type</label>
+          <select id="edChatbot"><option value="keyword">Keyword (deterministic, no LLM)</option><option value="llm">LLM</option><option value="hybrid">Hybrid</option></select>
+          <div class="checks" style="flex-direction:column;align-items:flex-start;gap:0.45rem;margin-top:0.7rem">
+            <label><input type="checkbox" id="edBooking" /> Enable booking (office hours)</label>
+            <label id="edGateWrap" class="hidden"><input type="checkbox" id="edGate" /> Gate chat behind a booking</label>
+            <label><input type="checkbox" id="edDash" /> Show lecturer dashboard on the site</label>
+            <label><input type="checkbox" id="edLlm" /> Generate content with LLM (backstories, docs, scenario)</label>
+            <label><input type="checkbox" id="edBuild" checked /> Build the site now</label>
           </div>
-          <p id="wReview" class="small muted" style="margin-top:0.6rem"></p>
+        </div>
+
+        <div data-etab="yaml" hidden>
+          <p class="muted small">Power-user view. Edit the YAML here to override the tabs; your manual edits take precedence on save. The structured tabs above stay the default — you never need to touch this.</p>
+          <textarea id="edYaml" style="min-height:260px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:0.82rem"></textarea>
         </div>
 
         <div class="row" style="margin-top:1rem">
-          <button class="ghost" id="wBack">Back</button>
-          <button class="primary" id="wNext">Next</button>
-          <button class="primary hidden" id="wCreate">Create simulation</button>
-          <button class="ghost" id="wCancel">Cancel</button>
-          <span id="wMsg" class="small muted"></span>
+          <button class="primary" id="edSave" type="button">Create simulation</button>
+          <span id="edSaveMsg" class="small muted"></span>
         </div>
       </div>
 
@@ -240,32 +208,6 @@
     });
   };
   const msg = (text, cls = "") => { const m = $("msg"); m.textContent = text; m.className = cls; };
-
-  const TEMPLATE = `company:
-  name: "Acme Corp"
-  tagline: "We make things"
-  industry: "general"
-  location: "Perth, Western Australia"
-  profile:
-    description: |
-      A short description of what this fictional company does.
-  scenario:
-    type: "growth"
-    name: "The central challenge"
-theme: tech-modern
-audience: adults
-employees:
-  - name: "Alex Lee"
-    role: "Managing Director"
-    archetype: founder_ceo
-  - name: "Sam Patel"
-    role: "Operations Manager"
-    archetype: operations_manager
-documents:
-  - type: policy
-    title: "Information Security Policy"
-    brief: "Acceptable use and access controls."
-`;
 
   async function refresh() {
     const r = await api("/api/v1/simulations");
@@ -306,7 +248,7 @@ documents:
     }
     document.querySelectorAll("[data-gen]").forEach(b => b.onclick = () => act(b.dataset.gen, "generate", b));
     document.querySelectorAll("[data-pub]").forEach(b => b.onclick = () => doPublish(b.dataset.pub, b));
-    document.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => openEdit(b.dataset.edit));
+    document.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => openEditor("edit", b.dataset.edit));
     document.querySelectorAll("[data-prov]").forEach(b => b.onclick = () => doProvision(b.dataset.prov, b));
     document.querySelectorAll("[data-book]").forEach(b => b.onclick = () => toggleBookings(b.dataset.book));
     document.querySelectorAll("[data-students]").forEach(b => b.onclick = () => toggleStudents(b.dataset.students));
@@ -519,8 +461,7 @@ documents:
     const wfs = await (await api("/api/v1/workflows")).json().catch(() => []);
     const opts = '<option value="">None (browse-only)</option>'
       + (wfs || []).map(w => `<option value="${w.name}">${w.name}</option>`).join("");
-    if ($("wWorkflow")) $("wWorkflow").innerHTML = opts;
-    if ($("simWorkflow")) $("simWorkflow").innerHTML = opts;
+    if ($("edWorkflow")) $("edWorkflow").innerHTML = opts;
     wfLoaded = true;
   }
 
@@ -528,7 +469,7 @@ documents:
     $("login").classList.add("hidden"); $("signup").classList.add("hidden");
     $("app").classList.remove("hidden"); $("logout").classList.remove("hidden");
     $("who").textContent = uc.email + " (" + uc.role + ")";
-    $("simYaml").value = TEMPLATE; msg("");
+    msg("");
     if (uc.role === "instance_admin") { $("adminPanel").classList.remove("hidden"); loadAdmin(); }
     else { $("adminPanel").classList.add("hidden"); }
     loadWorkflows(); refresh();
@@ -575,164 +516,205 @@ documents:
   $("verifyBtn").onclick = verifySignup;
   $("resendBtn").onclick = resendSignup;
   $("suCode").addEventListener("keydown", e => { if (e.key === "Enter") verifySignup(); });
-  let editingId = null;
-  function openNew() {
-    editingId = null;
-    $("simName").value = ""; $("simName").readOnly = false;
-    $("simPw").value = ""; $("simYaml").value = TEMPLATE;
-    $("createBtn").textContent = "Create";
-    document.querySelector("#newForm h2").textContent = "New simulation";
-    $("newForm").classList.remove("hidden");
-  }
-  async function openEdit(id) {
-    const sims = await (await api("/api/v1/simulations")).json();
-    const sim = sims.find(s => s.id === id);
-    const yr = await api(`/api/v1/simulations/${id}/yaml`);
-    if (!yr.ok) { msg("Could not load YAML", "err"); return; }
-    editingId = id;
-    $("simName").value = sim ? sim.name : "";
-    $("simName").readOnly = true;
-    $("simPw").value = "";
-    $("simYaml").value = (await yr.json()).company_yaml;
-    $("createBtn").textContent = "Save changes";
-    document.querySelector("#newForm h2").textContent = "Edit simulation";
-    $("newForm").classList.remove("hidden");
-    $("newForm").scrollIntoView({ behavior: "smooth" });
-  }
-  $("cancelBtn").onclick = () => $("newForm").classList.add("hidden");
-  $("createBtn").onclick = async () => {
-    const editing = !!editingId;
-    $("createMsg").textContent = editing ? "Saving…" : "Creating… (build can take a few seconds)";
-    const body = JSON.stringify(editing
-      ? { company_yaml: $("simYaml").value, with_llm: $("simLlm").checked, build: $("simBuild").checked }
-      : { name: $("simName").value, company_yaml: $("simYaml").value,
-          shared_password: $("simPw").value || null, auth_mode: $("simAuth").value,
-          workflow: $("simWorkflow").value, with_llm: $("simLlm").checked,
-          build: $("simBuild").checked });
-    const url = editing ? `/api/v1/simulations/${editingId}` : "/api/v1/simulations";
-    const r = await api(url, { method: editing ? "PUT" : "POST", body });
-    const data = await r.json().catch(() => ({}));
-    if (!r.ok) { $("createMsg").textContent = ""; msg(data.detail || "Failed", "err"); return; }
-    $("createMsg").textContent = ""; $("newForm").classList.add("hidden");
-    msg(editing ? "Saved." : ("Created " + data.slug), "ok"); refresh();
-  };
-
-  // --- guided wizard ---
-  const INDUSTRIES = ["general", "cloud_services", "software_development", "finance",
+  // --- structured editor (tabbed): create + edit, structured by default, YAML as advanced ---
+  const ED_INDUSTRIES = ["general", "cloud_services", "software_development", "finance",
     "mining", "government", "nonprofit", "consulting"];
-  const SCENARIOS = ["growth", "breach", "digital_transformation", "crisis", "merger", "custom"];
-  let wStep = 0, wArchetypes = [], wCatalogsLoaded = false;
+  const ED_SCENARIOS = ["growth", "breach", "digital_transformation", "crisis", "merger", "custom"];
+  const ED_DOCTYPES = ["policy", "support", "internal", "press", "custom"];
+  const ED_TABS = [["basics", "Basics"], ["company", "Company"], ["scenario", "Scenario"],
+    ["people", "People"], ["documents", "Documents"], ["features", "Features"],
+    ["yaml", "Advanced (YAML)"]];
+  let editingId = null, edCatalogs = false, edArchetypes = [], edYamlDirty = false, edTab = "basics";
 
-  async function wLoadCatalogs() {
-    if (wCatalogsLoaded) return;
-    $("wIndustry").innerHTML = INDUSTRIES.map(i => `<option value="${i}">${i.replace(/_/g, " ")}</option>`).join("");
-    $("wScenType").innerHTML = SCENARIOS.map(s => `<option value="${s}">${s.replace(/_/g, " ")}</option>`).join("");
+  function edRenderTabs() {
+    $("edTabs").innerHTML = ED_TABS.map(([k, l]) =>
+      `<button class="${k === edTab ? 'primary' : 'ghost'}" data-etabbtn="${k}" type="button" `
+      + `style="padding:0.35rem 0.7rem">${l}</button>`).join("");
+    document.querySelectorAll("[data-etabbtn]").forEach(b =>
+      b.onclick = () => edShow(b.dataset.etabbtn));
+  }
+  function edShow(tab) {
+    edTab = tab;
+    document.querySelectorAll("#editor [data-etab]").forEach(el => el.hidden = (el.dataset.etab !== tab));
+    edRenderTabs();
+  }
+
+  async function edLoadCatalogs() {
+    if (edCatalogs) return;
+    $("edIndustry").innerHTML = ED_INDUSTRIES.map(i => `<option value="${i}">${i.replace(/_/g, " ")}</option>`).join("");
+    $("edScenType").innerHTML = ED_SCENARIOS.map(s => `<option value="${s}">${s.replace(/_/g, " ")}</option>`).join("");
     const themes = await (await api("/api/v1/themes")).json().catch(() => []);
-    $("wTheme").innerHTML = (themes && themes.length ? themes : [{ name: "tech-modern" }])
+    $("edTheme").innerHTML = (themes && themes.length ? themes : [{ name: "tech-modern" }])
       .map(t => `<option value="${t.name}">${t.name}</option>`).join("");
-    wArchetypes = await (await api("/api/v1/archetypes")).json().catch(() => []);
-    wCatalogsLoaded = true;
+    const wfs = await (await api("/api/v1/workflows")).json().catch(() => []);
+    $("edWorkflow").innerHTML = '<option value="">None (browse-only)</option>'
+      + (wfs || []).map(w => `<option value="${w.name}">${w.name}</option>`).join("");
+    edArchetypes = await (await api("/api/v1/archetypes")).json().catch(() => []);
+    edCatalogs = true;
   }
 
-  function wStepIndicator() {
-    const labels = ["Basics", "Company", "Scenario", "People", "Documents", "Finish"];
-    $("wizSteps").innerHTML = labels.map((l, i) =>
-      i === wStep ? `<strong style="color:var(--accent)">${i + 1}. ${l}</strong>` : `${i + 1}. ${l}`)
-      .join("  ·  ");
-  }
-
-  function wShow(n) {
-    wStep = n;
-    document.querySelectorAll("#wizard [data-step]").forEach(el => { el.hidden = (+el.dataset.step !== n); });
-    $("wBack").style.visibility = n === 0 ? "hidden" : "visible";
-    $("wNext").classList.toggle("hidden", n >= 5);
-    $("wCreate").classList.toggle("hidden", n < 5);
-    wStepIndicator();
-    if (n === 5) {
-      const emps = document.querySelectorAll("#wEmps .row").length;
-      const docs = document.querySelectorAll("#wDocs .row").length;
-      $("wReview").textContent = `${$("wCoName").value || "(company)"} · ${emps} people · `
-        + `${docs} documents · theme ${$("wTheme").value} · audience ${$("wAudience").value}`;
+  function edApplyAudience() {
+    const minors = $("edAudience").value === "minors";
+    $("edSafeBanner").classList.toggle("hidden", !minors);
+    if (minors) {  // safe-mode defaults are enforced in the UI
+      $("edChatbot").value = "keyword"; $("edChatbot").disabled = true;
+      $("edAuth").value = "shared_password"; $("edAuth").disabled = true;
+      $("edLlm").checked = false; $("edLlm").disabled = true;
+    } else {
+      $("edChatbot").disabled = false; $("edAuth").disabled = false; $("edLlm").disabled = false;
     }
   }
-
-  function wEmpRow() {
-    const div = document.createElement("div"); div.className = "row"; div.style.marginBottom = "0.4rem";
-    const opts = wArchetypes.map(a => `<option value="${a.name}">${a.label || a.name}</option>`).join("");
-    div.innerHTML = `<input class="wEmpName" aria-label="Employee name" placeholder="Name" style="flex:2">
-      <input class="wEmpRole" aria-label="Employee role" placeholder="Role" style="flex:2">
-      <select class="wEmpArch" aria-label="Employee archetype" style="flex:2">${opts}</select>
-      <button class="ghost wEmpDel" type="button" aria-label="Remove employee">✕</button>`;
-    div.querySelector(".wEmpDel").onclick = () => div.remove();
-    return div;
-  }
-  function wDocRow() {
-    const div = document.createElement("div"); div.className = "row"; div.style.marginBottom = "0.4rem";
-    div.innerHTML = `<select class="wDocType" aria-label="Document type" style="flex:1">
-        ${["policy", "support", "internal", "press", "custom"].map(t => `<option>${t}</option>`).join("")}</select>
-      <input class="wDocTitle" aria-label="Document title" placeholder="Title" style="flex:2">
-      <input class="wDocBrief" aria-label="Document brief" placeholder="One-line brief" style="flex:3">
-      <button class="ghost wDocDel" type="button" aria-label="Remove document">✕</button>`;
-    div.querySelector(".wDocDel").onclick = () => div.remove();
-    return div;
+  function edApplyBooking() {
+    $("edGateWrap").classList.toggle("hidden", !$("edBooking").checked);
+    if (!$("edBooking").checked) $("edGate").checked = false;
   }
 
-  async function openWizard() {
-    await wLoadCatalogs();
-    $("newForm").classList.add("hidden");
-    ["wName", "wPw", "wCoName", "wTagline", "wLocation", "wDesc", "wScenName", "wScenDesc"]
+  function edEmpRow(emp) {
+    const div = document.createElement("div"); div.className = "row"; div.style.marginBottom = "0.4rem";
+    const opts = edArchetypes.map(a => `<option value="${a.name}">${a.label || a.name}</option>`).join("");
+    div.innerHTML = `<input class="edEmpName" aria-label="Person name" placeholder="Name" style="flex:2">
+      <input class="edEmpRole" aria-label="Person role" placeholder="Role" style="flex:2">
+      <select class="edEmpArch" aria-label="Person archetype" style="flex:2"><option value="staff">(default)</option>${opts}</select>
+      <button class="ghost edEmpDel" type="button" aria-label="Remove person">✕</button>`;
+    if (emp) {
+      div.querySelector(".edEmpName").value = emp.name || "";
+      div.querySelector(".edEmpRole").value = emp.role || "";
+      if (emp.archetype) div.querySelector(".edEmpArch").value = emp.archetype;
+    }
+    div.querySelector(".edEmpDel").onclick = () => div.remove();
+    return div;
+  }
+  function edDocRow(doc) {
+    const div = document.createElement("div"); div.className = "row"; div.style.marginBottom = "0.4rem";
+    div.innerHTML = `<select class="edDocType" aria-label="Document type" style="flex:1">`
+      + ED_DOCTYPES.map(t => `<option value="${t}">${t}</option>`).join("") + `</select>
+      <input class="edDocTitle" aria-label="Document title" placeholder="Title" style="flex:2">
+      <input class="edDocBrief" aria-label="Document brief" placeholder="One-line brief" style="flex:3">
+      <button class="ghost edDocDel" type="button" aria-label="Remove document">✕</button>`;
+    if (doc) {
+      div.querySelector(".edDocType").value = doc.type || "custom";
+      div.querySelector(".edDocTitle").value = doc.title || "";
+      div.querySelector(".edDocBrief").value = doc.brief || "";
+    }
+    div.querySelector(".edDocDel").onclick = () => div.remove();
+    return div;
+  }
+
+  function edClear() {
+    ["edName", "edPw", "edCoName", "edTagline", "edLocation", "edDesc", "edScenName", "edScenDesc"]
       .forEach(id => { $(id).value = ""; });
-    $("wEmps").innerHTML = ""; $("wDocs").innerHTML = "";
-    $("wEmps").appendChild(wEmpRow()); $("wDocs").appendChild(wDocRow());
-    $("wMsg").textContent = "";
-    $("wizard").classList.remove("hidden");
-    wShow(0);
+    $("edEmps").innerHTML = ""; $("edDocs").innerHTML = "";
+    $("edEmps").appendChild(edEmpRow()); $("edDocs").appendChild(edDocRow());
+    $("edAudience").value = "adults"; $("edAuth").value = "shared_password"; $("edWorkflow").value = "";
+    $("edChatbot").value = "keyword"; $("edBooking").checked = false;
+    $("edGate").checked = false; $("edDash").checked = false;
+    $("edLlm").checked = false; $("edBuild").checked = true;
+    edYamlDirty = false; $("edYaml").value = ""; $("edMsg").textContent = ""; $("edSaveMsg").textContent = "";
+    edApplyAudience(); edApplyBooking();
   }
 
-  function wAssemble() {
-    const emps = Array.prototype.map.call(document.querySelectorAll("#wEmps .row"), r => ({
-      name: r.querySelector(".wEmpName").value, role: r.querySelector(".wEmpRole").value,
-      archetype: r.querySelector(".wEmpArch").value || "staff",
+  async function openEditor(mode, id) {
+    await edLoadCatalogs();
+    editingId = (mode === "edit") ? id : null;
+    edClear();
+    if (mode === "edit") {
+      const [simRes, cfgRes, yamlRes] = await Promise.all([
+        (await api(`/api/v1/simulations/${id}`)).json().catch(() => null),
+        (await api(`/api/v1/simulations/${id}/config`)).json().catch(() => null),
+        api(`/api/v1/simulations/${id}/yaml`),
+      ]);
+      if (!cfgRes) { msg("Could not load this simulation's configuration", "err"); return; }
+      edPopulate(cfgRes, simRes);
+      if (yamlRes.ok) $("edYaml").value = (await yamlRes.json()).company_yaml;  // seed advanced tab
+      $("edTitle").textContent = "Edit: " + (simRes ? simRes.name : "simulation");
+      $("edSave").textContent = "Save changes"; $("edName").readOnly = true;
+    } else {
+      $("edTitle").textContent = "New simulation";
+      $("edSave").textContent = "Create simulation"; $("edName").readOnly = false;
+    }
+    edShow("basics");
+    $("editor").classList.remove("hidden");
+    $("editor").scrollIntoView({ behavior: "smooth" });
+  }
+
+  function edPopulate(cfg, sim) {
+    $("edName").value = sim ? sim.name : "";
+    $("edAudience").value = cfg.audience || "adults";
+    $("edAuth").value = (sim && sim.auth_mode) || "shared_password";
+    $("edWorkflow").value = (sim && sim.workflow) || "";
+    $("edTheme").value = cfg.theme || "tech-modern";
+    const co = cfg.company || {};
+    $("edCoName").value = co.name || ""; $("edTagline").value = co.tagline || "";
+    $("edIndustry").value = co.industry || "general"; $("edLocation").value = co.location || "";
+    $("edDesc").value = (co.profile && co.profile.description) || "";
+    const sc = co.scenario || {};
+    $("edScenType").value = sc.type || "custom"; $("edScenName").value = sc.name || "";
+    $("edScenDesc").value = sc.description || "";
+    $("edEmps").innerHTML = "";
+    (cfg.employees || []).forEach(e => $("edEmps").appendChild(edEmpRow(e)));
+    if (!$("edEmps").children.length) $("edEmps").appendChild(edEmpRow());
+    $("edDocs").innerHTML = "";
+    (cfg.documents || []).forEach(d => $("edDocs").appendChild(edDocRow(d)));
+    if (!$("edDocs").children.length) $("edDocs").appendChild(edDocRow());
+    $("edChatbot").value = cfg.chatbot_mode || "keyword";
+    const pl = cfg.platform || {};
+    $("edBooking").checked = !!pl.booking_enabled;
+    $("edGate").checked = !!pl.chatbot_requires_booking;
+    $("edDash").checked = !!pl.lecturer_dashboard;
+    edApplyAudience(); edApplyBooking();
+  }
+
+  function edAssemble() {
+    const emps = Array.prototype.map.call(document.querySelectorAll("#edEmps .row"), r => ({
+      name: r.querySelector(".edEmpName").value, role: r.querySelector(".edEmpRole").value,
+      archetype: r.querySelector(".edEmpArch").value || "staff",
     })).filter(e => e.name.trim());
-    const docs = Array.prototype.map.call(document.querySelectorAll("#wDocs .row"), r => ({
-      type: r.querySelector(".wDocType").value, title: r.querySelector(".wDocTitle").value,
-      brief: r.querySelector(".wDocBrief").value,
+    const docs = Array.prototype.map.call(document.querySelectorAll("#edDocs .row"), r => ({
+      type: r.querySelector(".edDocType").value, title: r.querySelector(".edDocTitle").value,
+      brief: r.querySelector(".edDocBrief").value,
     })).filter(d => d.title.trim());
     return {
       company: {
-        name: $("wCoName").value, tagline: $("wTagline").value, industry: $("wIndustry").value,
-        location: $("wLocation").value, profile: { description: $("wDesc").value },
-        scenario: { type: $("wScenType").value, name: $("wScenName").value, description: $("wScenDesc").value },
+        name: $("edCoName").value, tagline: $("edTagline").value, industry: $("edIndustry").value,
+        location: $("edLocation").value, profile: { description: $("edDesc").value },
+        scenario: { type: $("edScenType").value, name: $("edScenName").value, description: $("edScenDesc").value },
       },
-      audience: $("wAudience").value, theme: $("wTheme").value, employees: emps, documents: docs,
+      audience: $("edAudience").value, theme: $("edTheme").value,
+      chatbot_mode: $("edChatbot").value,
+      platform: { booking_enabled: $("edBooking").checked,
+        chatbot_requires_booking: $("edGate").checked, lecturer_dashboard: $("edDash").checked },
+      employees: emps, documents: docs,
     };
   }
 
-  $("wBack").onclick = () => wShow(Math.max(0, wStep - 1));
-  $("wNext").onclick = () => {
-    if (wStep === 0 && !$("wName").value.trim()) { $("wMsg").textContent = "Give the simulation a name."; return; }
-    if (wStep === 1 && !$("wCoName").value.trim()) { $("wMsg").textContent = "Give the company a name."; return; }
-    $("wMsg").textContent = ""; wShow(Math.min(5, wStep + 1));
-  };
-  $("wAddEmp").onclick = () => $("wEmps").appendChild(wEmpRow());
-  $("wAddDoc").onclick = () => $("wDocs").appendChild(wDocRow());
-  $("wCancel").onclick = () => $("wizard").classList.add("hidden");
-  $("toYaml").onclick = (e) => { e.preventDefault(); $("wizard").classList.add("hidden"); openNew(); };
-  $("toWizard").onclick = (e) => { e.preventDefault(); openWizard(); };
-  $("newBtn").onclick = openWizard;
-  $("wCreate").onclick = async () => {
-    $("wMsg").textContent = "Creating… (build can take a few seconds)";
-    const body = JSON.stringify({
-      name: $("wName").value, config: wAssemble(), auth_mode: $("wAuth").value,
-      shared_password: $("wPw").value || null, workflow: $("wWorkflow").value,
-      with_llm: $("wLlm").checked, build: $("wBuild").checked,
-    });
-    const r = await api("/api/v1/simulations", { method: "POST", body });
+  $("edSave").onclick = async () => {
+    const editing = !!editingId;
+    if (!editing && !$("edName").value.trim()) { $("edMsg").textContent = "Give the simulation a name (Basics tab)."; return; }
+    if (!edAssemble().company.name.trim()) { $("edMsg").textContent = "Company name is required (Company tab)."; return; }
+    $("edSaveMsg").textContent = editing ? "Saving…" : "Creating… (build can take a few seconds)";
+    const useYaml = edYamlDirty && $("edYaml").value.trim();  // manual YAML edits win
+    const payload = useYaml
+      ? { company_yaml: $("edYaml").value, with_llm: $("edLlm").checked, build: $("edBuild").checked }
+      : (editing
+          ? { config: edAssemble(), with_llm: $("edLlm").checked, build: $("edBuild").checked }
+          : { name: $("edName").value, config: edAssemble(), auth_mode: $("edAuth").value,
+              shared_password: $("edPw").value || null, workflow: $("edWorkflow").value,
+              with_llm: $("edLlm").checked, build: $("edBuild").checked });
+    const url = editing ? `/api/v1/simulations/${editingId}` : "/api/v1/simulations";
+    const r = await api(url, { method: editing ? "PUT" : "POST", body: JSON.stringify(payload) });
     const d = await r.json().catch(() => ({}));
-    if (!r.ok) { $("wMsg").textContent = ""; msg(d.detail || "Failed", "err"); return; }
-    $("wMsg").textContent = ""; $("wizard").classList.add("hidden");
-    msg("Created " + d.slug, "ok"); refresh();
+    if (!r.ok) { $("edSaveMsg").textContent = ""; $("edMsg").textContent = d.detail || "Failed"; return; }
+    $("edMsg").textContent = ""; $("edSaveMsg").textContent = "";
+    $("editor").classList.add("hidden");
+    msg(editing ? "Saved." : ("Created " + d.slug), "ok"); refresh();
   };
+  $("edCancel").onclick = () => $("editor").classList.add("hidden");
+  $("edAddEmp").onclick = () => $("edEmps").appendChild(edEmpRow());
+  $("edAddDoc").onclick = () => $("edDocs").appendChild(edDocRow());
+  $("edAudience").onchange = edApplyAudience;
+  $("edBooking").onchange = edApplyBooking;
+  $("edYaml").addEventListener("input", () => { edYamlDirty = true; });
+  $("newBtn").onclick = () => openEditor("new");
 
   boot();
   </script>
