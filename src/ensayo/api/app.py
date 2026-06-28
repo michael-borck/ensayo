@@ -47,6 +47,7 @@ from .service import (
     cancel_booking,
     connect_repo,
     create_booking,
+    create_multisite_simulation,
     create_simulation,
     delete_visibility_rule,
     evaluate_visibility,
@@ -55,6 +56,7 @@ from .service import (
     publish,
     regenerate,
     row_to_dict,
+    update_multisite_simulation,
     update_simulation,
     working_root,
 )
@@ -91,7 +93,8 @@ class RegistrationToggleReq(BaseModel):
 class CreateSimReq(BaseModel):
     name: str
     company_yaml: str = ""          # raw YAML (advanced) …
-    config: dict | None = None      # … or structured fields (the wizard)
+    config: dict | None = None      # … or structured single-company fields
+    simulation: dict | None = None  # … or structured multi-site config (portal + companies)
     shared_password: str | None = None
     auth_mode: str = "shared_password"
     workflow: str = ""
@@ -193,7 +196,8 @@ class StudentVerifyReq(BaseModel):
 
 class UpdateSimReq(BaseModel):
     company_yaml: str = ""          # raw YAML (advanced) …
-    config: dict | None = None      # … or structured fields (the tabbed editor)
+    config: dict | None = None      # … or structured single-company fields
+    simulation: dict | None = None  # … or structured multi-site config
     with_llm: bool = False
     build: bool = True
 
@@ -329,8 +333,25 @@ def create_app() -> FastAPI:
     @app.post("/api/v1/simulations", status_code=201)
     def create_sim(req: CreateSimReq, uc: sqlite3.Row = Depends(current_uc),
                    conn: sqlite3.Connection = Depends(get_conn)):
+        # Multi-site (structured): portal + companies → simulation.yaml
+        if req.simulation is not None:
+            from ..config import dump_simulation_yaml
+            from ..models import SimulationConfig
+            try:
+                simulation_yaml = dump_simulation_yaml(SimulationConfig.model_validate(req.simulation))
+            except Exception as exc:
+                raise HTTPException(422, f"invalid configuration: {exc}") from exc
+            try:
+                return create_multisite_simulation(
+                    conn, uc["id"], req.name, simulation_yaml,
+                    workflow=req.workflow, with_llm=req.with_llm, build=req.build)
+            except ConfigError as exc:
+                raise HTTPException(422, f"invalid simulation.yaml:\n{exc}") from exc
+            except ServiceError as exc:
+                raise HTTPException(400, str(exc)) from exc
+        # Single-company (structured or raw YAML)
         company_yaml = req.company_yaml
-        if req.config is not None:  # wizard sends structured fields → build the YAML server-side
+        if req.config is not None:
             from ..config import dump_config_yaml
             from ..models import CompanyConfig
             try:
@@ -338,7 +359,7 @@ def create_app() -> FastAPI:
             except Exception as exc:  # pydantic ValidationError → 422
                 raise HTTPException(422, f"invalid configuration: {exc}") from exc
         if not company_yaml.strip():
-            raise HTTPException(422, "provide company_yaml or config")
+            raise HTTPException(422, "provide company_yaml, config, or simulation")
         try:
             return create_simulation(
                 conn, uc["id"], req.name, company_yaml,
@@ -400,11 +421,14 @@ def create_app() -> FastAPI:
     def get_sim_config(sim_id: str, uc: sqlite3.Row = Depends(current_uc),
                        conn: sqlite3.Connection = Depends(get_conn)):
         sim = _owned_sim(sim_id, uc, conn)
-        path = Path(sim["working_clone_path"]) / "company.yaml"
-        if not path.exists():
-            raise HTTPException(404, "company.yaml not found")
+        clone = Path(sim["working_clone_path"])
         try:
-            return load_company_config(path).model_dump(mode="json")
+            if sim["type"] == "multi_site":
+                from ..config import load_simulation_config
+                return load_simulation_config(clone / "simulation.yaml").model_dump(mode="json")
+            return load_company_config(clone / "company.yaml").model_dump(mode="json")
+        except FileNotFoundError as exc:
+            raise HTTPException(404, "config file not found") from exc
         except ConfigError as exc:
             raise HTTPException(422, str(exc)) from exc
 
@@ -435,6 +459,22 @@ def create_app() -> FastAPI:
                    uc: sqlite3.Row = Depends(current_uc),
                    conn: sqlite3.Connection = Depends(get_conn)):
         sim = _owned_sim(sim_id, uc, conn)
+        # Multi-site (structured)
+        if req.simulation is not None:
+            from ..config import dump_simulation_yaml
+            from ..models import SimulationConfig
+            try:
+                simulation_yaml = dump_simulation_yaml(SimulationConfig.model_validate(req.simulation))
+            except Exception as exc:
+                raise HTTPException(422, f"invalid configuration: {exc}") from exc
+            try:
+                return update_multisite_simulation(conn, sim, simulation_yaml,
+                                                   with_llm=req.with_llm, build=req.build)
+            except ConfigError as exc:
+                raise HTTPException(422, f"invalid simulation.yaml:\n{exc}") from exc
+            except ServiceError as exc:
+                raise HTTPException(400, str(exc)) from exc
+        # Single-company
         company_yaml = req.company_yaml
         if req.config is not None:  # structured editor → build YAML server-side
             from ..config import dump_config_yaml
@@ -444,7 +484,7 @@ def create_app() -> FastAPI:
             except Exception as exc:  # pydantic ValidationError → 422
                 raise HTTPException(422, f"invalid configuration: {exc}") from exc
         if not company_yaml.strip():
-            raise HTTPException(422, "provide company_yaml or config")
+            raise HTTPException(422, "provide company_yaml, config, or simulation")
         try:
             return update_simulation(conn, sim, company_yaml,
                                      with_llm=req.with_llm, build=req.build)

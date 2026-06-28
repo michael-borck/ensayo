@@ -34,6 +34,8 @@
     .pill { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.05em;
       padding:0.1rem 0.5rem; border-radius:999px; background:var(--surface2); color:var(--muted); }
     .grow { flex:1; } .hidden { display:none; }
+    #editor.company-mode .sim-only { display:none; }  /* editing a company within a multi-site sim */
+    .tabs { display:flex; gap:0.3rem; flex-wrap:wrap; border-bottom:1px solid var(--border); margin:0.6rem 0; }
     a { color:var(--accent); }
     #msg { margin:0.75rem 0; min-height:1.2em; }
     .err { color:#ff7a7a; } .ok { color:var(--accent); }
@@ -112,18 +114,18 @@
 
         <div data-etab="basics">
           <div class="field-row">
-            <div><label>Simulation name</label><input id="edName" placeholder="CloudCore — ISYS6018 Sem1 2026" /></div>
+            <div class="sim-only"><label>Simulation name</label><input id="edName" placeholder="CloudCore — ISYS6018 Sem1 2026" /></div>
             <div><label>Audience</label>
               <select id="edAudience"><option value="adults">Adults (university)</option><option value="minors">Minors (school — safe mode)</option></select></div>
           </div>
           <div class="field-row">
-            <div><label>Student sign-in</label>
+          <div class="sim-only"><label>Student sign-in</label>
               <select id="edAuth"><option value="shared_password">Shared password</option><option value="individual_account">Individual accounts</option><option value="email_only">Email only</option></select></div>
-            <div><label>Shared password</label><input id="edPw" placeholder="students enter this" /></div>
+            <div class="sim-only"><label>Shared password</label><input id="edPw" placeholder="students enter this" /></div>
           </div>
           <div class="field-row">
             <div><label>Theme</label><select id="edTheme"></select></div>
-            <div><label>Workflow <span class="muted small">(student lifecycle)</span></label><select id="edWorkflow"></select></div>
+            <div class="sim-only"><label>Workflow <span class="muted small">(student lifecycle)</span></label><select id="edWorkflow"></select></div>
           </div>
         </div>
 
@@ -168,8 +170,8 @@
             <label><input type="checkbox" id="edBooking" /> Enable booking (office hours)</label>
             <label id="edGateWrap" class="hidden"><input type="checkbox" id="edGate" /> Gate chat behind a booking</label>
             <label><input type="checkbox" id="edDash" /> Show lecturer dashboard on the site</label>
-            <label><input type="checkbox" id="edLlm" /> Generate content with LLM (backstories, docs, scenario)</label>
-            <label><input type="checkbox" id="edBuild" checked /> Build the site now</label>
+            <label class="sim-only"><input type="checkbox" id="edLlm" /> Generate content with LLM (backstories, docs, scenario)</label>
+            <label class="sim-only"><input type="checkbox" id="edBuild" checked /> Build the site now</label>
           </div>
         </div>
 
@@ -181,6 +183,46 @@
         <div class="row" style="margin-top:1rem">
           <button class="primary" id="edSave" type="button">Create simulation</button>
           <span id="edSaveMsg" class="small muted"></span>
+        </div>
+      </div>
+
+      <div id="newChooser" class="card hidden" style="margin-top:1rem">
+        <h2>New simulation</h2>
+        <p class="muted small">Choose a pattern. Most courses use a single company; multi-site coordinates a portal with several companies (power-user).</p>
+        <div class="row" style="gap:0.6rem;margin-top:0.6rem">
+          <button class="primary" id="chooseSingle" type="button">Single company</button>
+          <button class="ghost" id="chooseMulti" type="button">Multi-site (portal + companies)</button>
+          <button class="ghost" id="chooseCancel" type="button">Cancel</button>
+        </div>
+      </div>
+
+      <div id="msEditor" class="card hidden" style="margin-top:1rem">
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <h2 id="msTitle" style="margin:0">New multi-site simulation</h2>
+          <button class="ghost" id="msCancel" type="button">Close</button>
+        </div>
+        <div id="msMsg" class="small err"></div>
+        <div class="field-row" style="margin-top:0.6rem">
+          <div><label>Simulation name</label><input id="msName" placeholder="WorkReady — ISYS6018 Sem1 2026" /></div>
+          <div><label>Workflow <span class="muted small">(student lifecycle)</span></label><select id="msWorkflow"></select></div>
+        </div>
+        <h3 style="font-size:0.95rem;margin:0.8rem 0 0.3rem">Portal (hub)</h3>
+        <div class="field-row">
+          <div><label>Portal title</label><input id="msPTitle" placeholder="WorkReady" /></div>
+          <div><label>Tagline</label><input id="msPTagline" /></div>
+        </div>
+        <label>Description</label>
+        <textarea id="msPDesc" style="min-height:60px"></textarea>
+
+        <h3 style="font-size:0.95rem;margin:0.9rem 0 0.3rem">Companies <span id="msCoCount" class="muted small"></span></h3>
+        <div id="msCompanies"></div>
+        <button class="ghost" id="msAddCompany" type="button" style="margin-top:0.4rem">+ Add company</button>
+
+        <label class="checks" style="margin-top:0.9rem"><input type="checkbox" id="msBuild" /> Build all sites now (heavier — portal + every company; otherwise build via Regenerate after)</label>
+
+        <div class="row" style="margin-top:1rem">
+          <button class="primary" id="msSave" type="button">Create simulation</button>
+          <span id="msSaveMsg" class="small muted"></span>
         </div>
       </div>
 
@@ -231,7 +273,7 @@
           <div class="row">
             <a class="ghost" style="padding:0.5rem 1rem;border:1px solid var(--border);border-radius:9px"
                href="/sims/${s.slug}/" target="_blank">View ↗</a>
-            <button class="ghost" data-edit="${s.id}">Edit</button>
+            <button class="ghost" data-edit="${s.id}" data-type="${s.type}">Edit</button>
             <button class="ghost" data-gen="${s.id}">Regenerate</button>
             <button class="ghost" data-students="${s.id}">Students</button>
             <button class="ghost" data-book="${s.id}">Bookings</button>
@@ -248,7 +290,8 @@
     }
     document.querySelectorAll("[data-gen]").forEach(b => b.onclick = () => act(b.dataset.gen, "generate", b));
     document.querySelectorAll("[data-pub]").forEach(b => b.onclick = () => doPublish(b.dataset.pub, b));
-    document.querySelectorAll("[data-edit]").forEach(b => b.onclick = () => openEditor("edit", b.dataset.edit));
+    document.querySelectorAll("[data-edit]").forEach(b => b.onclick = () =>
+      b.dataset.type === "multi_site" ? openMsEditor("edit", b.dataset.edit) : openEditor("edit", b.dataset.edit));
     document.querySelectorAll("[data-prov]").forEach(b => b.onclick = () => doProvision(b.dataset.prov, b));
     document.querySelectorAll("[data-book]").forEach(b => b.onclick = () => toggleBookings(b.dataset.book));
     document.querySelectorAll("[data-students]").forEach(b => b.onclick = () => toggleStudents(b.dataset.students));
@@ -524,10 +567,11 @@
   const ED_TABS = [["basics", "Basics"], ["company", "Company"], ["scenario", "Scenario"],
     ["people", "People"], ["documents", "Documents"], ["features", "Features"],
     ["yaml", "Advanced (YAML)"]];
-  let editingId = null, edCatalogs = false, edArchetypes = [], edYamlDirty = false, edTab = "basics";
+  let editingId = null, edCatalogs = false, edArchetypes = [], edYamlDirty = false, edTab = "basics",
+      edCompanyMode = false, edOnCompany = null;
 
   function edRenderTabs() {
-    $("edTabs").innerHTML = ED_TABS.map(([k, l]) =>
+    $("edTabs").innerHTML = ED_TABS.filter(([k]) => !(edCompanyMode && k === "yaml")).map(([k, l]) =>
       `<button class="${k === edTab ? 'primary' : 'ghost'}" data-etabbtn="${k}" type="button" `
       + `style="padding:0.35rem 0.7rem">${l}</button>`).join("");
     document.querySelectorAll("[data-etabbtn]").forEach(b =>
@@ -612,9 +656,21 @@
     edYamlDirty = false; $("edYaml").value = ""; $("edMsg").textContent = ""; $("edSaveMsg").textContent = "";
     edApplyAudience(); edApplyBooking();
   }
-
-  async function openEditor(mode, id) {
+  async function openEditor(mode, id, opts = {}) {
     await edLoadCatalogs();
+    edCompanyMode = !!opts.onCompany;  // editing one company inside a multi-site sim
+    edOnCompany = opts.onCompany || null;
+    $("editor").classList.toggle("company-mode", edCompanyMode);
+    if (edCompanyMode) {
+      editingId = null; edClear();
+      if (opts.company) edPopulate(opts.company, null);
+      $("edTitle").textContent = opts.company ? "Edit company" : "Add company";
+      $("edSave").textContent = "Done";
+      edShow("company");
+      $("editor").classList.remove("hidden");
+      $("editor").scrollIntoView({ behavior: "smooth" });
+      return;
+    }
     editingId = (mode === "edit") ? id : null;
     edClear();
     if (mode === "edit") {
@@ -625,7 +681,7 @@
       ]);
       if (!cfgRes) { msg("Could not load this simulation's configuration", "err"); return; }
       edPopulate(cfgRes, simRes);
-      if (yamlRes.ok) $("edYaml").value = (await yamlRes.json()).company_yaml;  // seed advanced tab
+      if (yamlRes.ok) $("edYaml").value = (await yamlRes.json()).company_yaml;
       $("edTitle").textContent = "Edit: " + (simRes ? simRes.name : "simulation");
       $("edSave").textContent = "Save changes"; $("edName").readOnly = true;
     } else {
@@ -688,6 +744,15 @@
   }
 
   $("edSave").onclick = async () => {
+    if (edCompanyMode) {  // editing a company within a multi-site sim → hand it back
+      if (!edAssemble().company.name.trim()) { $("edMsg").textContent = "Company name is required."; return; }
+      $("edMsg").textContent = "";
+      const cfg = edAssemble();
+      $("editor").classList.add("hidden"); $("editor").classList.remove("company-mode");
+      const cb = edOnCompany; edCompanyMode = false; edOnCompany = null;
+      if (cb) cb(cfg);
+      return;
+    }
     const editing = !!editingId;
     if (!editing && !$("edName").value.trim()) { $("edMsg").textContent = "Give the simulation a name (Basics tab)."; return; }
     if (!edAssemble().company.name.trim()) { $("edMsg").textContent = "Company name is required (Company tab)."; return; }
@@ -714,7 +779,100 @@
   $("edAudience").onchange = edApplyAudience;
   $("edBooking").onchange = edApplyBooking;
   $("edYaml").addEventListener("input", () => { edYamlDirty = true; });
-  $("newBtn").onclick = () => openEditor("new");
+  $("newBtn").onclick = () => {
+    ["editor", "msEditor"].forEach(id => $(id).classList.add("hidden"));
+    $("newChooser").classList.remove("hidden");
+  };
+  $("chooseSingle").onclick = () => { $("newChooser").classList.add("hidden"); openEditor("new"); };
+  $("chooseMulti").onclick = () => { $("newChooser").classList.add("hidden"); openMsEditor("new"); };
+  $("chooseCancel").onclick = () => $("newChooser").classList.add("hidden");
+
+  // --- multi-site editor (portal + companies; reuses the editor per company) ---
+  let msEditingId = null, msCompanies = [];
+
+  async function openMsEditor(mode, id) {
+    await edLoadCatalogs();
+    const wfs = await (await api("/api/v1/workflows")).json().catch(() => []);
+    $("msWorkflow").innerHTML = '<option value="">None (browse-only)</option>'
+      + (wfs || []).map(w => `<option value="${w.name}">${w.name}</option>`).join("");
+    msEditingId = (mode === "edit") ? id : null;
+    msCompanies = [];
+    ["msName", "msPTitle", "msPTagline", "msPDesc"].forEach(idv => $(idv).value = "");
+    $("msMsg").textContent = ""; $("msSaveMsg").textContent = "";
+    if (mode === "edit") {
+      const [simRes, cfgRes] = await Promise.all([
+        (await api(`/api/v1/simulations/${id}`)).json().catch(() => null),
+        (await api(`/api/v1/simulations/${id}/config`)).json().catch(() => null),
+      ]);
+      if (!cfgRes) { msg("Could not load this simulation", "err"); return; }
+      msPopulate(cfgRes, simRes);
+      $("msTitle").textContent = "Edit: " + (simRes ? simRes.name : "simulation");
+      $("msSave").textContent = "Save changes"; $("msName").readOnly = true;
+    } else {
+      $("msTitle").textContent = "New multi-site simulation";
+      $("msSave").textContent = "Create simulation"; $("msName").readOnly = false;
+      renderMsCompanies();
+    }
+    $("msEditor").classList.remove("hidden");
+    $("msEditor").scrollIntoView({ behavior: "smooth" });
+  }
+
+  function msPopulate(cfg, sim) {
+    $("msName").value = sim ? sim.name : (cfg.name || "");
+    $("msWorkflow").value = (sim && sim.workflow) || cfg.workflow || "";
+    const p = cfg.portal || {};
+    $("msPTitle").value = p.title || ""; $("msPTagline").value = p.tagline || "";
+    $("msPDesc").value = p.description || "";
+    msCompanies = (cfg.companies || []).map(c => c);
+    renderMsCompanies();
+  }
+
+  function renderMsCompanies() {
+    $("msCoCount").textContent = "(" + msCompanies.length + ")";
+    $("msCompanies").innerHTML = "";
+    msCompanies.forEach((c, i) => {
+      const el = document.createElement("div"); el.className = "card"; el.style.marginBottom = "0.6rem";
+      const name = (c.company && c.company.name) || "(untitled company)";
+      el.innerHTML = `<div class="row" style="justify-content:space-between">
+        <div><strong>${name}</strong> <span class="muted small">${c.theme || ""} · ${(c.employees || []).length} people</span></div>
+        <div class="row">
+          <button class="ghost" data-msedit="${i}" type="button">Edit</button>
+          <button class="ghost" data-msdel="${i}" type="button">Remove</button>
+        </div></div>`;
+      $("msCompanies").appendChild(el);
+    });
+    document.querySelectorAll("[data-msedit]").forEach(b => b.onclick = () =>
+      openEditor("company", null, { company: msCompanies[+b.dataset.msedit],
+        onCompany: cfg => { msCompanies[+b.dataset.msedit] = cfg; renderMsCompanies(); } }));
+    document.querySelectorAll("[data-msdel]").forEach(b => b.onclick = () =>
+      { msCompanies.splice(+b.dataset.msdel, 1); renderMsCompanies(); });
+  }
+
+  function msAssemble() {
+    return { name: $("msName").value, workflow: $("msWorkflow").value,
+      theme: "portal-clean", audience: "adults",
+      portal: { title: $("msPTitle").value, tagline: $("msPTagline").value, description: $("msPDesc").value },
+      companies: msCompanies };
+  }
+
+  $("msCancel").onclick = () => $("msEditor").classList.add("hidden");
+  $("msAddCompany").onclick = () =>
+    openEditor("company", null, { onCompany: cfg => { msCompanies.push(cfg); renderMsCompanies(); } });
+  $("msSave").onclick = async () => {
+    const editing = !!msEditingId;
+    if (!$("msName").value.trim()) { $("msMsg").textContent = "Give the simulation a name."; return; }
+    if (!msCompanies.length) { $("msMsg").textContent = "Add at least one company."; return; }
+    $("msMsg").textContent = "";
+    $("msSaveMsg").textContent = editing ? "Saving…" : "Creating… (multi-site builds take longer)";
+    const payload = { name: $("msName").value, simulation: msAssemble(), build: $("msBuild").checked };
+    const url = editing ? `/api/v1/simulations/${msEditingId}` : "/api/v1/simulations";
+    const r = await api(url, { method: editing ? "PUT" : "POST", body: JSON.stringify(payload) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { $("msSaveMsg").textContent = ""; $("msMsg").textContent = (typeof d.detail === "string" ? d.detail : "Configuration rejected — check the company details.") || "Failed"; return; }
+    $("msMsg").textContent = ""; $("msSaveMsg").textContent = "";
+    $("msEditor").classList.add("hidden");
+    msg(editing ? "Saved." : ("Created " + d.slug), "ok"); refresh();
+  };
 
   boot();
   </script>

@@ -239,7 +239,9 @@ def generate_multisite(
     log(f"Loaded multi-site simulation: {sim.name} ({sim.slug}) — "
         f"{len(sim.companies)} companies")
     output_dir.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(Path(config_path), output_dir / "simulation.yaml")
+    _src, _dst = Path(config_path), output_dir / "simulation.yaml"
+    if _src.resolve() != _dst.resolve():  # dashboard already wrote it in-place
+        shutil.copyfile(_src, _dst)
 
     dist = output_dir / "dist"
     if dist.exists():

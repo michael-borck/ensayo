@@ -76,6 +76,25 @@ def load_company_config_from_text(text: str) -> CompanyConfig:
     except ValidationError as exc:
         raise ConfigError(_format_validation_error(Path("<input>"), exc)) from exc
 
+def load_simulation_config_from_text(text: str) -> SimulationConfig:
+    """Validate YAML *text* into a :class:`SimulationConfig` (dashboard input)."""
+    try:
+        raw = yaml.safe_load(text)
+    except yaml.YAMLError as exc:
+        raise ConfigError(f"invalid YAML\n{exc}") from exc
+    if not isinstance(raw, dict):
+        raise ConfigError("top-level YAML must be a mapping")
+    try:
+        return SimulationConfig.model_validate(raw)
+    except ValidationError as exc:
+        raise ConfigError(_format_validation_error(Path("<input>"), exc)) from exc
+
+
+def dump_simulation_yaml(config: SimulationConfig) -> str:
+    """Serialise a multi-site config back to clean YAML."""
+    data = config.model_dump(mode="json", exclude_defaults=True)
+    return yaml.safe_dump(data, sort_keys=False, allow_unicode=True, width=100)
+
 
 def dump_config_yaml(config: CompanyConfig) -> str:
     """Serialise a (possibly enriched) config back to clean YAML."""

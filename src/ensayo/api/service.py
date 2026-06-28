@@ -21,8 +21,8 @@ from pathlib import Path
 
 import httpx
 
-from ..config import load_company_config_from_text
-from ..generator import generate
+from ..config import load_company_config_from_text, load_simulation_config_from_text
+from ..generator import generate, generate_multisite
 from .audit import audit
 from .auth import hash_password
 
@@ -234,16 +234,21 @@ def update_simulation(conn: sqlite3.Connection, sim: sqlite3.Row, company_yaml: 
 def regenerate(conn: sqlite3.Connection, sim: sqlite3.Row, *, with_llm: bool = False,
                build: bool = True, log=lambda m: None) -> dict:
     clone = Path(sim["working_clone_path"])
-    cfg_path = clone / "company.yaml"
+    multisite = sim["type"] == "multi_site"
+    cfg_path = clone / ("simulation.yaml" if multisite else "company.yaml")
     if not cfg_path.exists():
-        raise ServiceError(f"working clone missing company.yaml: {clone}")
+        raise ServiceError(f"working clone missing {cfg_path.name}: {clone}")
     can_build = True
     with simulation_lock(sim["slug"]):
         try:
             with build_slot(build) as slot:
                 can_build = slot
-                generate(cfg_path, clone, base=sim["site_url"], with_llm=with_llm,
-                         build=can_build, log=log)
+                if multisite:
+                    generate_multisite(cfg_path, clone, base=sim["site_url"],
+                                       with_llm=with_llm, build=can_build, log=log)
+                else:
+                    generate(cfg_path, clone, base=sim["site_url"], with_llm=with_llm,
+                             build=can_build, log=log)
         except Exception as exc:
             raise ServiceError(f"generation failed: {exc}") from exc
         _git(["add", "-A"], clone)
@@ -256,6 +261,78 @@ def regenerate(conn: sqlite3.Connection, sim: sqlite3.Row, *, with_llm: bool = F
     out["build_deferred"] = build and not can_build
     return out
 
+
+# --- multi-site lifecycle (portal + N companies, one repo) ----------------
+
+def create_multisite_simulation(conn: sqlite3.Connection, owner_uc_id: str, name: str,
+                                simulation_yaml: str, *, workflow: str = "",
+                                with_llm: bool = False, build: bool = True,
+                                log=lambda m: None) -> dict:
+    """Create a multi-site simulation: write simulation.yaml, build portal + companies."""
+    sim = load_simulation_config_from_text(simulation_yaml)  # raises ConfigError if bad
+    slug = sim.slug
+    if conn.execute("SELECT 1 FROM simulations WHERE slug = ?", (slug,)).fetchone():
+        raise ServiceError(f"a simulation with slug {slug!r} already exists")
+    clone = working_root() / slug
+    base = f"/sims/{slug}/"
+    can_build = True
+    with simulation_lock(slug):
+        clone.mkdir(parents=True, exist_ok=True)
+        (clone / "simulation.yaml").write_text(simulation_yaml, encoding="utf-8")
+        if not (clone / ".git").exists():
+            _git(["init", "-q"], clone)
+        with build_slot(build) as slot:
+            can_build = slot
+            try:
+                generate_multisite(clone / "simulation.yaml", clone, base=base,
+                                   with_llm=with_llm, build=can_build, log=log)
+            except Exception as exc:
+                raise ServiceError(f"generation failed: {exc}") from exc
+        _git(["add", "-A"], clone)
+        _git(["commit", "-q", "-m", "Create multi-site simulation"], clone)
+    sim_id = str(uuid.uuid4())
+    now = _now()
+    conn.execute(
+        """INSERT INTO simulations
+           (id, name, slug, type, audience, auth_mode, workflow, owner_uc_id,
+            working_clone_path, site_url, status, config_cache, created_at, updated_at)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        (sim_id, name, slug, "multi_site", sim.audience.value,
+         "shared_password", workflow or sim.workflow, owner_uc_id, str(clone), base,
+         "draft", json.dumps(sim.model_dump(mode="json")), now, now))
+    conn.commit()
+    audit("simulation.created", audience=sim.audience.value, sim=slug, uc=owner_uc_id,
+          type="multi_site", companies=len(sim.companies))
+    out = row_to_dict(conn.execute("SELECT * FROM simulations WHERE id = ?", (sim_id,)).fetchone())
+    out["build_deferred"] = build and not can_build
+    return out
+
+
+def update_multisite_simulation(conn: sqlite3.Connection, sim: sqlite3.Row,
+                                simulation_yaml: str, *, with_llm: bool = False,
+                                build: bool = True, log=lambda m: None) -> dict:
+    """Save an edited multi-site simulation: rewrite simulation.yaml, regenerate."""
+    config = load_simulation_config_from_text(simulation_yaml)  # validate first
+    clone = Path(sim["working_clone_path"])
+    can_build = True
+    with simulation_lock(sim["slug"]):
+        (clone / "simulation.yaml").write_text(simulation_yaml, encoding="utf-8")
+        with build_slot(build) as slot:
+            can_build = slot
+            try:
+                generate_multisite(clone / "simulation.yaml", clone, base=sim["site_url"],
+                                   with_llm=with_llm, build=can_build, log=log)
+            except Exception as exc:
+                raise ServiceError(f"generation failed: {exc}") from exc
+        _git(["add", "-A"], clone)
+        _git(["commit", "-q", "--allow-empty", "-m", "Save multi-site edit"], clone)
+    conn.execute(
+        "UPDATE simulations SET config_cache = ?, has_unpublished_changes = 1, updated_at = ? "
+        "WHERE id = ?", (json.dumps(config.model_dump(mode="json")), _now(), sim["id"]))
+    conn.commit()
+    out = row_to_dict(conn.execute("SELECT * FROM simulations WHERE id = ?", (sim["id"],)).fetchone())
+    out["build_deferred"] = build and not can_build
+    return out
 
 # --- repo connection + publishing -----------------------------------------
 
