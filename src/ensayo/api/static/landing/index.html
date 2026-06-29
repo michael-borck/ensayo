@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ensayo — turn a worksheet into a living workplace simulation</title>
+  <meta name="description" content="Ensayo generates LLM-assisted teaching simulations: describe a fictional company and students interview chatbot employees, read internal docs, and complete scenario tasks in a safe environment." />
+  <style>
+    :root { color-scheme: dark;
+      --bg:#0b0e14; --bg2:#11151f; --surface:#161b26; --surface2:#1e2532;
+      --border:#26304a; --text:#e7ecf3; --muted:#93a1b6;
+      --accent:#00d4aa; --primary:#4a63e7; --primary2:#6c63ff; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg); color: var(--text); line-height:1.6;
+      -webkit-font-smoothing: antialiased; }
+    a { color: var(--accent); text-decoration: none; } a:hover { text-decoration: underline; }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 1.5rem; }
+    header.nav { position: sticky; top:0; z-index: 10; backdrop-filter: blur(8px);
+      background: rgba(11,14,20,0.75); border-bottom: 1px solid var(--border); }
+    .nav .wrap { display:flex; align-items:center; justify-content:space-between; height:60px; }
+    .brand { font-weight:800; font-size:1.1rem; letter-spacing:-0.01em; }
+    .brand span { color: var(--accent); }
+    .nav .links { display:flex; gap:1.2rem; align-items:center; }
+    .nav .links a { color: var(--muted); font-size:0.92rem; }
+    .nav .links a:hover { color: var(--text); }
+    button, .btn { font: inherit; cursor: pointer; border-radius: 10px; border: 1px solid transparent;
+      padding: 0.6rem 1.1rem; font-weight: 600; }
+    .btn.primary { background: linear-gradient(135deg, var(--primary), var(--primary2)); color:#fff; }
+    .btn.ghost { background: transparent; border-color: var(--border); color: var(--text); }
+
+    /* hero */
+    .hero { position: relative; overflow: hidden; padding: 6rem 0 5rem; }
+    .hero::before { content:""; position:absolute; inset:0; z-index:-1;
+      background: radial-gradient(60% 60% at 70% 0%, rgba(74,99,231,0.25), transparent 70%),
+                  radial-gradient(50% 50% at 10% 20%, rgba(0,212,170,0.18), transparent 70%); }
+    .pill { display:inline-block; font-size:0.78rem; color: var(--accent);
+      border:1px solid rgba(0,212,170,0.35); background: rgba(0,212,170,0.08);
+      padding:0.25rem 0.7rem; border-radius:999px; margin-bottom:1.2rem; }
+    .hero h1 { font-size: clamp(2.1rem, 5vw, 3.4rem); line-height:1.08; margin:0 0 1rem;
+      letter-spacing:-0.02em; max-width: 18ch; }
+    .hero h1 em { font-style: normal; background: linear-gradient(135deg, var(--accent), var(--primary2));
+      -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .hero p.lead { font-size:1.15rem; color: var(--muted); max-width: 60ch; margin:0 0 2rem; }
+    .cta { display:flex; gap:0.8rem; flex-wrap:wrap; align-items:center; }
+    .gate { margin-top:1rem; color: var(--muted); font-size:0.9rem; }
+    .gate b { color: var(--text); }
+
+    /* sections */
+    section { padding: 4rem 0; }
+    section h2 { font-size:1.8rem; letter-spacing:-0.01em; margin:0 0 0.6rem; }
+    section .sub { color: var(--muted); margin:0 0 2.2rem; max-width: 60ch; }
+    .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:1.2rem; }
+    .card { background: var(--surface); border:1px solid var(--border); border-radius:16px; padding:1.5rem; }
+    .card .ico { font-size:1.6rem; margin-bottom:0.6rem; }
+    .card h3 { margin:0 0 0.4rem; font-size:1.1rem; }
+    .card p { margin:0; color: var(--muted); font-size:0.95rem; }
+
+    /* steps */
+    .steps { counter-reset: s; display:grid; gap:1rem; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); }
+    .step { background: var(--surface); border:1px solid var(--border); border-radius:14px; padding:1.3rem 1.3rem 1.3rem 3.4rem; position:relative; }
+    .step::before { counter-increment: s; content: counter(s); position:absolute; left:1.1rem; top:1.2rem;
+      width:1.7rem; height:1.7rem; display:grid; place-items:center; border-radius:50%;
+      background: linear-gradient(135deg,var(--primary),var(--primary2)); color:#fff; font-weight:700; font-size:0.9rem; }
+    .step h3 { margin:0 0 0.3rem; font-size:1rem; } .step p { margin:0; color: var(--muted); font-size:0.92rem; }
+
+    /* code */
+    pre { background: var(--bg2); border:1px solid var(--border); border-radius:12px; padding:1rem 1.1rem;
+      overflow:auto; font-family: ui-monospace, Menlo, Consolas, monospace; font-size:0.85rem; color:#cfe3ff; }
+    code { font-family: ui-monospace, Menlo, Consolas, monospace; }
+    .tabs { display:flex; gap:0.4rem; margin-bottom:0.6rem; }
+    .tab { padding:0.35rem 0.8rem; border-radius:8px; border:1px solid var(--border); background:transparent;
+      color: var(--muted); cursor:pointer; font-size:0.85rem; }
+    .tab.active { color: var(--text); border-color: var(--primary); background: rgba(74,99,231,0.12); }
+
+    footer { border-top:1px solid var(--border); padding:2.5rem 0; color: var(--muted); font-size:0.9rem; }
+    footer .wrap { display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap; align-items:center; }
+    .hidden { display:none; }
+    @media (max-width: 640px){ .hero { padding:4rem 0 3rem; } }
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap">
+      <div class="brand">Ensayo<span>·</span></div>
+      <nav class="links">
+        <a href="#what">What it does</a>
+        <a href="#start">Quick start</a>
+        <a href="#selfhost">Self-host</a>
+        <a href="https://github.com/michael-borck/ensayo" target="_blank" rel="noopener">GitHub ↗</a>
+        <a class="btn primary" id="navCta" href="/admin/">Sign in</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="hero">
+    <div class="wrap">
+      <span class="pill">● Teaching simulations, generated</span>
+      <h1>Turn a worksheet into a <em>living workplace simulation</em>.</h1>
+      <p class="lead">Describe a fictional company — or drop in an assignment — and Ensayo builds a website where students interview chatbot employees, read internal documents, and work through a scenario. Safe, controlled, ready to share.</p>
+      <div class="cta">
+        <a class="btn primary" id="heroCta" href="/admin/">Get started →</a>
+        <a class="btn ghost" href="#start">See how it works</a>
+      </div>
+      <p class="gate" id="gate">Loading sign-in details…</p>
+    </div>
+  </div>
+
+  <section id="what">
+    <div class="wrap">
+      <h2>What it does</h2>
+      <p class="sub">A simulation is a fictional organisation rendered as a website. Students don't read about the scenario — they step into it.</p>
+      <div class="grid">
+        <div class="card"><div class="ico">🧑‍💼</div><h3>Chatbot employees</h3><p>Each virtual colleague has a persona and an opinion. Keyword chatbots need no LLM; LLM mode adds depth.</p></div>
+        <div class="card"><div class="ico">📚</div><h3>Documents &amp; tasks</h3><p>Policies, datasets, and scenario-driven tasks — gated by server-enforced visibility rules.</p></div>
+        <div class="card"><div class="ico">🛡️</div><h3>Safe mode for schools</h3><p>A minors bundle: keyword-only chatbots, shared-password sign-in, no PII. One setting, many defaults.</p></div>
+        <div class="card"><div class="ico">🏢</div><h3>Single &amp; multi-site</h3><p>One company for a focused case, or a portal coordinating several — a job board, applications, a workflow.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="start" style="background:var(--bg2);">
+    <div class="wrap">
+      <h2>Quick start</h2>
+      <p class="sub">From zero to a running simulation in three steps. Runs here — no install for lecturers.</p>
+      <div class="steps">
+        <div class="step"><h3>Sign in with your work email</h3><p>Registration is restricted to allowed institutional domains, with a one-time email verification code.</p></div>
+        <div class="step"><h3>Describe or upload a scenario</h3><p>Use the guided editor (or paste a worksheet). Themes, personas, and documents are generated for you.</p></div>
+        <div class="step"><h3>Build &amp; share</h3><p>One click builds the site; students reach it by a link and a shared password. Up to 3 simulations per account.</p></div>
+      </div>
+      <p style="margin-top:1.6rem"><a class="btn primary" href="/admin/">Open the dashboard →</a></p>
+    </div>
+  </section>
+
+  <section id="selfhost">
+    <div class="wrap">
+      <h2>Run it yourself</h2>
+      <p class="sub">Self-host on any VPS. Two ways — pick one.</p>
+      <div class="tabs">
+        <button class="tab active" data-tab="bare">Bare-metal (uv)</button>
+        <button class="tab" data-tab="docker">Docker</button>
+      </div>
+      <pre id="code-bare">git clone https://github.com/michael-borck/ensayo.git
+cd ensayo
+bash deploy/selfhost.sh        # installs uv + Node, configures .env, makes an admin
+uv run ensayo serve            # → http://127.0.0.1:8000/admin/</pre>
+      <pre id="code-docker" class="hidden">git clone https://github.com/michael-borck/ensayo.git
+cd ensayo
+cp instance.env.example instance.env   # fill in JWT_SECRET + email + ALLOWED_DOMAINS
+docker compose up -d                   # → http://localhost:8080/admin/
+docker pull <b>ghcr.io/michael-borck/ensayo:latest</b></pre>
+      <p style="margin-top:1rem; color:var(--muted); font-size:0.9rem;">
+        Latest image: <a href="https://github.com/michael-borck/ensayo/pkgs/container/ensayo" target="_blank" rel="noopener">ghcr.io/michael-borck/ensayo ↗</a>
+        · Source: <a href="https://github.com/michael-borck/ensayo" target="_blank" rel="noopener">github.com/michael-borck/ensayo ↗</a>
+      </p>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <div>Ensayo · configuration-driven teaching simulations · <a href="https://github.com/michael-borck/ensayo/blob/main/LICENSE" target="_blank" rel="noopener">MIT</a></div>
+      <div><a href="https://github.com/michael-borck/ensayo" target="_blank" rel="noopener">GitHub</a> · <a href="https://github.com/michael-borck/ensayo/pkgs/container/ensayo" target="_blank" rel="noopener">Docker image</a></div>
+    </div>
+  </footer>
+
+  <script>
+    // Show the allowed sign-in domains + open/closed state (gated registration).
+    fetch("/api/v1/auth/registration-status").then(r => r.json()).then(s => {
+      const g = document.getElementById("gate");
+      const domains = (s.allowed_domains && s.allowed_domains.length)
+        ? s.allowed_domains.map(d => "@" + d).join(", ") : "any domain";
+      if (s.registration_open) {
+        g.innerHTML = "Sign-in is open to <b>" + domains + "</b> with a one-time email code.";
+      } else {
+        g.innerHTML = "⚠ Registration is currently closed. Ask the instance admin to open it.";
+      }
+    }).catch(() => { document.getElementById("gate").textContent = ""; });
+
+    // If already signed in, point the CTAs straight at the dashboard.
+    const tok = localStorage.getItem("ensayo_token");
+    if (tok) {
+      fetch("/api/v1/auth/me", { headers: { Authorization: "Bearer " + tok } })
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(() => {
+          ["navCta", "heroCta"].forEach(id => { const e = document.getElementById(id); if (e) e.textContent = "Go to dashboard →"; });
+        }).catch(() => {});
+    }
+
+    // Self-host code tabs.
+    document.querySelectorAll(".tab").forEach(t => t.onclick = () => {
+      document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
+      t.classList.add("active");
+      document.getElementById("code-bare").classList.toggle("hidden", t.dataset.tab !== "bare");
+      document.getElementById("code-docker").classList.toggle("hidden", t.dataset.tab !== "docker");
+    });
+  </script>
+</body>
+</html>

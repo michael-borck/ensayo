@@ -56,6 +56,7 @@ from .service import (
     publish,
     regenerate,
     row_to_dict,
+    sim_usage,
     update_multisite_simulation,
     update_simulation,
     working_root,
@@ -945,7 +946,13 @@ def create_app() -> FastAPI:
 
     @app.get("/")
     def root():
-        return RedirectResponse(url="/admin/")
+        # Landing page at the domain root; the dashboard lives at /admin/.
+        return FileResponse(_STATIC / "landing" / "index.html")
+
+    @app.get("/api/v1/usage")
+    def sim_usage_endpoint(uc: sqlite3.Row = Depends(current_uc),
+                           conn: sqlite3.Connection = Depends(get_conn)):
+        return sim_usage(conn, uc["id"])
 
     return app
 

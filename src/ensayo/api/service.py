@@ -122,11 +122,33 @@ def row_to_dict(row: sqlite3.Row) -> dict:
 _AUTH_MODES = ("shared_password", "individual_account", "email_only")
 
 
+def _sim_limit() -> int:
+    return max(0, int(os.environ.get("MAX_SIMS_PER_UC", "3")))
+
+
+def _enforce_sim_limit(conn: sqlite3.Connection, owner_uc_id: str) -> None:
+    """Raise ServiceError if the UC already owns MAX_SIMS_PER_UC simulations."""
+    limit = _sim_limit()
+    n = conn.execute("SELECT COUNT(*) AS n FROM simulations WHERE owner_uc_id = ?",
+                     (owner_uc_id,)).fetchone()["n"]
+    if n >= limit:
+        raise ServiceError(
+            f"you've reached the {limit}-simulation limit for this account — "
+            "delete one to make room (or ask the instance admin to raise MAX_SIMS_PER_UC).")
+
+
+def sim_usage(conn: sqlite3.Connection, owner_uc_id: str) -> dict:
+    n = conn.execute("SELECT COUNT(*) AS n FROM simulations WHERE owner_uc_id = ?",
+                     (owner_uc_id,)).fetchone()["n"]
+    return {"count": n, "limit": _sim_limit()}
+
+
 def create_simulation(
     conn: sqlite3.Connection, owner_uc_id: str, name: str, company_yaml: str, *,
     shared_password: str | None = None, auth_mode: str = "shared_password",
     workflow: str = "", with_llm: bool = False, build: bool = True, log=lambda m: None,
 ) -> dict:
+    _enforce_sim_limit(conn, owner_uc_id)
     config = load_company_config_from_text(company_yaml)  # raises ConfigError if bad
     slug = config.slug
 
@@ -269,6 +291,7 @@ def create_multisite_simulation(conn: sqlite3.Connection, owner_uc_id: str, name
                                 with_llm: bool = False, build: bool = True,
                                 log=lambda m: None) -> dict:
     """Create a multi-site simulation: write simulation.yaml, build portal + companies."""
+    _enforce_sim_limit(conn, owner_uc_id)
     sim = load_simulation_config_from_text(simulation_yaml)  # raises ConfigError if bad
     slug = sim.slug
     if conn.execute("SELECT 1 FROM simulations WHERE slug = ?", (slug,)).fetchone():

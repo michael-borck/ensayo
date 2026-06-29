@@ -98,7 +98,10 @@
     <section id="app" class="hidden">
       <div class="row" style="justify-content:space-between">
         <h1 style="margin:0">Simulations</h1>
-        <button class="primary" id="newBtn">+ New simulation</button>
+        <div class="row">
+          <span id="usageBadge" class="muted small" style="margin-right:0.6rem"></span>
+          <button class="primary" id="newBtn">+ New simulation</button>
+        </div>
       </div>
 
       <div id="editor" class="card hidden" style="margin-top:1rem">
@@ -251,7 +254,17 @@
   };
   const msg = (text, cls = "") => { const m = $("msg"); m.textContent = text; m.className = cls; };
 
+  async function loadUsage() {
+    const r = await api("/api/v1/usage");
+    if (!r.ok) return;
+    const u = await r.json();
+    $("usageBadge").textContent = u.count + " of " + u.limit + " simulations used";
+    $("newBtn").disabled = u.count >= u.limit;
+  }
+
+
   async function refresh() {
+    loadUsage();
     const r = await api("/api/v1/simulations");
     if (!r.ok) return;
     const sims = await r.json();
