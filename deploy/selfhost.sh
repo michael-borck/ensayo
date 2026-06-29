@@ -1,33 +1,33 @@
 #!/usr/bin/env bash
 #
-# Ensayo self-host setup — one command to a running full service on a fresh VPS.
+# Ensayo — local setup.
 #
-#   curl -fsSL https://raw.githubusercontent.com/michael-borck/ensayo/main/deploy/selfhost.sh | bash
+# Run this from inside your ensayo checkout (you clone the repo wherever you
+# like first). It installs the local environment and configures it — nothing
+# more (no serving, no proxy, no systemd). You run it yourself afterwards:
 #
-#   # or, after cloning:
-#   bash deploy/selfhost.sh
+#   - installs uv (brings its own Python) + Node 20
+#   - `uv sync` (Python deps) + vendors theme node_modules
+#   - writes .env (generates JWT_SECRET; prompts for the rest)
+#   - creates the instance admin
 #
-# Installs uv (brings its own Python) + Node 20, clones (or reuses the current
-# checkout), `uv sync`s, vendors theme deps, writes .env (generates JWT_SECRET,
-# prompts for the rest), creates the instance admin, installs a systemd unit, and
-# — if you give a domain — Caddy as a reverse proxy. Idempotent; safe to re-run.
+# Then it prints how to start the service. Reverse proxy / TLS (Caddy,
+# Cloudflare, …) and process management are yours to set up.
 #
-# Non-interactive (automation): export ENSAYO_DOMAIN, ENSAYO_ADMIN_EMAIL,
-# ENSAYO_ADMIN_PASSWORD, RESEND_API_KEY, RESEND_FROM, ALLOWED_DOMAINS, and set
-# NONINTERACTIVE=1 before running.
+#   bash deploy/selfhost.sh                                     # interactive
+#   NONINTERACTIVE=1 ENSAYO_ADMIN_EMAIL=you@edu ENSAYO_ADMIN_PASSWORD=... \
+#     RESEND_API_KEY=re_... RESEND_FROM="..." ALLOWED_DOMAINS=edu \
+#     bash deploy/selfhost.sh                                   # automation
 #
 set -euo pipefail
 
-ENSAYO_HOME="${ENSAYO_HOME:-/opt/ensayo}"
 HTTP_PORT="${ENSAYO_HTTP_PORT:-8000}"
-RUN_USER="${RUN_USER:-root}"
+HOST="${ENSAYO_HOST:-127.0.0.1}"   # referenced only in the printed "how to run" hint
 
 log()  { printf '\033[36m[ensayo]\033[0m %s\n' "$*"; }
 warn() { printf '\033[33m[ensayo]\033[0m %s\n' "$*" >&2; }
 die()  { printf '\033[31m[ensayo] error:\033[0m %s\n' "$*" >&2; exit 1; }
 have() { command -v "$1" >/dev/null 2>&1; }
-
-SUDO=""; [ "$(id -u)" -ne 0 ] && have sudo && SUDO="sudo"
 is_debian() { [ -f /etc/debian_version ] || have apt-get; }
 
 # Ensure an uncommented KEY=VALUE line in .env (uncomment if commented, else add).
@@ -41,8 +41,7 @@ set_env() {
     printf '%s=%s\n' "$k" "$v" >> .env
   fi
 }
-
-# Read a setting: existing .env value → env var → interactive prompt (or default).
+# Resolve a setting: existing .env value → env var → interactive prompt (or default).
 ask() {  # ask VAR "label" "default"
   local var="$1" label="$2" def="${3:-}" cur ans
   cur=$(grep -E "^$var=" .env 2>/dev/null | head -1 | cut -d= -f2- || true)
@@ -55,9 +54,23 @@ ask() {  # ask VAR "label" "default"
   [ -n "$cur" ] && set_env "$var" "$cur"
 }
 
-# --- 1. system packages ----------------------------------------------------
+SUDO=""; [ "$(id -u)" -ne 0 ] && have sudo && SUDO="sudo"
+
+# --- 0. locate the repo (walk up to pyproject.toml name="ensayo") ----------
+root=""
+d="$(pwd)"
+while [ "$d" != "/" ]; do
+  if [ -f "$d/pyproject.toml" ] && grep -q 'name = "ensayo"' "$d/pyproject.toml" 2>/dev/null; then
+    root="$d"; break
+  fi
+  d="$(dirname "$d")"
+done
+[ -n "$root" ] || die "run this from inside your ensayo checkout (no pyproject.toml with name=\"ensayo\" found upward)."
+cd "$root"
+log "Repo: $root"
+
+# --- 1. system packages (Debian/Ubuntu; usually already present) -----------
 if is_debian; then
-  log "Installing system packages…"
   $SUDO apt-get update -qq
   $SUDO apt-get install -y --no-install-recommends git curl ca-certificates gnupg >/dev/null
 fi
@@ -83,41 +96,27 @@ if ! node_ok; then
   fi
 fi
 
-# --- 4. get the code -------------------------------------------------------
-if [ -f pyproject.toml ] && grep -q 'name = "ensayo"' pyproject.toml 2>/dev/null; then
-  ENSAYO_HOME="$(pwd)"; log "Using current checkout: $ENSAYO_HOME"
-else
-  if [ ! -d "$ENSAYO_HOME/.git" ]; then
-    log "Cloning ensayo → $ENSAYO_HOME"
-    $SUDO mkdir -p "$ENSAYO_HOME"
-    $SUDO git clone https://github.com/michael-borck/ensayo.git "$ENSAYO_HOME"
-  fi
-  cd "$ENSAYO_HOME"
-fi
-
-# --- 5. Python deps (uv fetches Python 3.12 itself) ------------------------
+# --- 4. Python deps --------------------------------------------------------
 log "Installing Python deps (uv sync)…"
 uv sync --quiet
 
-# --- 6. vendor theme node_modules (first dashboard build then needs no npm) -
+# --- 5. vendor theme node_modules (so the first build is fast) -------------
 log "Vendoring theme dependencies…"
 for t in themes/*/; do
   [ -f "$t/package.json" ] || continue
   (cd "$t" && npm install --no-audit --no-fund >/dev/null 2>&1 || true)
 done
 
-# --- 7. .env ---------------------------------------------------------------
+# --- 6. .env ---------------------------------------------------------------
 [ -f .env ] || cp .env.example .env
 JWT="$(uv run python -c 'import secrets; print(secrets.token_urlsafe(32))' 2>/dev/null || openssl rand -hex 32)"
 set_env JWT_SECRET "$JWT"
-ask RESEND_API_KEY  "Resend API key (blank = no email; codes show in admin panel)" ""
+ask RESEND_API_KEY  "Resend API key (blank = no email; codes show in the admin panel)" ""
 ask RESEND_FROM     "Resend From address" "Ensayo <noreply@contact.locoensayo.org>"
 ask ALLOWED_DOMAINS "Allowed sign-up domains (comma-sep; blank = open)" "curtin.edu.au"
-ask ENSAYO_DOMAIN   "Public domain for Caddy (blank = skip Caddy, you proxy yourself)" ""
-# If a real Resend key was supplied, force the provider to resend.
 if grep -qE '^RESEND_API_KEY=re_' .env; then set_env EMAIL_PROVIDER resend; fi
 
-# --- 8. instance admin -----------------------------------------------------
+# --- 7. instance admin -----------------------------------------------------
 ADMIN_EMAIL="${ENSAYO_ADMIN_EMAIL:-}"
 if [ -z "$ADMIN_EMAIL" ] && [ -z "${NONINTERACTIVE:-}" ]; then
   printf '[ensayo] Admin email (blank = skip): ' >&2
@@ -134,60 +133,10 @@ if [ -n "$ADMIN_EMAIL" ]; then
     || warn "(admin may already exist; continuing)"
 fi
 
-# --- 9. systemd unit (keep it running across reboots) ----------------------
-if is_debian; then
-  UV_BIN="$(command -v uv)"
-  log "Installing systemd unit…"
-  $SUDO tee /etc/systemd/system/ensayo.service >/dev/null <<UNIT
-[Unit]
-Description=Ensayo (dashboard + API)
-After=network.target
-
-[Service]
-Type=simple
-WorkingDirectory=$ENSAYO_HOME
-EnvironmentFile=$ENSAYO_HOME/.env
-ExecStart=$UV_BIN run ensayo serve --host 127.0.0.1 --port $HTTP_PORT
-Restart=always
-User=$RUN_USER
-
-[Install]
-WantedBy=multi-user.target
-UNIT
-  $SUDO systemctl daemon-reload
-  $SUDO systemctl enable --now ensayo
-  log "Started: systemctl status ensayo"
-else
-  warn "Not Debian/Ubuntu — skipping systemd. Run manually: uv run ensayo serve"
-fi
-
-# --- 10. (optional) Caddy reverse proxy if a domain was given --------------
-DOMAIN="$(grep -E '^ENSAYO_DOMAIN=' .env 2>/dev/null | head -1 | cut -d= -f2- || true)"
-if [ -n "$DOMAIN" ] && is_debian; then
-  if ! have caddy; then
-    log "Installing Caddy…"
-    curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
-      | $SUDO gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg 2>/dev/null || true
-    curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' \
-      | $SUDO tee /etc/apt/sources.list.d/caddy-stable.list >/dev/null
-    $SUDO apt-get update -qq && $SUDO apt-get install -y caddy >/dev/null
-  fi
-  log "Caddy reverse-proxy: $DOMAIN → 127.0.0.1:$HTTP_PORT"
-  $SUDO tee /etc/caddy/Caddyfile >/dev/null <<CADDY
-$DOMAIN {
-    reverse_proxy 127.0.0.1:$HTTP_PORT
-}
-CADDY
-  $SUDO systemctl reload caddy 2>/dev/null || $SUDO systemctl restart caddy 2>/dev/null || true
-fi
-
 # --- done ------------------------------------------------------------------
 echo
-log "Done."
-if [ -n "$DOMAIN" ]; then
-  echo "  Dashboard:  https://$DOMAIN/admin/   (point Cloudflare DNS at this box)"
-else
-  echo "  Dashboard:  http://127.0.0.1:$HTTP_PORT/admin/   (put a proxy + Cloudflare in front)"
-fi
-echo "  Test email: uv run ensayo admin send-test-email --to you@your.edu"
-echo "  Logs:       journalctl -u ensayo -f   (or 'uv run ensayo serve' if no systemd)"
+log "Setup complete."
+echo "  Start the service:    uv run ensayo serve        # → http://$HOST:$HTTP_PORT/admin/"
+echo "  Test email delivery:  uv run ensayo admin send-test-email --to you@your.edu"
+echo "  Logs / stop:          the service runs in that terminal; Ctrl+C stops it."
+echo "  Next: put your reverse proxy (Caddy/Cloudflare) in front, served at the domain root."
