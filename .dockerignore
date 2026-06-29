@@ -11,5 +11,10 @@ __pycache__
 **/*.pyc
 .env
 instance.env
+.ensayo-data
 .DS_Store
+# macOS AppleDouble metadata (exFAT drives) — breaks the build-context sender.
+._*
+**/._*
 tests
+docs

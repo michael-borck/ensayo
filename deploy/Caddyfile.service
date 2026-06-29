@@ -1,0 +1,15 @@
+# Ensayo service-mode Caddy config (full-service container / VPS service).
+#
+# Caddy terminates :80 and reverse-proxies everything to the FastAPI service
+# (uvicorn) on :8000, which serves the dashboard, API, and generated sites.
+# TLS is terminated upstream by Cloudflare or an outer proxy, so this is HTTP.
+
+{
+	admin off
+	auto_https off
+}
+
+:80 {
+	encode gzip
+	reverse_proxy 127.0.0.1:8000
+}

@@ -29,3 +29,5 @@ scripts/a11y/package-lock.json
 
 # OS
 .DS_Store
+._*          # macOS AppleDouble metadata (exFAT/external volumes)
+**/._*

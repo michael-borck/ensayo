@@ -1,22 +1,23 @@
-# Ensayo — zero-config first run (spec §5.4):
+# Ensayo — full-service container (dashboard + API + generated sites).
 #
-#   docker compose up -d         # build + run
-#   open http://localhost:8080
-#
-# No API keys, no DNS, no AnythingLLM required. The image ships a pre-built demo
-# simulation served by Caddy with path-based routing.
+#   cp instance.env.example instance.env   # then fill in secrets (JWT_SECRET, RESEND_API_KEY, …)
+#   docker compose up -d --build
+#   docker compose exec ensayo ensayo admin create-uc -e admin@your.edu --admin
+#   open http://localhost:8080/admin/
 
 services:
   ensayo:
     build: .
     image: ghcr.io/michael-borck/ensayo:latest
     ports:
-      # Override with ENSAYO_HTTP_PORT in instance.env. Default 8080 to avoid
-      # clashing with anything already on port 80.
+      # Override with ENSAYO_HTTP_PORT in instance.env. Default 8080.
       - "${ENSAYO_HTTP_PORT:-8080}:80"
     env_file:
       - instance.env
-      # - .env        # uncomment once you've added secrets (LLM keys, etc.)
+    environment:
+      # Runtime data lives on the persisted volume (overrides instance.env).
+      ENSAYO_DB: /var/ensayo/ensayo.db
+      WORKING_CLONES_DIR: /var/ensayo/sims
     volumes:
       - ensayo-data:/var/ensayo
     restart: unless-stopped
