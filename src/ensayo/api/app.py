@@ -13,7 +13,7 @@ import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -395,6 +395,26 @@ def create_app() -> FastAPI:
             except Exception:
                 out.append({"name": name, "description": ""})
         return out
+
+    @app.post("/api/v1/ideate")
+    def ideate_endpoint(idea: str = Form(""),
+                        file: UploadFile | None = File(None),
+                        uc: sqlite3.Row = Depends(current_uc)):
+        """Suggest 2-3 simulations from an idea and/or an uploaded file.
+
+        The file is read in memory and discarded (never written to disk)."""
+        from ..extract import ExtractError, extract_text
+        from ..ideate import IdeateError, ideate
+        content = ""
+        if file is not None and file.filename:
+            try:
+                content = extract_text(file.file.read(), file.filename)
+            except ExtractError as exc:
+                raise HTTPException(exc.status, exc.message) from exc
+        try:
+            return {"proposals": ideate(idea, content)}
+        except IdeateError as exc:
+            raise HTTPException(exc.status, exc.message) from exc
 
     @app.get("/api/v1/simulations")
     def list_sims(uc: sqlite3.Row = Depends(current_uc),
