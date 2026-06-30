@@ -86,3 +86,55 @@ def test_provision_refused_for_minors(client, auth):
                     headers=auth, json={"build": False})
     assert r.status_code == 400
     assert "minors" in r.json()["detail"].lower()
+
+
+YAML_DOC_MAP = """
+company:
+  name: "Doc Mapping Co"
+documents:
+  - title: "Security Policy"
+    type: policy
+    content: "Use 2FA everywhere."
+  - title: "Employee Handbook"
+    type: internal
+    content: "Be excellent to each other."
+employees:
+  - name: "Targeted Ted"
+    role: "Analyst"
+    customisation:
+      background: "Ted worked at the NSA for 10 years."
+      known_documents: ["Security Policy"]
+  - name: "General Gwen"
+    role: "Manager"
+"""
+
+
+def test_provision_per_persona_doc_targeting(client, auth):
+    """known_documents limits docs per persona; backstory counts as +1."""
+    sim = _create(client, auth, YAML_DOC_MAP, "Doc Mapping Sim")
+    logs: list[str] = []
+    conn = client.app.state.conn
+    sim_row = conn.execute(
+        "SELECT * FROM simulations WHERE id = ?", (sim["id"],)).fetchone()
+    from ensayo.api.provision import provision_chatbots
+    provision_chatbots(conn, sim_row, build=False, log=logs.append)
+
+    ted = [l for l in logs if "Ted" in l]
+    gwen = [l for l in logs if "Gwen" in l]
+    assert ted, f"no log for Ted in {logs}"
+    assert gwen, f"no log for Gwen in {logs}"
+    # Ted: 1 known doc (Security Policy) + 1 backstory = 2
+    assert "2 docs" in ted[0], ted[0]
+    # Gwen: no known_documents → all docs (2), no backstory = 2
+    assert "2 docs" in gwen[0], gwen[0]
+
+
+def test_provision_known_documents_persists(client, auth):
+    """known_documents survives provisioning round-trip in config_cache."""
+    sim = _create(client, auth, YAML_DOC_MAP, "Persist Sim")
+    r = client.post(f"/api/v1/simulations/{sim['id']}/provision-chatbots",
+                    headers=auth, json={"build": False})
+    assert r.status_code == 200, r.text
+    cfg = client.get(f"/api/v1/simulations/{sim['id']}", headers=auth).json()["config_cache"]
+    ted = next(e for e in cfg["employees"] if e["id"] == "targeted-ted")
+    assert ted["customisation"]["known_documents"] == ["Security Policy"]

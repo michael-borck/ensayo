@@ -63,6 +63,16 @@ class AnythingLLMClient:
         except (httpx.HTTPError, ValueError) as exc:
             raise AnythingLLMError(f"POST {path} failed: {exc}") from exc
 
+    def _get(self, path: str) -> dict:
+        try:
+            r = httpx.get(f"{self.base_url}{path}",
+                          headers={"Authorization": f"Bearer {self.api_key}"},
+                          timeout=_TIMEOUT)
+            r.raise_for_status()
+            return r.json()
+        except (httpx.HTTPError, ValueError) as exc:
+            raise AnythingLLMError(f"GET {path} failed: {exc}") from exc
+
     # --- operations --------------------------------------------------------
 
     def create_workspace(self, name: str) -> str:
@@ -71,6 +81,37 @@ class AnythingLLMClient:
         if not slug:
             raise AnythingLLMError(f"no workspace slug returned for {name!r}")
         return slug
+
+    def get_or_create_workspace(self, name: str) -> str:
+        """Return the slug of an existing workspace, or create one (idempotent)."""
+        try:
+            data = self._get("/api/v1/workspaces")
+            for ws in data.get("workspaces", []):
+                if ws.get("slug") == name or ws.get("name") == name:
+                    return ws["slug"]
+        except AnythingLLMError:
+            pass
+        return self.create_workspace(name)
+
+    def get_workspace_documents(self, workspace_slug: str) -> list[dict]:
+        """Return documents currently embedded in a workspace."""
+        data = self._get(f"/api/v1/workspace/{workspace_slug}")
+        ws = data.get("workspace")
+        if isinstance(ws, list):
+            ws = ws[0] if ws else {}
+        return (ws or {}).get("documents", [])
+
+    def reset_workspace(self, workspace_slug: str) -> None:
+        """Remove all documents from a workspace (clean re-provisioning).
+
+        AnythingLLM ignores wildcard deletes, so we enumerate the workspace's
+        actual document paths and delete them explicitly.
+        """
+        docs = self.get_workspace_documents(workspace_slug)
+        paths = [d["docpath"] for d in docs if d.get("docpath")]
+        if paths:
+            self._post(f"/api/v1/workspace/{workspace_slug}/update-embeddings",
+                       {"adds": [], "deletes": paths})
 
     def set_system_prompt(self, workspace_slug: str, prompt: str) -> None:
         self._post(f"/api/v1/workspace/{workspace_slug}/update", {"openAiPrompt": prompt})
@@ -88,10 +129,14 @@ class AnythingLLMClient:
             self._post(f"/api/v1/workspace/{workspace_slug}/update-embeddings",
                        {"adds": locations})
 
-    def create_embed(self, workspace_slug: str) -> str:
-        data = self._post("/api/v1/embed/new",
-                          {"workspace_slug": workspace_slug, "enabled": True,
-                           "chat_mode": "chat"})
+    def create_embed(self, workspace_slug: str, *,
+                     allowlist_domains: list[str] | None = None,
+                     chat_mode: str = "chat") -> str:
+        body: dict = {"workspace_slug": workspace_slug, "enabled": True,
+                      "chat_mode": chat_mode}
+        if allowlist_domains:
+            body["allowlist_domains"] = allowlist_domains
+        data = self._post("/api/v1/embed/new", body)
         embed = data.get("embed") or data
         uuid = embed.get("uuid") or embed.get("id")
         if not uuid:
