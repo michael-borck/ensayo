@@ -77,6 +77,13 @@
     footer .wrap { display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap; align-items:center; }
     .hidden { display:none; }
     @media (max-width: 640px){ .hero { padding:4rem 0 3rem; } }
+    .modal-overlay { position:fixed; inset:0; z-index:100; background:rgba(0,0,0,0.65);
+      display:flex; align-items:center; justify-content:center; padding:1rem; }
+    .modal-card { background:var(--surface); border:1px solid var(--border);
+      border-radius:16px; padding:2rem; max-width:420px; width:100%; max-height:90vh; overflow:auto; }
+    .modal-card input { width:100%; margin-bottom:0.6rem; padding:0.6rem;
+      background:var(--bg); border:1px solid var(--border); border-radius:9px; color:var(--text); font:inherit; }
+    .modal-card .btn { width:100%; }
   </style>
 </head>
 <body>
@@ -88,7 +95,7 @@
         <a href="#start">Quick start</a>
         <a href="#selfhost">Self-host</a>
         <a href="https://github.com/michael-borck/ensayo" target="_blank" rel="noopener">GitHub ↗</a>
-        <a class="btn primary" id="navCta" href="/admin/">Sign in</a>
+        <a class="btn primary" id="navCta" href="/admin/" data-auth="login">Sign in</a>
       </nav>
     </div>
   </header>
@@ -99,7 +106,7 @@
       <h1>Turn a worksheet into a <em>living workplace simulation</em>.</h1>
       <p class="lead">Describe a fictional company — or drop in an assignment — and Ensayo builds a website where students interview chatbot employees, read internal documents, and work through a scenario. Safe, controlled, ready to share.</p>
       <div class="cta">
-        <a class="btn primary" id="heroCta" href="/admin/">Get started →</a>
+        <a class="btn primary" id="heroCta" href="/admin/" data-auth="login">Get started →</a>
         <a class="btn ghost" href="#start">See how it works</a>
       </div>
       <p class="gate" id="gate">Loading sign-in details…</p>
@@ -128,7 +135,7 @@
         <div class="step"><h3>Describe or upload a scenario</h3><p>Use the guided editor (or paste a worksheet). Themes, personas, and documents are generated for you.</p></div>
         <div class="step"><h3>Build &amp; share</h3><p>One click builds the site; students reach it by a link and a shared password. Up to 3 simulations per account.</p></div>
       </div>
-      <p style="margin-top:1.6rem"><a class="btn primary" href="/admin/">Open the dashboard →</a></p>
+      <p style="margin-top:1.6rem"><a class="btn primary" href="/admin/" data-auth="login">Open the dashboard →</a></p>
     </div>
   </section>
 
@@ -163,6 +170,38 @@ docker pull <b>ghcr.io/michael-borck/ensayo:latest</b></pre>
     </div>
   </footer>
 
+  <div id="authOverlay" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <h2 id="authTitle" style="margin:0;font-size:1.3rem">Sign in</h2>
+        <button class="btn ghost" id="authClose" style="padding:0.3rem 0.7rem">✕</button>
+      </div>
+      <div id="authLogin">
+        <input id="liEmail" type="email" placeholder="Email" />
+        <input id="liPw" type="password" placeholder="Password" />
+        <p id="liMsg" class="small" style="color:#ff7a7a;min-height:1em;margin:0 0 0.4rem"></p>
+        <button class="btn primary" id="liBtn">Sign in</button>
+        <p class="small muted" style="margin-top:0.8rem;text-align:center">No account? <a href="#" id="toRegister">Create one →</a></p>
+      </div>
+      <div id="authRegister" class="hidden">
+        <input id="rgName" type="text" placeholder="Display name" />
+        <input id="rgEmail" type="email" placeholder="Email" />
+        <input id="rgPw" type="password" placeholder="Password (min 8 chars)" />
+        <p id="rgMsg" class="small" style="color:#ff7a7a;min-height:1em;margin:0 0 0.4rem"></p>
+        <button class="btn primary" id="rgBtn">Create account</button>
+        <div id="authVerify" class="hidden" style="margin-top:1rem;border-top:1px solid var(--border);padding-top:1rem">
+          <p class="small muted" id="verifyHint"></p>
+          <input id="rgCode" type="text" placeholder="Verification code" style="text-transform:uppercase" />
+          <div style="display:flex;gap:0.5rem">
+            <button class="btn primary" id="verifyBtn" style="flex:1">Verify &amp; sign in</button>
+            <button class="btn ghost" id="resendBtn" style="white-space:nowrap">Resend</button>
+          </div>
+        </div>
+        <p class="small muted" style="margin-top:0.8rem;text-align:center">Have an account? <a href="#" id="toLogin">Sign in →</a></p>
+      </div>
+    </div>
+  </div>
+
   <script>
     // Show the allowed sign-in domains + open/closed state (gated registration).
     fetch("/api/v1/auth/registration-status").then(r => r.json()).then(s => {
@@ -193,6 +232,69 @@ docker pull <b>ghcr.io/michael-borck/ensayo:latest</b></pre>
       document.getElementById("code-bare").classList.toggle("hidden", t.dataset.tab !== "bare");
       document.getElementById("code-docker").classList.toggle("hidden", t.dataset.tab !== "docker");
     });
+  // --- auth overlay (login/register over the landing page) ---
+  const O = () => document.getElementById("authOverlay");
+  function openAuth(mode) { O().classList.remove("hidden"); (mode === "register") ? showRegister() : showLogin(); }
+  function closeAuth() { O().classList.add("hidden"); }
+  function showLogin() {
+    document.getElementById("authLogin").classList.remove("hidden");
+    document.getElementById("authRegister").classList.add("hidden");
+    document.getElementById("authTitle").textContent = "Sign in";
+    document.getElementById("liMsg").textContent = "";
+  }
+  function showRegister() {
+    document.getElementById("authLogin").classList.add("hidden");
+    document.getElementById("authRegister").classList.remove("hidden");
+    document.getElementById("authTitle").textContent = "Create account";
+    document.getElementById("rgMsg").textContent = "";
+    document.getElementById("authVerify").classList.add("hidden");
+  }
+  document.getElementById("authClose").onclick = closeAuth;
+  document.getElementById("toRegister").onclick = (e) => { e.preventDefault(); showRegister(); };
+  document.getElementById("toLogin").onclick = (e) => { e.preventDefault(); showLogin(); };
+  document.getElementById("liBtn").onclick = async () => {
+    const m = document.getElementById("liMsg");
+    const r = await fetch("/api/v1/auth/login", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: document.getElementById("liEmail").value, password: document.getElementById("liPw").value }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { m.textContent = (typeof d.detail === "string" ? d.detail : "Login failed"); return; }
+    localStorage.setItem("ensayo_token", d.token);
+    window.location.href = "/admin/";
+  };
+  document.getElementById("rgBtn").onclick = async () => {
+    const m = document.getElementById("rgMsg");
+    const r = await fetch("/api/v1/auth/register", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: document.getElementById("rgEmail").value, password: document.getElementById("rgPw").value,
+        display_name: document.getElementById("rgName").value }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { m.textContent = (typeof d.detail === "string" ? d.detail : "Sign-up failed"); return; }
+    document.getElementById("authVerify").classList.remove("hidden");
+    document.getElementById("verifyHint").textContent = d.verification_sent
+      ? "We emailed a code to " + d.email + " — enter it below."
+      : "Enter the code for " + d.email + " (an admin can provide it if email isn't set up).";
+    m.textContent = "";
+  };
+  document.getElementById("verifyBtn").onclick = async () => {
+    const r = await fetch("/api/v1/auth/verify-email", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: document.getElementById("rgEmail").value, code: document.getElementById("rgCode").value }) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { document.getElementById("rgMsg").textContent = d.detail || "Verification failed"; return; }
+    localStorage.setItem("ensayo_token", d.token);
+    window.location.href = "/admin/";
+  };
+  document.getElementById("resendBtn").onclick = async () => {
+    await fetch("/api/v1/auth/resend-verification", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: document.getElementById("rgEmail").value }) });
+    document.getElementById("rgMsg").textContent = "If the account exists, a new code is on its way.";
+  };
+  O().addEventListener("click", e => { if (e.target === O()) closeAuth(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeAuth(); });
+  document.querySelectorAll("[data-auth]").forEach(a => a.addEventListener("click", e => {
+    if (localStorage.getItem("ensayo_token")) return;  // logged in → href works → /admin/
+    e.preventDefault();
+    openAuth(a.dataset.auth || "login");
+  }));
+
   </script>
 </body>
 </html>
