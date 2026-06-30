@@ -614,6 +614,68 @@
     "mining", "government", "nonprofit", "consulting"];
   const ED_SCENARIOS = ["growth", "breach", "digital_transformation", "crisis", "merger", "custom"];
   const ED_DOCTYPES = ["policy", "support", "internal", "press", "custom"];
+  const PERSONALITY_TRAITS = ["blunt","articulate","quiet","sarcastic","diplomatic","calm","anxious",
+    "optimistic","cynical","passionate","methodical","impulsive","perfectionist","laid-back","driven",
+    "charismatic","awkward","funny","serious","warm","cold","stubborn","adaptable","secretive","loyal"];
+  const ARCHETYPE_TRAITS = {
+    founder_ceo: ["visionary","driven","stubborn","charismatic"],
+    operations_manager: ["methodical","calm","practical","organized"],
+    finance_manager: ["meticulous","conservative","analytical","cautious"],
+    technical_specialist: ["quiet","methodical","detail-oriented","focused"],
+    marketing_manager: ["creative","energetic","optimistic","charismatic"],
+    sales_lead: ["competitive","persuasive","driven","outgoing"],
+    hr_manager: ["empathetic","patient","diplomatic","warm"],
+    project_manager: ["organized","adaptable","calm","decisive"],
+    customer_support: ["patient","warm","diplomatic","calm"],
+  };
+  const SCENARIO_OPINIONS = {
+    growth: ["Wants to hire aggressively","Worries about losing quality","Thinks we're expanding too fast","Sees opportunity everywhere"],
+    breach: ["Thinks the breach was preventable","Blames the vendor","Fears for their job","Wants full transparency","Suspects an inside job"],
+    crisis: ["Wants to go public immediately","Prefers to contain quietly","Blames leadership","Wants external help"],
+    merger: ["Supports the merger","Fears redundancy","Sees career opportunity","Distrusts the other company"],
+    digital_transformation: ["Embraces the change","Resists new technology","Worries about job security","Sees it as overdue"],
+  };
+  const SCENARIO_PERSPECTIVES = {
+    growth: ["Believes the company is at a tipping point","Sees the growth as unsustainable without structural change"],
+    breach: ["Believes the breach was an inside job","Wants to protect the team from blame while fixing the gap"],
+    crisis: ["Sees the crisis as an opportunity to restructure","Believes leadership is hiding the full picture"],
+    merger: ["Sees the merger as the only path forward","Believes the cultures will never align"],
+    digital_transformation: ["Believes the transformation is overdue and necessary","Worries the pace is too fast for the team"],
+  };
+  // --- tag-input component (pills for list fields) ---
+  const _TS = "display:inline-block;padding:0.2rem 0.55rem;margin:0.15rem;border-radius:6px;font-size:0.8rem;";
+  function tagFieldHTML(selected, suggestions, fieldClass) {
+    const sel = selected.map(v => `<span class="tag-sel" data-val="${v}" style="${_TS}background:var(--primary);color:#fff">${v} <b class="tag-rm" data-val="${v}" style="cursor:pointer;opacity:0.7">✕</b></span>`).join("");
+    const sugg = suggestions.filter(s => !selected.includes(s))
+      .map(s => `<span class="tag-sugg" data-val="${s}" style="${_TS}background:var(--surface2);color:var(--muted);cursor:pointer">${s}</span>`).join("");
+    return `<div class="tag-field ${fieldClass}">
+      <div class="tag-selected" style="display:flex;flex-wrap:wrap;min-height:1.8rem">${sel || '<span class="muted small">Click below or type your own</span>'}</div>
+      <input class="tag-custom" placeholder="Type + Enter" style="width:100%;font-size:0.82rem;padding:0.25rem 0.4rem;margin-top:0.2rem;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:inherit" />
+      <div class="tag-suggs" style="display:flex;flex-wrap:wrap;margin-top:0.2rem">${sugg}</div></div>`;
+  }
+  function wireTagField(c) {
+    c.addEventListener("click", e => {
+      if (e.target.classList.contains("tag-sugg")) {
+        const v = e.target.dataset.val; e.target.remove();
+        const sel = c.querySelector(".tag-selected"); const ph = sel.querySelector(".muted"); if (ph) ph.remove();
+        sel.insertAdjacentHTML("beforeend", `<span class="tag-sel" data-val="${v}" style="${_TS}background:var(--primary);color:#fff">${v} <b class="tag-rm" data-val="${v}" style="cursor:pointer;opacity:0.7">✕</b></span>`);
+      }
+      if (e.target.classList.contains("tag-rm")) {
+        const v = e.target.dataset.val; e.target.closest(".tag-sel").remove();
+        c.querySelector(".tag-suggs").insertAdjacentHTML("beforeend", `<span class="tag-sugg" data-val="${v}" style="${_TS}background:var(--surface2);color:var(--muted);cursor:pointer">${v}</span>`);
+        if (!c.querySelector(".tag-sel")) c.querySelector(".tag-selected").innerHTML = '<span class="muted small">Click below or type your own</span>';
+      }
+    });
+    const inp = c.querySelector(".tag-custom");
+    inp.addEventListener("keydown", e => {
+      if (e.key === "Enter" && inp.value.trim()) {
+        e.preventDefault(); const v = inp.value.trim(); inp.value = "";
+        const sel = c.querySelector(".tag-selected"); const ph = sel.querySelector(".muted"); if (ph) ph.remove();
+        sel.insertAdjacentHTML("beforeend", `<span class="tag-sel" data-val="${v}" style="${_TS}background:var(--primary);color:#fff">${v} <b class="tag-rm" data-val="${v}" style="cursor:pointer;opacity:0.7">✕</b></span>`);
+      }
+    });
+  }
+  function readTagField(c) { return Array.from(c.querySelectorAll(".tag-sel")).map(e => e.dataset.val); }
   const ED_TABS = [["basics", "Basics"], ["company", "Company"], ["scenario", "Scenario"],
     ["people", "People"], ["documents", "Documents"], ["features", "Features"],
     ["yaml", "Advanced (YAML)"]];
@@ -669,6 +731,15 @@
     div.style.background = "var(--surface)"; div.style.border = "1px solid var(--border)";
     div.style.borderRadius = "12px"; div.style.padding = "0.8rem";
     const opts = edArchetypes.map(a => `<option value="${a.name}">${a.label || a.name}</option>`).join("");
+    const c = (emp && emp.customisation) || {};
+    const quirks = c.personality_additions || [];
+    const opinions = c.opinions || [];
+    const arch = (emp && emp.archetype) || "staff";
+    const archT = ARCHETYPE_TRAITS[arch] || [];
+    const quirkSugg = [...new Set([...archT, ...PERSONALITY_TRAITS])];
+    const scen = $("edScenType") ? $("edScenType").value : "growth";
+    const opSugg = SCENARIO_OPINIONS[scen] || SCENARIO_OPINIONS["growth"];
+    const perspTmpl = SCENARIO_PERSPECTIVES[scen] || SCENARIO_PERSPECTIVES["growth"];
     div.innerHTML = `
       <div class="row">
         <input class="edEmpName" aria-label="Person name" placeholder="Name" style="flex:2">
@@ -680,23 +751,24 @@
       <div class="edEmpDetail" hidden style="margin-top:0.6rem;padding-left:0.8rem;border-left:2px solid var(--border)">
         <label class="small muted">Background / backstory</label>
         <textarea class="edEmpBg" placeholder="Their history — how they got here, what shaped them" style="width:100%;min-height:50px;font-size:0.85rem;font-family:inherit"></textarea>
-        <label class="small muted" style="margin-top:0.4rem;display:block">Personality quirks (one per line)</label>
-        <textarea class="edEmpPers" placeholder="Obsessive about punctuality&#10;Speaks in metaphors" style="width:100%;min-height:40px;font-size:0.85rem;font-family:inherit"></textarea>
-        <label class="small muted" style="margin-top:0.4rem;display:block">Opinions (one per line)</label>
-        <textarea class="edEmpOps" placeholder="Thinks the new policy is overkill&#10;Distrusts the vendor" style="width:100%;min-height:40px;font-size:0.85rem;font-family:inherit"></textarea>
-        <label class="small muted" style="margin-top:0.4rem;display:block">Scenario perspective — how they see the central challenge</label>
-        <textarea class="edEmpScen" placeholder="Believes the breach was an inside job" style="width:100%;min-height:40px;font-size:0.85rem;font-family:inherit"></textarea>
+        <label class="small muted" style="margin-top:0.4rem;display:block">Personality quirks</label>
+        <div class="edEmpPersTags">${tagFieldHTML(quirks, quirkSugg, "edEmpPers")}</div>
+        <label class="small muted" style="margin-top:0.4rem;display:block">Opinions</label>
+        <div class="edEmpOpsTags">${tagFieldHTML(opinions, opSugg, "edEmpOps")}</div>
+        <label class="small muted" style="margin-top:0.4rem;display:block">Scenario perspective</label>
+        <div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.3rem">${perspTmpl.map(t => `<span class="persp-tmpl" data-val="${t}" style="${_TS}background:var(--surface2);color:var(--accent);cursor:pointer">⚡ ${t.slice(0,40)}…</span>`).join("")}</div>
+        <textarea class="edEmpScen" placeholder="How they see the central challenge" style="width:100%;min-height:50px;font-size:0.85rem;font-family:inherit"></textarea>
       </div>`;
     if (emp) {
       div.querySelector(".edEmpName").value = emp.name || "";
       div.querySelector(".edEmpRole").value = emp.role || "";
       if (emp.archetype) div.querySelector(".edEmpArch").value = emp.archetype;
-      const c = emp.customisation || {};
       div.querySelector(".edEmpBg").value = c.background || "";
-      div.querySelector(".edEmpPers").value = (c.personality_additions || []).join("\n");
-      div.querySelector(".edEmpOps").value = (c.opinions || []).join("\n");
       div.querySelector(".edEmpScen").value = c.scenario_perspective || "";
     }
+    wireTagField(div.querySelector(".edEmpPersTags .tag-field"));
+    wireTagField(div.querySelector(".edEmpOpsTags .tag-field"));
+    div.querySelectorAll(".persp-tmpl").forEach(t => t.onclick = () => { div.querySelector(".edEmpScen").value = t.dataset.val; });
     div.querySelector(".edEmpDel").onclick = () => div.remove();
     div.querySelector(".edEmpToggle").onclick = () => {
       const d = div.querySelector(".edEmpDetail");
@@ -803,8 +875,8 @@
       archetype: r.querySelector(".edEmpArch").value || "staff",
       customisation: {
         background: (r.querySelector(".edEmpBg") || {}).value || "",
-        personality_additions: ((r.querySelector(".edEmpPers") || {}).value || "").split("\n").filter(x => x.trim()),
-        opinions: ((r.querySelector(".edEmpOps") || {}).value || "").split("\n").filter(x => x.trim()),
+        personality_additions: readTagField(r.querySelector(".edEmpPersTags .tag-field")),
+        opinions: readTagField(r.querySelector(".edEmpOpsTags .tag-field")),
         scenario_perspective: (r.querySelector(".edEmpScen") || {}).value || "",
       },
     })).filter(e => e.name.trim());
