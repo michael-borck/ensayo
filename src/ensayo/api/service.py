@@ -25,6 +25,7 @@ from ..config import load_company_config_from_text, load_simulation_config_from_
 from ..generator import generate, generate_multisite
 from .audit import audit
 from .auth import hash_password
+from ..models import slugify
 
 
 class ServiceError(Exception):
@@ -34,6 +35,12 @@ class ServiceError(Exception):
 def working_root() -> Path:
     raw = os.environ.get("WORKING_CLONES_DIR", "./.ensayo-data/sims")
     return Path(raw).expanduser()
+
+def _owner_slug(conn: sqlite3.Connection, owner_uc_id: str) -> str:
+    """Derive a URL-safe owner slug from the owner's email local part."""
+    row = conn.execute("SELECT email FROM uc_accounts WHERE id = ?",
+                       (owner_uc_id,)).fetchone()
+    return slugify(row["email"].split("@")[0]) if row else "unknown"
 
 
 def _now() -> str:
@@ -168,11 +175,13 @@ def create_simulation(
             "LLM-assisted generation is off by default for minors audiences; "
             "acknowledge the 'llm_assist' override to enable it")
 
-    if conn.execute("SELECT 1 FROM simulations WHERE slug = ?", (slug,)).fetchone():
-        raise ServiceError(f"a simulation with slug {slug!r} already exists")
+    owner_slug = _owner_slug(conn, owner_uc_id)
+    if conn.execute("SELECT 1 FROM simulations WHERE slug = ? AND owner_uc_id = ?",
+                    (slug, owner_uc_id)).fetchone():
+        raise ServiceError(f"you already have a simulation with slug {slug!r}")
 
-    clone = working_root() / slug
-    base = f"/sims/{slug}/"
+    clone = working_root() / owner_slug / slug
+    base = f"/sims/{owner_slug}/{slug}/"
     with simulation_lock(slug):
         clone.mkdir(parents=True, exist_ok=True)
         (clone / "company.yaml").write_text(company_yaml, encoding="utf-8")
@@ -193,11 +202,11 @@ def create_simulation(
     now = _now()
     conn.execute(
         """INSERT INTO simulations
-           (id, name, slug, type, audience, auth_mode, workflow, owner_uc_id,
+           (id, name, slug, owner_slug, type, audience, auth_mode, workflow, owner_uc_id,
             working_clone_path, site_url, status, shared_password_hash, config_cache,
             created_at, updated_at)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-        (sim_id, name, slug, "single_company", config.audience.value, auth_mode, workflow,
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        (sim_id, name, slug, owner_slug, "single_company", config.audience.value, auth_mode, workflow,
          owner_uc_id, str(clone), base, "draft",
          hash_password(shared_password) if shared_password else "",
          json.dumps(config.model_dump(mode="json")), now, now),
@@ -297,10 +306,12 @@ def create_multisite_simulation(conn: sqlite3.Connection, owner_uc_id: str, name
     _enforce_sim_limit(conn, owner_uc_id)
     sim = load_simulation_config_from_text(simulation_yaml)  # raises ConfigError if bad
     slug = sim.slug
-    if conn.execute("SELECT 1 FROM simulations WHERE slug = ?", (slug,)).fetchone():
-        raise ServiceError(f"a simulation with slug {slug!r} already exists")
-    clone = working_root() / slug
-    base = f"/sims/{slug}/"
+    owner_slug = _owner_slug(conn, owner_uc_id)
+    if conn.execute("SELECT 1 FROM simulations WHERE slug = ? AND owner_uc_id = ?",
+                    (slug, owner_uc_id)).fetchone():
+        raise ServiceError(f"you already have a simulation with slug {slug!r}")
+    clone = working_root() / owner_slug / slug
+    base = f"/sims/{owner_slug}/{slug}/"
     can_build = True
     with simulation_lock(slug):
         clone.mkdir(parents=True, exist_ok=True)
@@ -320,10 +331,10 @@ def create_multisite_simulation(conn: sqlite3.Connection, owner_uc_id: str, name
     now = _now()
     conn.execute(
         """INSERT INTO simulations
-           (id, name, slug, type, audience, auth_mode, workflow, owner_uc_id,
+           (id, name, slug, owner_slug, type, audience, auth_mode, workflow, owner_uc_id,
             working_clone_path, site_url, status, config_cache, created_at, updated_at)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-        (sim_id, name, slug, "multi_site", sim.audience.value,
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+        (sim_id, name, slug, owner_slug, "multi_site", sim.audience.value,
          "shared_password", workflow or sim.workflow, owner_uc_id, str(clone), base,
          "draft", json.dumps(sim.model_dump(mode="json")), now, now))
     conn.commit()

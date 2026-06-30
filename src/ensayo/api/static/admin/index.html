@@ -310,7 +310,7 @@
         ? '<span class="pill" style="color:#ffd5a8">build deferred — click Regenerate</span>' : "";
       const pubBtn = GITHUB_ENABLED
         ? `<button class="primary" data-pub="${s.id}">${s.repo_url ? "Publish" : "Connect repo + publish"}</button>` : "";
-      const studentUrl = window.location.origin + "/sims/" + s.slug + "/";
+      const studentUrl = window.location.origin + "/sims/" + (s.owner_slug ? s.owner_slug + "/" : "") + s.slug + "/";
       el.innerHTML = `
         <div class="row" style="justify-content:space-between">
           <div><strong>${s.name}</strong> <span class="pill">${s.status}</span> ${unpub} ${deferred}
@@ -318,7 +318,7 @@
               ${s.repo_url ? "· " + s.repo_url : ""}</div></div>
           <div class="row">
             <a class="ghost" style="padding:0.5rem 1rem;border:1px solid var(--border);border-radius:9px"
-               href="/sims/${s.slug}/" target="_blank">Student link ↗</a>
+               href="/sims/${s.owner_slug ? s.owner_slug + "/" : ""}${s.slug}/" target="_blank">Student link ↗</a>
             <button class="ghost" data-copy="${studentUrl}" title="Copy student link">Copy</button>
             <button class="ghost" data-edit="${s.id}" data-type="${s.type}">Edit</button>
             <button class="ghost" data-gen="${s.id}">Regenerate</button>

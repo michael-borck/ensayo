@@ -15,8 +15,10 @@
 
   var API = (window.ENSAYO_API_BASE || "").replace(/\/$/, "");
   var SLUG = window.ENSAYO_SIM_SLUG || "";
+  var OWNER = window.ENSAYO_SIM_OWNER || "";
+  var SIM_PATH = OWNER ? OWNER + "/" + SLUG : SLUG;
 
-  function api(path) { return API + path; }
+  function api(path) { return API + path.replace("{sim}", SIM_PATH); }
   function key(emp) { return "ensayo_booking_" + SLUG + "_" + emp; }
   function el(tag, cls, text) {
     var n = document.createElement(tag);
@@ -87,7 +89,7 @@
 
     find.addEventListener("click", function () {
       note.textContent = "Loading available times…"; slots.innerHTML = "";
-      fetch(api("/api/v1/sims/" + SLUG + "/availability?employee=" + encodeURIComponent(emp) +
+      fetch(api("/api/v1/sims/{sim}/availability?employee=" + encodeURIComponent(emp) +
                 "&date=" + date.value))
         .then(function (r) { return r.json(); })
         .then(function (d) {
@@ -108,7 +110,7 @@
 
   function book(emp, slot, sname, smail, note, gate, wrap, name) {
     note.textContent = "Booking…";
-    fetch(api("/api/v1/sims/" + SLUG + "/bookings"), {
+    fetch(api("/api/v1/sims/{sim}/bookings"), {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ employee_slug: emp, slot_start: slot,
         student_name: sname || "", student_email: smail || "" })

@@ -251,7 +251,16 @@ def create_app() -> FastAPI:
         return sim
 
     def _sim_by_slug(slug: str, conn: sqlite3.Connection) -> sqlite3.Row:
-        sim = conn.execute("SELECT * FROM simulations WHERE slug = ?", (slug,)).fetchone()
+        """Resolve a sim by slug. Accepts 'acme-corp' (global) or
+        'owner/acme-corp' (account-scoped)."""
+        if "/" in slug:
+            owner, sim_slug = slug.split("/", 1)
+            sim = conn.execute(
+                "SELECT * FROM simulations WHERE owner_slug = ? AND slug = ?",
+                (owner, sim_slug)).fetchone()
+        else:
+            sim = conn.execute(
+                "SELECT * FROM simulations WHERE slug = ?", (slug,)).fetchone()
         if sim is None:
             raise HTTPException(404, "simulation not found")
         return sim
@@ -704,7 +713,7 @@ def create_app() -> FastAPI:
             raise HTTPException(exc.status, str(exc)) from exc
 
     # --- student-facing auth (by slug) ------------------------------------
-    @app.post("/api/v1/sims/{slug}/students/register", status_code=201)
+    @app.post("/api/v1/sims/{slug:path}/students/register", status_code=201)
     def student_register(slug: str, req: StudentRegisterReq,
                          conn: sqlite3.Connection = Depends(get_conn)):
         sim = _sim_by_slug(slug, conn)
@@ -713,7 +722,7 @@ def create_app() -> FastAPI:
         except studentauth.StudentError as exc:
             raise HTTPException(exc.status, str(exc)) from exc
 
-    @app.post("/api/v1/sims/{slug}/students/login")
+    @app.post("/api/v1/sims/{slug:path}/students/login")
     def student_login(slug: str, req: StudentLoginReq,
                       conn: sqlite3.Connection = Depends(get_conn)):
         sim = _sim_by_slug(slug, conn)
@@ -723,12 +732,12 @@ def create_app() -> FastAPI:
         except studentauth.StudentError as exc:
             raise HTTPException(exc.status, str(exc)) from exc
 
-    @app.post("/api/v1/sims/{slug}/students/request-reset")
+    @app.post("/api/v1/sims/{slug:path}/students/request-reset")
     def student_request_reset(slug: str, req: ResetRequestReq,
                               conn: sqlite3.Connection = Depends(get_conn)):
         return studentauth.request_reset(conn, _sim_by_slug(slug, conn), req.email)
 
-    @app.post("/api/v1/sims/{slug}/students/reset")
+    @app.post("/api/v1/sims/{slug:path}/students/reset")
     def student_reset(slug: str, req: ResetReq,
                       conn: sqlite3.Connection = Depends(get_conn)):
         sim = _sim_by_slug(slug, conn)
@@ -737,7 +746,7 @@ def create_app() -> FastAPI:
         except studentauth.StudentError as exc:
             raise HTTPException(exc.status, str(exc)) from exc
 
-    @app.get("/api/v1/sims/{slug}/students/me")
+    @app.get("/api/v1/sims/{slug:path}/students/me")
     def student_me(slug: str, student: dict = Depends(studentauth.current_student),
                    conn: sqlite3.Connection = Depends(get_conn)):
         row = conn.execute("SELECT * FROM student_access WHERE id = ?",
@@ -757,7 +766,7 @@ def create_app() -> FastAPI:
         return {"ok": ok}
 
     # --- student-facing booking + visibility (by slug; no UC auth) ---------
-    @app.get("/api/v1/sims/{slug}/availability")
+    @app.get("/api/v1/sims/{slug:path}/availability")
     def student_availability(slug: str, employee: str, date: str,
                              conn: sqlite3.Connection = Depends(get_conn)):
         sim = _sim_by_slug(slug, conn)
@@ -766,7 +775,7 @@ def create_app() -> FastAPI:
         except ServiceError as exc:
             raise HTTPException(400, str(exc)) from exc
 
-    @app.post("/api/v1/sims/{slug}/bookings", status_code=201)
+    @app.post("/api/v1/sims/{slug:path}/bookings", status_code=201)
     def student_book(slug: str, req: BookingReq,
                      conn: sqlite3.Connection = Depends(get_conn)):
         sim = _sim_by_slug(slug, conn)
@@ -777,13 +786,13 @@ def create_app() -> FastAPI:
         except ServiceError as exc:
             raise HTTPException(400, str(exc)) from exc
 
-    @app.get("/api/v1/sims/{slug}/visibility")
+    @app.get("/api/v1/sims/{slug:path}/visibility")
     def student_visibility(slug: str, unit_code: str = "",
                            conn: sqlite3.Connection = Depends(get_conn)):
         sim = _sim_by_slug(slug, conn)
         return evaluate_visibility(conn, sim, unit_code=unit_code)
 
-    @app.get("/api/v1/sims/{slug}/employees")
+    @app.get("/api/v1/sims/{slug:path}/employees")
     def sim_employees(slug: str, conn: sqlite3.Connection = Depends(get_conn)):
         sim = _sim_by_slug(slug, conn)
         cache = json.loads(sim["config_cache"] or "{}")
@@ -795,11 +804,12 @@ def create_app() -> FastAPI:
 
     # --- workflow runtime: student applications + inbox -------------------
     def _student_sim(slug: str, student: dict, conn: sqlite3.Connection) -> sqlite3.Row:
-        if student["slug"] != slug:
+        sim_slug = slug.rsplit("/", 1)[-1] if "/" in slug else slug
+        if student["slug"] != sim_slug:
             raise HTTPException(403, "token is for a different simulation")
         return _sim_by_slug(slug, conn)
 
-    @app.post("/api/v1/sims/{slug}/applications", status_code=201)
+    @app.post("/api/v1/sims/{slug:path}/applications", status_code=201)
     def student_apply(slug: str, req: ApplicationReq,
                       student: dict = Depends(studentauth.current_student),
                       conn: sqlite3.Connection = Depends(get_conn)):
@@ -810,21 +820,21 @@ def create_app() -> FastAPI:
         except wfr.WorkflowRuntimeError as exc:
             raise HTTPException(exc.status, str(exc)) from exc
 
-    @app.get("/api/v1/sims/{slug}/applications")
+    @app.get("/api/v1/sims/{slug:path}/applications")
     def student_applications(slug: str,
                              student: dict = Depends(studentauth.current_student),
                              conn: sqlite3.Connection = Depends(get_conn)):
         sim = _student_sim(slug, student, conn)
         return wfr.list_applications(conn, sim, student_id=student["id"])
 
-    @app.get("/api/v1/sims/{slug}/messages")
+    @app.get("/api/v1/sims/{slug:path}/messages")
     def student_messages(slug: str, inbox: str = "",
                          student: dict = Depends(studentauth.current_student),
                          conn: sqlite3.Connection = Depends(get_conn)):
         sim = _student_sim(slug, student, conn)
         return wfr.list_messages(conn, sim, student["id"], inbox=inbox or None)
 
-    @app.post("/api/v1/sims/{slug}/messages/{message_id}/read")
+    @app.post("/api/v1/sims/{slug:path}/messages/{message_id}/read")
     def student_mark_read(slug: str, message_id: str,
                           student: dict = Depends(studentauth.current_student),
                           conn: sqlite3.Connection = Depends(get_conn)):
@@ -835,7 +845,7 @@ def create_app() -> FastAPI:
             raise HTTPException(exc.status, str(exc)) from exc
 
     # --- 1-on-1 conversation surface --------------------------------------
-    @app.post("/api/v1/sims/{slug}/conversations", status_code=201)
+    @app.post("/api/v1/sims/{slug:path}/conversations", status_code=201)
     def conversation_start(slug: str, req: ConversationStartReq,
                            student: dict = Depends(studentauth.current_student),
                            conn: sqlite3.Connection = Depends(get_conn)):
@@ -849,7 +859,7 @@ def create_app() -> FastAPI:
         except convo.ConversationError as exc:
             raise HTTPException(exc.status, str(exc)) from exc
 
-    @app.get("/api/v1/sims/{slug}/conversations/{sid}")
+    @app.get("/api/v1/sims/{slug:path}/conversations/{sid}")
     def conversation_get(slug: str, sid: str,
                          student: dict = Depends(studentauth.current_student),
                          conn: sqlite3.Connection = Depends(get_conn)):
@@ -859,7 +869,7 @@ def create_app() -> FastAPI:
         except convo.ConversationError as exc:
             raise HTTPException(exc.status, str(exc)) from exc
 
-    @app.post("/api/v1/sims/{slug}/conversations/{sid}/message")
+    @app.post("/api/v1/sims/{slug:path}/conversations/{sid}/message")
     def conversation_message(slug: str, sid: str, req: ConversationMessageReq,
                              student: dict = Depends(studentauth.current_student),
                              conn: sqlite3.Connection = Depends(get_conn)):
@@ -869,7 +879,7 @@ def create_app() -> FastAPI:
         except convo.ConversationError as exc:
             raise HTTPException(exc.status, str(exc)) from exc
 
-    @app.post("/api/v1/sims/{slug}/conversations/{sid}/complete")
+    @app.post("/api/v1/sims/{slug:path}/conversations/{sid}/complete")
     def conversation_complete(slug: str, sid: str,
                               student: dict = Depends(studentauth.current_student),
                               conn: sqlite3.Connection = Depends(get_conn)):
@@ -880,7 +890,7 @@ def create_app() -> FastAPI:
             raise HTTPException(exc.status, str(exc)) from exc
 
     # --- document submission surface --------------------------------------
-    @app.post("/api/v1/sims/{slug}/submissions", status_code=201)
+    @app.post("/api/v1/sims/{slug:path}/submissions", status_code=201)
     def submit_doc(slug: str, req: SubmissionReq,
                    student: dict = Depends(studentauth.current_student),
                    conn: sqlite3.Connection = Depends(get_conn)):
@@ -893,13 +903,13 @@ def create_app() -> FastAPI:
         except subm.SubmissionError as exc:
             raise HTTPException(exc.status, str(exc)) from exc
 
-    @app.get("/api/v1/sims/{slug}/submissions")
+    @app.get("/api/v1/sims/{slug:path}/submissions")
     def list_docs(slug: str, student: dict = Depends(studentauth.current_student),
                   conn: sqlite3.Connection = Depends(get_conn)):
         sim = _student_sim(slug, student, conn)
         return subm.list_submissions(conn, sim, student["id"])
 
-    @app.get("/api/v1/sims/{slug}/submissions/{sid}")
+    @app.get("/api/v1/sims/{slug:path}/submissions/{sid}")
     def get_doc(slug: str, sid: str, student: dict = Depends(studentauth.current_student),
                 conn: sqlite3.Connection = Depends(get_conn)):
         sim = _student_sim(slug, student, conn)
@@ -909,7 +919,7 @@ def create_app() -> FastAPI:
             raise HTTPException(exc.status, str(exc)) from exc
 
     # --- group chat surface -----------------------------------------------
-    @app.post("/api/v1/sims/{slug}/group-chats", status_code=201)
+    @app.post("/api/v1/sims/{slug:path}/group-chats", status_code=201)
     def group_start(slug: str, req: GroupChatStartReq,
                     student: dict = Depends(studentauth.current_student),
                     conn: sqlite3.Connection = Depends(get_conn)):
@@ -919,7 +929,7 @@ def create_app() -> FastAPI:
                            application_id=req.application_id,
                            beat_interval_seconds=req.beat_interval_seconds)
 
-    @app.get("/api/v1/sims/{slug}/group-chats/{gid}")
+    @app.get("/api/v1/sims/{slug:path}/group-chats/{gid}")
     def group_get(slug: str, gid: str, student: dict = Depends(studentauth.current_student),
                   conn: sqlite3.Connection = Depends(get_conn)):
         sim = _student_sim(slug, student, conn)
@@ -928,7 +938,7 @@ def create_app() -> FastAPI:
         except gchat.GroupChatError as exc:
             raise HTTPException(exc.status, str(exc)) from exc
 
-    @app.post("/api/v1/sims/{slug}/group-chats/{gid}/post")
+    @app.post("/api/v1/sims/{slug:path}/group-chats/{gid}/post")
     def group_post(slug: str, gid: str, req: GroupChatPostReq,
                    student: dict = Depends(studentauth.current_student),
                    conn: sqlite3.Connection = Depends(get_conn)):
@@ -938,7 +948,7 @@ def create_app() -> FastAPI:
         except gchat.GroupChatError as exc:
             raise HTTPException(exc.status, str(exc)) from exc
 
-    @app.post("/api/v1/sims/{slug}/group-chats/{gid}/complete")
+    @app.post("/api/v1/sims/{slug:path}/group-chats/{gid}/complete")
     def group_complete(slug: str, gid: str,
                        student: dict = Depends(studentauth.current_student),
                        conn: sqlite3.Connection = Depends(get_conn)):
@@ -987,23 +997,45 @@ def create_app() -> FastAPI:
         return export_svc.export_journey(conn, _owned_sim(sim_id, uc, conn), student_id)
 
     # --- serve generated sites (local; GitHub Pages in production) ---------
-    @app.get("/sims/{slug}")
-    def sim_root(slug: str):
-        return RedirectResponse(url=f"/sims/{slug}/")
+    def _try_find_sim(sim_id: str, conn: sqlite3.Connection) -> sqlite3.Row | None:
+        if "/" in sim_id:
+            owner, s = sim_id.split("/", 1)
+            return conn.execute(
+                "SELECT * FROM simulations WHERE owner_slug = ? AND slug = ?",
+                (owner, s)).fetchone()
+        return conn.execute(
+            "SELECT * FROM simulations WHERE slug = ?", (sim_id,)).fetchone()
 
-    @app.get("/sims/{slug}/{path:path}")
-    def serve_sim(slug: str, path: str):
-        root = (working_root() / slug / "dist").resolve()
-        if not root.exists():
-            raise HTTPException(404, "site not built")
-        candidate = (root / path).resolve()
-        if not str(candidate).startswith(str(root)):
-            raise HTTPException(403, "forbidden")
-        if path == "" or candidate.is_dir():
-            candidate = candidate / "index.html"
-        if not candidate.exists():
-            raise HTTPException(404, "not found")
-        return FileResponse(candidate)
+    @app.get("/sims/{rest:path}")
+    def serve_sim(rest: str, conn: sqlite3.Connection = Depends(get_conn)):
+        clean = rest.rstrip("/")
+        if not clean:
+            raise HTTPException(404)
+        parts = clean.split("/")
+        # Try 2-segment (owner/sim) then 1-segment (sim, legacy).
+        for n in [2, 1]:
+            if len(parts) < n:
+                continue
+            sim_id = "/".join(parts[:n])
+            file_parts = parts[n:]
+            sim = _try_find_sim(sim_id, conn)
+            if sim:
+                root = (Path(sim["working_clone_path"]) / "dist").resolve()
+                if not root.exists():
+                    raise HTTPException(404, "site not built")
+                if not file_parts:
+                    if not rest.endswith("/"):
+                        return RedirectResponse(url=f"/sims/{clean}/")
+                    file_parts = ["index.html"]
+                candidate = (root / "/".join(file_parts)).resolve()
+                if not str(candidate).startswith(str(root)):
+                    raise HTTPException(403, "forbidden")
+                if candidate.is_dir():
+                    candidate = candidate / "index.html"
+                if not candidate.exists():
+                    raise HTTPException(404, "not found")
+                return FileResponse(candidate)
+        raise HTTPException(404, "site not found")
 
     # --- dashboard + root --------------------------------------------------
     app.mount("/admin", StaticFiles(directory=_STATIC / "admin", html=True), name="admin")

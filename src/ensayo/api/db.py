@@ -45,6 +45,57 @@ def _add_column(conn: sqlite3.Connection, table: str, coldef: str) -> None:
         conn.execute(f"ALTER TABLE {table} ADD COLUMN {coldef}")
 
 
+def _migrate_slug_unique_to_composite(conn: sqlite3.Connection) -> None:
+    """Drop the legacy UNIQUE constraint on simulations.slug.
+
+    SQLite can't ALTER constraints, so we recreate the table when the old
+    single-column unique index is detected. Idempotent — no-op if already done.
+    """
+    has_unique_slug = False
+    for idx in conn.execute("PRAGMA index_list('simulations')").fetchall():
+        if idx["origin"] == "u":
+            info = conn.execute(f"PRAGMA index_info('{idx['name']}')").fetchall()
+            if len(info) == 1 and info[0]["name"] == "slug":
+                has_unique_slug = True
+                break
+    if not has_unique_slug:
+        return
+    cols = [r["name"] for r in conn.execute("PRAGMA table_info(simulations)")]
+    col_list = ", ".join(cols)
+    conn.executescript(
+        f"""
+        CREATE TABLE simulations_new (
+            id                    TEXT PRIMARY KEY,
+            name                  TEXT NOT NULL,
+            slug                  TEXT NOT NULL,
+            owner_slug            TEXT NOT NULL DEFAULT '',
+            type                  TEXT NOT NULL DEFAULT 'single_company',
+            audience              TEXT NOT NULL DEFAULT 'adults',
+            owner_uc_id           TEXT NOT NULL,
+            repo_url              TEXT DEFAULT '',
+            working_clone_path    TEXT DEFAULT '',
+            site_url              TEXT DEFAULT '',
+            status                TEXT NOT NULL DEFAULT 'draft',
+            has_unpublished_changes INTEGER NOT NULL DEFAULT 0,
+            auto_publish          INTEGER NOT NULL DEFAULT 0,
+            shared_password_hash  TEXT DEFAULT '',
+            config_cache          TEXT DEFAULT '{{}}',
+            auth_mode             TEXT NOT NULL DEFAULT 'shared_password',
+            workflow              TEXT DEFAULT '',
+            created_at            TEXT NOT NULL,
+            updated_at            TEXT NOT NULL,
+            last_published_at     TEXT,
+            FOREIGN KEY (owner_uc_id) REFERENCES uc_accounts(id)
+        );
+        INSERT INTO simulations_new ({col_list}) SELECT {col_list} FROM simulations;
+        DROP TABLE simulations;
+        ALTER TABLE simulations_new RENAME TO simulations;
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_sim_owner_slug
+            ON simulations (owner_uc_id, slug);
+        """
+    )
+
+
 def migrate(conn: sqlite3.Connection) -> None:
     conn.executescript(
         """
@@ -61,7 +112,8 @@ def migrate(conn: sqlite3.Connection) -> None:
         CREATE TABLE IF NOT EXISTS simulations (
             id                    TEXT PRIMARY KEY,
             name                  TEXT NOT NULL,
-            slug                  TEXT UNIQUE NOT NULL,
+            slug                  TEXT NOT NULL,
+            owner_slug            TEXT NOT NULL DEFAULT '',
             type                  TEXT NOT NULL DEFAULT 'single_company',
             audience              TEXT NOT NULL DEFAULT 'adults',
             owner_uc_id           TEXT NOT NULL,
@@ -73,11 +125,15 @@ def migrate(conn: sqlite3.Connection) -> None:
             auto_publish          INTEGER NOT NULL DEFAULT 0,
             shared_password_hash  TEXT DEFAULT '',
             config_cache          TEXT DEFAULT '{}',
+            auth_mode             TEXT NOT NULL DEFAULT 'shared_password',
+            workflow              TEXT DEFAULT '',
             created_at            TEXT NOT NULL,
             updated_at            TEXT NOT NULL,
             last_published_at     TEXT,
             FOREIGN KEY (owner_uc_id) REFERENCES uc_accounts(id)
         );
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_sim_owner_slug
+            ON simulations (owner_uc_id, slug);
 
         CREATE TABLE IF NOT EXISTS bookings (
             id            TEXT PRIMARY KEY,
@@ -266,8 +322,22 @@ def migrate(conn: sqlite3.Connection) -> None:
     _add_column(conn, "simulations", "last_published_at TEXT")
     _add_column(conn, "simulations", "auth_mode TEXT NOT NULL DEFAULT 'shared_password'")
     _add_column(conn, "simulations", "workflow TEXT DEFAULT ''")
+    _add_column(conn, "simulations", "owner_slug TEXT NOT NULL DEFAULT ''")
     _add_column(conn, "student_access", "reset_attempts INTEGER NOT NULL DEFAULT 0")
     _add_column(conn, "uc_accounts", "is_verified INTEGER NOT NULL DEFAULT 1")
+    # Migrate slug from UNIQUE to per-owner composite uniqueness (SQLite can't
+    # ALTER constraints, so recreate the table when the old unique index exists).
+    _migrate_slug_unique_to_composite(conn)
+    # Backfill owner_slug for existing sims from their owner's email.
+    from ..models import slugify
+    rows = conn.execute(
+        "SELECT s.id, u.email FROM simulations s "
+        "JOIN uc_accounts u ON s.owner_uc_id = u.id "
+        "WHERE s.owner_slug = ''").fetchall()
+    for r in rows:
+        owner_slug = slugify(r["email"].split("@")[0])
+        conn.execute("UPDATE simulations SET owner_slug = ? WHERE id = ?",
+                     (owner_slug, r["id"]))
     conn.execute(
         "INSERT OR IGNORE INTO instance_settings (key, value) "
         "VALUES ('registration_open', '1')")

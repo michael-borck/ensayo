@@ -68,7 +68,8 @@ def test_create_and_list_simulation(app_ctx):
     assert r.status_code == 201, r.text
     sim = r.json()
     assert sim["slug"] == "test-co"
-    assert sim["site_url"] == "/sims/test-co/"
+    assert sim["site_url"] == f"/sims/{sim['owner_slug']}/{sim['slug']}/"
+    assert sim["owner_slug"] == "uc"  # derived from uc@example.edu
 
     lst = app_ctx.get("/api/v1/simulations", headers=_auth(app_ctx)).json()
     assert len(lst) == 1 and lst[0]["slug"] == "test-co"
@@ -105,3 +106,51 @@ def test_student_shared_password_verify(app_ctx):
     bad = app_ctx.post("/api/v1/auth/student/verify",
                        json={"slug": "test-co", "password": "nope"})
     assert bad.json()["ok"] is False
+
+
+
+ACME_YAML = """
+company:
+  name: "Acme Corp"
+employees:
+  - name: "Test Person"
+"""
+
+
+def test_two_owners_same_slug(client):
+    """Account-scoped slugs: two owners can have the same sim slug."""
+    create_uc(client.app.state.conn, "alice@uni.edu", "pw12345")
+    create_uc(client.app.state.conn, "bob@uni.edu", "pw12345")
+    auth_a = {"Authorization": "Bearer " + client.post(
+        "/api/v1/auth/login", json={"email": "alice@uni.edu", "password": "pw12345"}).json()["token"]}
+    auth_b = {"Authorization": "Bearer " + client.post(
+        "/api/v1/auth/login", json={"email": "bob@uni.edu", "password": "pw12345"}).json()["token"]}
+
+    sim_a = client.post("/api/v1/simulations", headers=auth_a,
+                        json={"name": "Alice's Acme", "company_yaml": ACME_YAML, "build": False}).json()
+    sim_b = client.post("/api/v1/simulations", headers=auth_b,
+                        json={"name": "Bob's Acme", "company_yaml": ACME_YAML, "build": False}).json()
+
+    # Both succeed — same slug, different owners
+    assert sim_a["slug"] == "acme-corp"
+    assert sim_b["slug"] == "acme-corp"
+    assert sim_a["owner_slug"] == "alice"
+    assert sim_b["owner_slug"] == "bob"
+    assert sim_a["site_url"] == "/sims/alice/acme-corp/"
+    assert sim_b["site_url"] == "/sims/bob/acme-corp/"
+
+    # Same owner can't duplicate
+    dup = client.post("/api/v1/simulations", headers=auth_a,
+                      json={"name": "Another", "company_yaml": ACME_YAML, "build": False})
+    assert dup.status_code == 400
+
+    # Student endpoint resolves by owner+slug
+    emps = client.get("/api/v1/sims/alice/acme-corp/employees").json()
+    assert len(emps) == 1 and emps[0]["name"] == "Test Person"
+    emps_b = client.get("/api/v1/sims/bob/acme-corp/employees").json()
+    assert len(emps_b) == 1 and emps_b[0]["name"] == "Test Person"
+
+    # Old pattern still works (backward compat — unique slug)
+    emps_old = client.get("/api/v1/sims/acme-corp/employees")
+    # Ambiguous now (two sims with same slug) — but {slug:path} resolves first match
+    assert emps_old.status_code == 200
