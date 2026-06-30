@@ -288,6 +288,24 @@ def send_test_email(to_email: str) -> None:
         click.secho(f"\u2717 Send failed via '{prov}' — check credentials/env.", fg="red")
         raise SystemExit(1)
 
+@admin.command(name="promote")
+@click.option("--email", "-e", required=True, help="Existing UC email to promote.")
+def promote(email: str) -> None:
+    """Promote an existing UC account to instance admin."""
+    from .api.db import init_db
+    from .api.auth import get_uc_by_email
+    conn = init_db()
+    try:
+        uc = get_uc_by_email(conn, email)
+        if uc is None:
+            raise click.ClickException(f"no account found for {email}")
+        conn.execute("UPDATE uc_accounts SET role = 'instance_admin' WHERE email = ?",
+                     (email.lower(),))
+        conn.commit()
+        click.secho(f"\u2713 Promoted {email} to instance_admin", fg="green")
+    finally:
+        conn.close()
+
 
 @main.group(name="workflow")
 def workflow_group() -> None:
