@@ -427,6 +427,22 @@ def create_app() -> FastAPI:
         except IdeateError as exc:
             raise HTTPException(exc.status, exc.message) from exc
 
+
+    @app.post("/api/v1/extract")
+    def extract_endpoint(file: UploadFile = File(...),
+                         uc: sqlite3.Row = Depends(current_uc)):
+        """Extract plain text from an uploaded file (for the Documents editor).
+
+        Supports txt/md/qmd/csv/json/pdf/docx/pptx/xlsx/odt.  The file is read
+        in memory and discarded (never written to disk).
+        """
+        from ..extract import ExtractError, extract_text
+        try:
+            text = extract_text(file.file.read(), file.filename)
+        except ExtractError as exc:
+            raise HTTPException(exc.status, exc.message) from exc
+        return {"text": text, "filename": file.filename}
+
     @app.get("/api/v1/simulations")
     def list_sims(uc: sqlite3.Row = Depends(current_uc),
                   conn: sqlite3.Connection = Depends(get_conn)):

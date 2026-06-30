@@ -91,3 +91,33 @@ def test_ideate_endpoint_unsupported_file(client, auth):
 
 def test_ideate_requires_auth(client):
     assert client.post("/api/v1/ideate", data={"idea": "x"}).status_code == 401
+
+
+
+# --- /api/v1/extract endpoint (Documents editor upload) -------------------
+
+def test_extract_endpoint_text_file(client, auth):
+    r = client.post("/api/v1/extract", headers=auth,
+                    files={"file": ("notes.txt", io.BytesIO(b"hello\nworld"), "text/plain")})
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["text"] == "hello\nworld"
+    assert body["filename"] == "notes.txt"
+
+
+def test_extract_endpoint_markdown(client, auth):
+    r = client.post("/api/v1/extract", headers=auth,
+                    files={"file": ("readme.md", io.BytesIO(b"# Title\n\nbody text"), "text/markdown")})
+    assert r.status_code == 200, r.text
+    assert "Title" in r.json()["text"]
+
+
+def test_extract_endpoint_unsupported(client, auth):
+    r = client.post("/api/v1/extract", headers=auth,
+                    files={"file": ("a.zip", io.BytesIO(b"x"), "application/zip")})
+    assert r.status_code == 415
+
+
+def test_extract_requires_auth(client):
+    assert client.post("/api/v1/extract",
+                       files={"file": ("x.txt", io.BytesIO(b"x"), "text/plain")}).status_code == 401

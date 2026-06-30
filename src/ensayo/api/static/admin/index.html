@@ -161,7 +161,7 @@
         </div>
 
         <div data-etab="documents" hidden>
-          <p class="muted small">Add documents (policies, guides). Bodies can be LLM-generated.</p>
+          <p class="muted small">Add documents (policies, guides). Paste body text or upload a file (pdf/docx/pptx/xlsx/odt). Click ▼ Body to expand.</p>
           <div id="edDocs"></div>
           <button class="ghost" id="edAddDoc" type="button">+ Add document</button>
         </div>
@@ -789,18 +789,55 @@
     return div;
   }
   function edDocRow(doc) {
-    const div = document.createElement("div"); div.className = "row"; div.style.marginBottom = "0.4rem";
-    div.innerHTML = `<select class="edDocType" aria-label="Document type" style="flex:1">`
+    const div = document.createElement("div");
+    div.className = "edDocCard"; div.style.marginBottom = "0.6rem";
+    div.style.background = "var(--surface)"; div.style.border = "1px solid var(--border)";
+    div.style.borderRadius = "12px"; div.style.padding = "0.8rem";
+    div.innerHTML = `
+      <div class="row">
+        <select class="edDocType" aria-label="Document type" style="flex:1">`
       + ED_DOCTYPES.map(t => `<option value="${t}">${t}</option>`).join("") + `</select>
-      <input class="edDocTitle" aria-label="Document title" placeholder="Title" style="flex:2">
-      <input class="edDocBrief" aria-label="Document brief" placeholder="One-line brief" style="flex:3">
-      <button class="ghost edDocDel" type="button" aria-label="Remove document">✕</button>`;
+        <input class="edDocTitle" aria-label="Document title" placeholder="Title" style="flex:2">
+        <button class="ghost edDocToggle" type="button" style="white-space:nowrap">▼ Body</button>
+        <button class="ghost edDocDel" type="button" aria-label="Remove document">✕</button>
+      </div>
+      <div class="edDocDetail" hidden style="margin-top:0.6rem;padding-left:0.8rem;border-left:2px solid var(--border)">
+        <input class="edDocBrief" aria-label="Document brief" placeholder="One-line brief" style="width:100%;margin-bottom:0.4rem">
+        <label class="small muted" style="display:block">Body</label>
+        <textarea class="edDocBody" aria-label="Document body" placeholder="Full document text — paste here or upload a file below" style="width:100%;min-height:120px;font-size:0.85rem;font-family:inherit"></textarea>
+        <div class="row" style="gap:0.5rem;margin-top:0.4rem;align-items:center">
+          <label class="ghost" style="cursor:pointer;font-size:0.82rem;padding:0.35rem 0.7rem">📎 Upload file
+            <input class="edDocFile" type="file" accept=".txt,.md,.markdown,.qmd,.csv,.json,.rst,.log,.pdf,.docx,.pptx,.xlsx,.odt,.ods,.odp" hidden>
+          </label>
+          <span class="edDocFileMsg small muted"></span>
+        </div>
+      </div>`;
     if (doc) {
       div.querySelector(".edDocType").value = doc.type || "custom";
       div.querySelector(".edDocTitle").value = doc.title || "";
       div.querySelector(".edDocBrief").value = doc.brief || "";
+      div.querySelector(".edDocBody").value = doc.content || "";
     }
     div.querySelector(".edDocDel").onclick = () => div.remove();
+    div.querySelector(".edDocToggle").onclick = () => {
+      const d = div.querySelector(".edDocDetail");
+      d.hidden = !d.hidden;
+      div.querySelector(".edDocToggle").textContent = d.hidden ? "▼ Body" : "▲ Body";
+    };
+    div.querySelector(".edDocFile").onchange = async (e) => {
+      const f = e.target.files[0]; if (!f) return;
+      const msg = div.querySelector(".edDocFileMsg");
+      msg.textContent = "Extracting…";
+      const fd = new FormData(); fd.append("file", f);
+      try {
+        const r = await fetch("/api/v1/extract", {
+          method: "POST", headers: { Authorization: "Bearer " + localStorage.getItem("ensayo_token") }, body: fd });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) { msg.textContent = d.detail || "Failed"; return; }
+        div.querySelector(".edDocBody").value = d.text;
+        msg.textContent = "✓ " + d.filename + " (" + d.text.length.toLocaleString() + " chars)";
+      } catch { msg.textContent = "Network error"; }
+    };
     return div;
   }
 
@@ -891,9 +928,10 @@
         scenario_perspective: (r.querySelector(".edEmpScen") || {}).value || "",
       },
     })).filter(e => e.name.trim());
-    const docs = Array.prototype.map.call(document.querySelectorAll("#edDocs .row"), r => ({
+    const docs = Array.prototype.map.call(document.querySelectorAll("#edDocs .edDocCard"), r => ({
       type: r.querySelector(".edDocType").value, title: r.querySelector(".edDocTitle").value,
       brief: r.querySelector(".edDocBrief").value,
+      content: (r.querySelector(".edDocBody") || {}).value || "",
     })).filter(d => d.title.trim());
     return {
       company: {

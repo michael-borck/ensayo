@@ -31,3 +31,4 @@ scripts/a11y/package-lock.json
 .DS_Store
 ._*          # macOS AppleDouble metadata (exFAT/external volumes)
 **/._*
+.handoff.md
