@@ -110,6 +110,7 @@ def _company_payload(config: CompanyConfig) -> dict:
 
 def _employee_payload(config: CompanyConfig, emp: Employee) -> dict:
     cust = emp.customisation
+    doc_slugs = {d.title: d.slug for d in config.documents}
     return {
         "slug": emp.slug,
         "name": emp.name,
@@ -124,6 +125,10 @@ def _employee_payload(config: CompanyConfig, emp: Employee) -> dict:
         "priorExperience": cust.prior_experience,
         "personality": cust.personality_additions,
         "knowledge": cust.knowledge_additions,
+        "knownDocuments": [
+            {"title": t, "slug": doc_slugs[t]}
+            for t in cust.known_documents if t in doc_slugs
+        ],
         "opinions": cust.opinions,
         "scenarioPerspective": cust.scenario_perspective.strip(),
         "refersTo": emp.refers_to,

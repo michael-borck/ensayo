@@ -138,3 +138,45 @@ def test_provision_known_documents_persists(client, auth):
     cfg = client.get(f"/api/v1/simulations/{sim['id']}", headers=auth).json()["config_cache"]
     ted = next(e for e in cfg["employees"] if e["id"] == "targeted-ted")
     assert ted["customisation"]["known_documents"] == ["Security Policy"]
+
+
+def test_keyword_rules_include_known_documents():
+    """build_keyword_responses adds a rule for each known document."""
+    from ensayo.prompts import build_keyword_responses
+    cfg = CompanyConfig.model_validate({
+        "company": {"name": "Test Co"},
+        "documents": [{"title": "Security Policy", "type": "policy"}],
+        "employees": [{"name": "Ada Byron", "role": "CTO", "customisation": {
+            "known_documents": ["Security Policy"]}}],
+    })
+    kw = build_keyword_responses(cfg, cfg.employees[0])
+    doc_rules = [r for r in kw["rules"] if "Security Policy" in r["response"]]
+    assert doc_rules, f"no keyword rule for known document in {kw['rules']}"
+    assert "Documents section" in doc_rules[0]["response"]
+
+
+def test_employee_payload_includes_known_documents():
+    """_employee_payload outputs knownDocuments with title + slug for linking."""
+    cfg = CompanyConfig.model_validate({
+        "company": {"name": "Test Co"},
+        "documents": [
+            {"title": "Security Policy", "type": "policy"},
+            {"title": "Employee Handbook", "type": "internal"},
+        ],
+        "employees": [{"name": "Ada Byron", "role": "CTO", "customisation": {
+            "known_documents": ["Security Policy", "Employee Handbook", "Missing Doc"]}}],
+    })
+    payload = _employee_payload(cfg, cfg.employees[0])
+    docs = payload["knownDocuments"]
+    assert len(docs) == 2  # "Missing Doc" filtered out (not in config.documents)
+    assert {"title": "Security Policy", "slug": "security-policy"} in docs
+    assert {"title": "Employee Handbook", "slug": "employee-handbook"} in docs
+
+
+def test_employee_payload_known_documents_empty_by_default():
+    """No known_documents → empty list (backward compatible)."""
+    cfg = CompanyConfig.model_validate({
+        "company": {"name": "Test Co"},
+        "employees": [{"name": "Ada Byron"}],
+    })
+    assert _employee_payload(cfg, cfg.employees[0])["knownDocuments"] == []

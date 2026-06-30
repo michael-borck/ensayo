@@ -21,6 +21,7 @@ const employees = defineCollection({
     priorExperience: z.array(z.string()).default([]),
     personality: z.array(z.string()).default([]),
     knowledge: z.array(z.string()).default([]),
+    knownDocuments: z.array(z.object({ title: z.string(), slug: z.string() })).default([]),
     opinions: z.array(z.string()).default([]),
     scenarioPerspective: z.string().default(""),
     refersTo: z.record(z.string()).default({}),

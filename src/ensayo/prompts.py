@@ -171,6 +171,13 @@ def build_keyword_responses(config: CompanyConfig, employee: Employee) -> dict:
             "keywords": _topic_keywords(area),
             "response": f"That's something I work with a lot — {area.lower()}. Ask me anything specific.",
         })
+    for doc_title in cust.known_documents[:5]:
+        topic = _topic_keywords(doc_title)
+        if topic:
+            rules.append({
+                "keywords": topic,
+                "response": f"I can discuss the {doc_title} — you'll find it in the Documents section.",
+            })
     for topic, who in employee.refers_to.items():
         rules.append({
             "keywords": [topic],
