@@ -664,18 +664,45 @@
   }
 
   function edEmpRow(emp) {
-    const div = document.createElement("div"); div.className = "row"; div.style.marginBottom = "0.4rem";
+    const div = document.createElement("div");
+    div.className = "edEmpCard"; div.style.marginBottom = "0.6rem";
+    div.style.background = "var(--surface)"; div.style.border = "1px solid var(--border)";
+    div.style.borderRadius = "12px"; div.style.padding = "0.8rem";
     const opts = edArchetypes.map(a => `<option value="${a.name}">${a.label || a.name}</option>`).join("");
-    div.innerHTML = `<input class="edEmpName" aria-label="Person name" placeholder="Name" style="flex:2">
-      <input class="edEmpRole" aria-label="Person role" placeholder="Role" style="flex:2">
-      <select class="edEmpArch" aria-label="Person archetype" style="flex:2"><option value="staff">(default)</option>${opts}</select>
-      <button class="ghost edEmpDel" type="button" aria-label="Remove person">✕</button>`;
+    div.innerHTML = `
+      <div class="row">
+        <input class="edEmpName" aria-label="Person name" placeholder="Name" style="flex:2">
+        <input class="edEmpRole" aria-label="Person role" placeholder="Role" style="flex:2">
+        <select class="edEmpArch" aria-label="Person archetype" style="flex:2"><option value="staff">(default)</option>${opts}</select>
+        <button class="ghost edEmpToggle" type="button" style="white-space:nowrap">▼ Persona</button>
+        <button class="ghost edEmpDel" type="button" aria-label="Remove person">✕</button>
+      </div>
+      <div class="edEmpDetail" hidden style="margin-top:0.6rem;padding-left:0.8rem;border-left:2px solid var(--border)">
+        <label class="small muted">Background / backstory</label>
+        <textarea class="edEmpBg" placeholder="Their history — how they got here, what shaped them" style="width:100%;min-height:50px;font-size:0.85rem;font-family:inherit"></textarea>
+        <label class="small muted" style="margin-top:0.4rem;display:block">Personality quirks (one per line)</label>
+        <textarea class="edEmpPers" placeholder="Obsessive about punctuality&#10;Speaks in metaphors" style="width:100%;min-height:40px;font-size:0.85rem;font-family:inherit"></textarea>
+        <label class="small muted" style="margin-top:0.4rem;display:block">Opinions (one per line)</label>
+        <textarea class="edEmpOps" placeholder="Thinks the new policy is overkill&#10;Distrusts the vendor" style="width:100%;min-height:40px;font-size:0.85rem;font-family:inherit"></textarea>
+        <label class="small muted" style="margin-top:0.4rem;display:block">Scenario perspective — how they see the central challenge</label>
+        <textarea class="edEmpScen" placeholder="Believes the breach was an inside job" style="width:100%;min-height:40px;font-size:0.85rem;font-family:inherit"></textarea>
+      </div>`;
     if (emp) {
       div.querySelector(".edEmpName").value = emp.name || "";
       div.querySelector(".edEmpRole").value = emp.role || "";
       if (emp.archetype) div.querySelector(".edEmpArch").value = emp.archetype;
+      const c = emp.customisation || {};
+      div.querySelector(".edEmpBg").value = c.background || "";
+      div.querySelector(".edEmpPers").value = (c.personality_additions || []).join("\n");
+      div.querySelector(".edEmpOps").value = (c.opinions || []).join("\n");
+      div.querySelector(".edEmpScen").value = c.scenario_perspective || "";
     }
     div.querySelector(".edEmpDel").onclick = () => div.remove();
+    div.querySelector(".edEmpToggle").onclick = () => {
+      const d = div.querySelector(".edEmpDetail");
+      d.hidden = !d.hidden;
+      div.querySelector(".edEmpToggle").textContent = d.hidden ? "▼ Persona" : "▲ Persona";
+    };
     return div;
   }
   function edDocRow(doc) {
@@ -771,9 +798,15 @@
   }
 
   function edAssemble() {
-    const emps = Array.prototype.map.call(document.querySelectorAll("#edEmps .row"), r => ({
+    const emps = Array.prototype.map.call(document.querySelectorAll("#edEmps .edEmpCard"), r => ({
       name: r.querySelector(".edEmpName").value, role: r.querySelector(".edEmpRole").value,
       archetype: r.querySelector(".edEmpArch").value || "staff",
+      customisation: {
+        background: (r.querySelector(".edEmpBg") || {}).value || "",
+        personality_additions: ((r.querySelector(".edEmpPers") || {}).value || "").split("\n").filter(x => x.trim()),
+        opinions: ((r.querySelector(".edEmpOps") || {}).value || "").split("\n").filter(x => x.trim()),
+        scenario_perspective: (r.querySelector(".edEmpScen") || {}).value || "",
+      },
     })).filter(e => e.name.trim());
     const docs = Array.prototype.map.call(document.querySelectorAll("#edDocs .row"), r => ({
       type: r.querySelector(".edDocType").value, title: r.querySelector(".edDocTitle").value,
