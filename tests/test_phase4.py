@@ -180,3 +180,37 @@ def test_employee_payload_known_documents_empty_by_default():
         "employees": [{"name": "Ada Byron"}],
     })
     assert _employee_payload(cfg, cfg.employees[0])["knownDocuments"] == []
+
+
+def test_api_base_url_round_trips(client, auth):
+    """api_base_url survives create → config retrieval."""
+    yaml = """
+company:
+  name: "Booking Co"
+api_base_url: "https://ensayo.locoensayo.org"
+platform:
+  booking_enabled: true
+  chatbot_requires_booking: true
+employees:
+  - name: "Ada Byron"
+    role: "CEO"
+"""
+    sim = _create(client, auth, yaml, "Booking Sim")
+    cfg = client.get(f"/api/v1/simulations/{sim['id']}/config", headers=auth).json()
+    assert cfg["api_base_url"] == "https://ensayo.locoensayo.org"
+    assert cfg["platform"]["booking_enabled"] is True
+
+
+def test_cors_headers_on_student_endpoints(client):
+    """Student-facing endpoints return CORS headers (cross-origin booking API)."""
+    # OPTIONS preflight (CORS middleware needs Origin + Access-Control-Request-Method)
+    r = client.options("/api/v1/sims/test-slug/availability",
+                       headers={"Origin": "https://example.github.io",
+                                "Access-Control-Request-Method": "GET"})
+    assert r.status_code == 200
+    assert r.headers.get("access-control-allow-origin") == "*"
+
+    # GET with Origin header (404 is fine — we just want CORS headers present)
+    r = client.get("/api/v1/sims/test-slug/availability?employee=x&date=2026-06-30",
+                   headers={"Origin": "https://example.github.io"})
+    assert r.headers.get("access-control-allow-origin") == "*"

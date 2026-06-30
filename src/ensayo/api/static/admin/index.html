@@ -172,6 +172,11 @@
           <div class="checks" style="flex-direction:column;align-items:flex-start;gap:0.45rem;margin-top:0.7rem">
             <label><input type="checkbox" id="edBooking" /> Enable booking (office hours)</label>
             <label id="edGateWrap" class="hidden"><input type="checkbox" id="edGate" /> Gate chat behind a booking</label>
+            <div id="edApiUrlWrap" class="hidden" style="margin-left:1.2rem;margin-top:0.3rem">
+              <label class="small muted">Booking API URL (for GitHub Pages export)</label>
+              <input id="edApiUrl" placeholder="https://your-vps.example.org" style="margin-top:0.2rem;width:100%;max-width:360px">
+              <p class="muted small" style="margin:0.2rem 0 0">Leave empty for hosted sims (same-origin). Set to your VPS URL when exporting to GitHub Pages so bookings call back here.</p>
+            </div>
             <label><input type="checkbox" id="edDash" /> Show lecturer dashboard on the site</label>
             <label class="sim-only"><input type="checkbox" id="edLlm" /> Generate content with LLM (backstories, docs, scenario)</label>
             <label class="sim-only"><input type="checkbox" id="edBuild" checked /> Build the site now</label>
@@ -481,6 +486,22 @@
   }
 
   async function doPublish(id, btn) {
+    // Warn if booking is enabled but no API URL is set (cross-origin dependency).
+    const cfgRes = await api(`/api/v1/simulations/${id}/config`);
+    if (cfgRes.ok) {
+      const cfg = await cfgRes.json();
+      if (cfg.platform?.booking_enabled && !(cfg.api_base_url || "").trim()) {
+        const ok = confirm(
+          "This simulation uses booking.\n\n" +
+          "When published to GitHub Pages, student bookings must call back to\n" +
+          "your Ensayo VPS. No Booking API URL is set — bookings will NOT\n" +
+          "work on the published site.\n\n" +
+          "To fix: open the sim → Features tab → set Booking API URL to your\n" +
+          "VPS (e.g. https://ensayo.locoensayo.org), save, then publish.\n\n" +
+          "Publish anyway?");
+        if (!ok) return;
+      }
+    }
     const sims = await (await api("/api/v1/simulations")).json();
     const sim = sims.find(s => s.id === id);
     if (sim && !sim.repo_url) {
@@ -733,8 +754,10 @@
     }
   }
   function edApplyBooking() {
-    $("edGateWrap").classList.toggle("hidden", !$("edBooking").checked);
-    if (!$("edBooking").checked) $("edGate").checked = false;
+    const on = $("edBooking").checked;
+    $("edGateWrap").classList.toggle("hidden", !on);
+    $("edApiUrlWrap").classList.toggle("hidden", !on);
+    if (!on) $("edGate").checked = false;
   }
 
   function edEmpRow(emp) {
@@ -869,7 +892,7 @@
   }
 
   function edClear() {
-    ["edName", "edPw", "edCoName", "edTagline", "edLocation", "edDesc", "edScenName", "edScenDesc"]
+    ["edName", "edPw", "edCoName", "edTagline", "edLocation", "edDesc", "edScenName", "edScenDesc", "edApiUrl"]
       .forEach(id => { $(id).value = ""; });
     $("edEmps").innerHTML = ""; $("edDocs").innerHTML = "";
     $("edEmps").appendChild(edEmpRow()); $("edDocs").appendChild(edDocRow());
@@ -941,6 +964,7 @@
     const pl = cfg.platform || {};
     $("edBooking").checked = !!pl.booking_enabled;
     $("edGate").checked = !!pl.chatbot_requires_booking;
+    $("edApiUrl").value = cfg.api_base_url || "";
     $("edDash").checked = !!pl.lecturer_dashboard;
     edApplyAudience(); edApplyBooking();
     edRefreshDocCheckboxes();
@@ -971,6 +995,7 @@
       },
       audience: $("edAudience").value, theme: $("edTheme").value,
       chatbot_mode: $("edChatbot").value,
+      api_base_url: $("edBooking").checked ? $("edApiUrl").value.trim() : "",
       platform: { booking_enabled: $("edBooking").checked,
         chatbot_requires_booking: $("edGate").checked, lecturer_dashboard: $("edDash").checked },
       employees: emps, documents: docs,

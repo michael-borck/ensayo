@@ -230,6 +230,16 @@ class VisibilityReq(BaseModel):
 
 def create_app() -> FastAPI:
     app = FastAPI(title="Ensayo", version=__version__)
+    # CORS: allow cross-origin requests so published sims (GitHub Pages, custom
+    # domains) can call the booking/student API on this VPS. Safe because auth
+    # uses JWT Bearer tokens, not cookies — no CSRF surface.
+    from starlette.middleware.cors import CORSMiddleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=["*"],
+    )
     app.state.conn = init_db()
 
     def _owned_sim(sim_id: str, uc: sqlite3.Row, conn: sqlite3.Connection) -> sqlite3.Row:
