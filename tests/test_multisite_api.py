@@ -65,3 +65,26 @@ def test_multisite_needs_a_company(client, auth):
     r = client.post("/api/v1/simulations", headers=auth,
                     json={"name": "Empty", "simulation": {"name": "Empty", "companies": []}, "build": False})
     assert r.status_code == 422
+
+
+
+def test_multisite_known_documents_round_trips(client, auth, monkeypatch):
+    """known_documents (doc↔persona mapping) survives multi-site create→config."""
+    monkeypatch.setattr(service, "generate_multisite", lambda *a, **k: None)
+    sim_obj = _sim()
+    sim_obj["companies"][0]["documents"] = [
+        {"title": "Security Policy", "type": "policy", "content": "Use 2FA."},
+        {"title": "Employee Handbook", "type": "internal", "content": "Be good."},
+    ]
+    sim_obj["companies"][0]["employees"][0]["customisation"] = {
+        "known_documents": ["Security Policy"],
+        "background": "Ada knows security.",
+    }
+    sim = client.post("/api/v1/simulations", headers=auth,
+                      json={"name": "Doc Map Portal", "simulation": sim_obj, "build": False}).json()
+    cfg = client.get(f"/api/v1/simulations/{sim['id']}/config", headers=auth).json()
+    acme = cfg["companies"][0]
+    emp = acme["employees"][0]
+    assert emp["customisation"]["known_documents"] == ["Security Policy"]
+    assert emp["customisation"]["background"] == "Ada knows security."
+    assert [d["title"] for d in acme["documents"]] == ["Security Policy", "Employee Handbook"]
