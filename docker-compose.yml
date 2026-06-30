@@ -4,6 +4,14 @@
 #   docker compose up -d --build
 #   docker compose exec ensayo ensayo admin create-uc -e admin@your.edu --admin
 #   open http://localhost:8080/admin/
+#
+# Data persistence: defaults to a named Docker volume (fresh start). To keep
+# existing bare-metal data, set DATA_DIR in instance.env:
+#
+#   DATA_DIR=./.ensayo-data    # bind-mount the local data directory
+#
+# This lets Docker read/write the same SQLite DB + working clones as a
+# bare-metal install. Leave DATA_DIR unset for a clean named volume.
 
 services:
   ensayo:
@@ -15,11 +23,13 @@ services:
     env_file:
       - instance.env
     environment:
-      # Runtime data lives on the persisted volume (overrides instance.env).
+      # Runtime data lives inside the container at /var/ensayo (overridden below).
       ENSAYO_DB: /var/ensayo/ensayo.db
       WORKING_CLONES_DIR: /var/ensayo/sims
     volumes:
-      - ensayo-data:/var/ensayo
+      # If DATA_DIR is set in instance.env, bind-mount that local directory
+      # (shares data with a bare-metal install). Otherwise use a named volume.
+      - "${DATA_DIR:-ensayo-data}:/var/ensayo"
     restart: unless-stopped
 
   # Optional — enable for Tier 3 (LLM chatbots with RAG). Spec §9.
