@@ -251,7 +251,10 @@
       <div id="adminPanel" class="hidden" style="margin-top:1.5rem;border-top:1px solid var(--border);padding-top:1rem">
         <div class="row" style="justify-content:space-between">
           <h2 style="margin:0">Instance admin</h2>
-          <label class="checks" style="margin:0"><input type="checkbox" id="regOpenChk" /> Registration open</label>
+          <div class="row" style="gap:1rem">
+            <label class="checks" style="margin:0"><input type="checkbox" id="regOpenChk" /> Registration open</label>
+            <label class="checks" style="margin:0"><input type="checkbox" id="maintChk" /> Maintenance mode</label>
+          </div>
         </div>
         <details style="margin-top:0.75rem"><summary class="small">Users &amp; pending verification codes</summary>
           <div id="usersList" style="margin-top:0.5rem"></div></details>
@@ -272,12 +275,13 @@
   };
   const msg = (text, cls = "") => { const m = $("msg"); m.textContent = text; m.className = cls; };
 
-  let GITHUB_ENABLED = false;
+  let GITHUB_ENABLED = false, MAINTENANCE_MODE = false;
   async function loadUsage() {
     const r = await api("/api/v1/usage");
     if (!r.ok) return;
     const u = await r.json();
     GITHUB_ENABLED = !!u.github_enabled;
+    MAINTENANCE_MODE = !!u.maintenance_mode;
     $("usageBadge").textContent = u.count + " of " + u.limit + " simulations used";
     $("newBtn").disabled = u.count >= u.limit;
     $("newBtn").title = u.count >= u.limit
@@ -575,6 +579,13 @@
       const r = await api("/api/v1/admin/registration", { method: "PUT",
         body: JSON.stringify({ open: $("regOpenChk").checked }) });
       msg(r.ok ? ("Registration " + ($("regOpenChk").checked ? "opened" : "closed")) : "Failed",
+          r.ok ? "ok" : "err");
+    };
+    $("maintChk").checked = MAINTENANCE_MODE;
+    $("maintChk").onchange = async () => {
+      const r = await api("/api/v1/admin/maintenance", { method: "PUT",
+        body: JSON.stringify({ on: $("maintChk").checked }) });
+      msg(r.ok ? ("Maintenance mode " + ($("maintChk").checked ? "ON — public sees coming-soon" : "off")) : "Failed",
           r.ok ? "ok" : "err");
     };
     const [users, pending] = await Promise.all([

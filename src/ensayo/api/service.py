@@ -140,8 +140,10 @@ def _enforce_sim_limit(conn: sqlite3.Connection, owner_uc_id: str) -> None:
 def sim_usage(conn: sqlite3.Connection, owner_uc_id: str) -> dict:
     n = conn.execute("SELECT COUNT(*) AS n FROM simulations WHERE owner_uc_id = ?",
                      (owner_uc_id,)).fetchone()["n"]
+    maint = conn.execute("SELECT value FROM instance_settings WHERE key = 'maintenance_mode'").fetchone()
     return {"count": n, "limit": _sim_limit(),
-            "github_enabled": bool(os.environ.get("GITHUB_TOKEN"))}
+            "github_enabled": bool(os.environ.get("GITHUB_TOKEN")),
+            "maintenance_mode": maint is not None and maint["value"] == "1"}
 
 
 def create_simulation(

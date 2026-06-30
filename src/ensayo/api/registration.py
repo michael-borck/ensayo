@@ -85,6 +85,22 @@ def set_registration_open(conn: sqlite3.Connection, open_: bool) -> bool:
     return open_
 
 
+def maintenance_mode(conn: sqlite3.Connection) -> bool:
+    """True when the public landing should show a 'coming soon' page."""
+    row = conn.execute(
+        "SELECT value FROM instance_settings WHERE key = 'maintenance_mode'"
+    ).fetchone()
+    return row is not None and row["value"] == "1"
+
+
+def set_maintenance_mode(conn: sqlite3.Connection, on: bool) -> bool:
+    conn.execute(
+        "INSERT INTO instance_settings (key, value) VALUES ('maintenance_mode', ?) "
+        "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        ("1" if on else "0",))
+    conn.commit()
+    return on
+
 # --- verification codes ----------------------------------------------------
 
 def _new_code() -> str:

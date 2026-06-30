@@ -91,6 +91,9 @@ class ResendReq(BaseModel):
 class RegistrationToggleReq(BaseModel):
     open: bool
 
+class MaintenanceToggleReq(BaseModel):
+    on: bool
+
 
 class CreateSimReq(BaseModel):
     name: str
@@ -330,6 +333,13 @@ def create_app() -> FastAPI:
                                   conn: sqlite3.Connection = Depends(get_conn)):
         _require_admin(uc)
         return {"registration_open": reg.set_registration_open(conn, req.open)}
+
+    @app.put("/api/v1/admin/maintenance")
+    def admin_toggle_maintenance(req: MaintenanceToggleReq,
+                                uc: sqlite3.Row = Depends(current_uc),
+                                conn: sqlite3.Connection = Depends(get_conn)):
+        _require_admin(uc)
+        return {"maintenance_mode": reg.set_maintenance_mode(conn, req.on)}
 
     # --- simulations -------------------------------------------------------
     @app.post("/api/v1/simulations", status_code=201)
@@ -974,8 +984,15 @@ def create_app() -> FastAPI:
     app.mount("/portal", StaticFiles(directory=_STATIC / "portal", html=True), name="portal")
 
     @app.get("/")
-    def root():
-        # Landing page at the domain root; the dashboard lives at /admin/.
+    def root(conn: sqlite3.Connection = Depends(get_conn)):
+        # Maintenance mode → public sees "coming soon"; admins use /preview/ or /admin/.
+        if reg.maintenance_mode(conn):
+            return FileResponse(_STATIC / "maintenance" / "index.html")
+        return FileResponse(_STATIC / "landing" / "index.html")
+
+    @app.get("/preview/")
+    def preview():
+        # Always serves the real landing — for the admin to test during maintenance.
         return FileResponse(_STATIC / "landing" / "index.html")
 
     @app.get("/api/v1/usage")
