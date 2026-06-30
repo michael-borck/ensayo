@@ -92,6 +92,7 @@ class EmployeeCustomisation(_Model):
     knowledge_additions: list[str] = Field(default_factory=list)
     opinions: list[str] = Field(default_factory=list)
     scenario_perspective: str = ""
+    known_documents: list[str] = Field(default_factory=list)
 
 
 class Employee(_Model):

@@ -704,6 +704,7 @@
     edTab = tab;
     document.querySelectorAll("#editor [data-etab]").forEach(el => el.hidden = (el.dataset.etab !== tab));
     edRenderTabs();
+    if (tab === "people") edRefreshDocCheckboxes();
   }
 
   async function edLoadCatalogs() {
@@ -769,6 +770,9 @@
         <label class="small muted" style="margin-top:0.4rem;display:block">Scenario perspective</label>
         <div style="display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.3rem">${perspTmpl.map(t => `<span class="persp-tmpl" data-val="${t}" style="${_TS}background:var(--surface2);color:var(--accent);cursor:pointer">⚡ ${t.slice(0,40)}…</span>`).join("")}</div>
         <textarea class="edEmpScen" placeholder="How they see the central challenge" style="width:100%;min-height:50px;font-size:0.85rem;font-family:inherit"></textarea>
+        <label class="small muted" style="margin-top:0.4rem;display:block">Known documents</label>
+        <div class="edEmpDocs" style="display:flex;flex-direction:column;gap:0.2rem;margin-bottom:0.2rem"></div>
+        <span class="edEmpDocsEmpty small muted" style="font-style:italic">No documents yet — add some in the Documents tab.</span>
       </div>`;
     if (emp) {
       div.querySelector(".edEmpName").value = emp.name || "";
@@ -777,6 +781,7 @@
       div.querySelector(".edEmpBg").value = c.background || "";
       div.querySelector(".edEmpScen").value = c.scenario_perspective || "";
     }
+    div._knownDocs = new Set(c.known_documents || []);
     wireTagField(div.querySelector(".edEmpPersTags .tag-field"));
     wireTagField(div.querySelector(".edEmpOpsTags .tag-field"));
     div.querySelectorAll(".persp-tmpl").forEach(t => t.onclick = () => { div.querySelector(".edEmpScen").value = t.dataset.val; });
@@ -787,6 +792,28 @@
       div.querySelector(".edEmpToggle").textContent = d.hidden ? "▼ Persona" : "▲ Persona";
     };
     return div;
+  }
+  function edRefreshDocCheckboxes() {
+    const titles = Array.from(document.querySelectorAll("#edDocs .edDocCard .edDocTitle"))
+      .map(i => i.value.trim()).filter(Boolean);
+    document.querySelectorAll("#edEmps .edEmpCard").forEach(card => {
+      const box = card.querySelector(".edEmpDocs");
+      const empty = card.querySelector(".edEmpDocsEmpty");
+      if (!box) return;
+      box.innerHTML = "";
+      if (!titles.length) { empty.style.display = ""; return; }
+      empty.style.display = "none";
+      titles.forEach(t => {
+        const lbl = document.createElement("label");
+        lbl.style.cssText = "display:flex;align-items:center;gap:0.3rem;font-size:0.82rem;cursor:pointer";
+        const chk = document.createElement("input");
+        chk.type = "checkbox"; chk.checked = card._knownDocs.has(t);
+        chk.onchange = () => { chk.checked ? card._knownDocs.add(t) : card._knownDocs.delete(t); };
+        lbl.appendChild(chk);
+        lbl.appendChild(document.createTextNode(t));
+        box.appendChild(lbl);
+      });
+    });
   }
   function edDocRow(doc) {
     const div = document.createElement("div");
@@ -818,7 +845,7 @@
       div.querySelector(".edDocBrief").value = doc.brief || "";
       div.querySelector(".edDocBody").value = doc.content || "";
     }
-    div.querySelector(".edDocDel").onclick = () => div.remove();
+    div.querySelector(".edDocDel").onclick = () => { div.remove(); edRefreshDocCheckboxes(); };
     div.querySelector(".edDocToggle").onclick = () => {
       const d = div.querySelector(".edDocDetail");
       d.hidden = !d.hidden;
@@ -852,6 +879,7 @@
     $("edLlm").checked = false; $("edBuild").checked = true;
     edYamlDirty = false; $("edYaml").value = ""; $("edMsg").textContent = ""; $("edSaveMsg").textContent = "";
     edApplyAudience(); edApplyBooking();
+    edRefreshDocCheckboxes();
   }
   async function openEditor(mode, id, opts = {}) {
     await edLoadCatalogs();
@@ -915,6 +943,7 @@
     $("edGate").checked = !!pl.chatbot_requires_booking;
     $("edDash").checked = !!pl.lecturer_dashboard;
     edApplyAudience(); edApplyBooking();
+    edRefreshDocCheckboxes();
   }
 
   function edAssemble() {
@@ -926,6 +955,7 @@
         personality_additions: readTagField(r.querySelector(".edEmpPersTags .tag-field")),
         opinions: readTagField(r.querySelector(".edEmpOpsTags .tag-field")),
         scenario_perspective: (r.querySelector(".edEmpScen") || {}).value || "",
+        known_documents: Array.from(r._knownDocs || []),
       },
     })).filter(e => e.name.trim());
     const docs = Array.prototype.map.call(document.querySelectorAll("#edDocs .edDocCard"), r => ({
@@ -978,9 +1008,8 @@
     msg(editing ? "Saved." : ("Created " + d.slug), "ok"); refresh();
   };
   $("edCancel").onclick = () => $("editor").classList.add("hidden");
-  $("edAddEmp").onclick = () => $("edEmps").appendChild(edEmpRow());
-  $("edAddDoc").onclick = () => $("edDocs").appendChild(edDocRow());
-  $("edAudience").onchange = edApplyAudience;
+  $("edAddEmp").onclick = () => { $("edEmps").appendChild(edEmpRow()); edRefreshDocCheckboxes(); };
+  $("edAddDoc").onclick = () => { $("edDocs").appendChild(edDocRow()); edRefreshDocCheckboxes(); };
   $("edBooking").onchange = edApplyBooking;
   $("edYaml").addEventListener("input", () => { edYamlDirty = true; });
   $("newBtn").onclick = () => {

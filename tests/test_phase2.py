@@ -89,3 +89,16 @@ def test_enriched_config_serialises_and_reloads(tmp_path):
     reloaded = load_company_config(out)
     assert reloaded.company.name == "BriteLeaf Organics"
     assert all(e.customisation.background for e in reloaded.employees)
+
+
+
+def test_known_documents_round_trip(tmp_path):
+    """known_documents (doc↔persona mapping) survives YAML dump/load."""
+    from ensayo.models import Employee, EmployeeCustomisation
+
+    cfg = load_company_config(SPARSE)
+    cfg.employees[0].customisation.known_documents = ["Security Policy", "Employee Handbook"]
+    out = tmp_path / "mapped.yaml"
+    out.write_text(dump_config_yaml(cfg), encoding="utf-8")
+    reloaded = load_company_config(out)
+    assert reloaded.employees[0].customisation.known_documents == ["Security Policy", "Employee Handbook"]
