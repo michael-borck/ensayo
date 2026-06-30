@@ -205,6 +205,15 @@
         </div>
       </div>
 
+      <div id="msTemplates" class="card hidden" style="margin-top:1rem">
+        <div class="row" style="justify-content:space-between;align-items:center">
+          <h2 style="margin:0">Choose a multi-site template</h2>
+          <button class="ghost" id="msTplCancel" type="button">Back</button>
+        </div>
+        <p class="muted small" style="margin:0.4rem 0">Pick a starting point. Everything is editable — companies, people, documents, workflow.</p>
+        <div id="msTplGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:0.8rem;margin-top:0.8rem"></div>
+      </div>
+
       <div id="ideatePanel" class="card hidden" style="margin-top:1rem">
         <div class="row" style="justify-content:space-between;align-items:center">
           <h2 style="margin:0">Suggest a simulation</h2>
@@ -1038,12 +1047,70 @@
   $("edBooking").onchange = edApplyBooking;
   $("edYaml").addEventListener("input", () => { edYamlDirty = true; });
   $("newBtn").onclick = () => {
-    ["editor", "msEditor", "ideatePanel"].forEach(id => $(id).classList.add("hidden"));
+    ["editor", "msEditor", "ideatePanel", "msTemplates"].forEach(id => $(id).classList.add("hidden"));
     $("newChooser").classList.remove("hidden");
   };
   $("chooseSingle").onclick = () => { $("newChooser").classList.add("hidden"); openEditor("new"); };
-  $("chooseMulti").onclick = () => { $("newChooser").classList.add("hidden"); openMsEditor("new"); };
+  $("chooseMulti").onclick = openMsTemplates;
   $("chooseCancel").onclick = () => $("newChooser").classList.add("hidden");
+
+  // --- multi-site template gallery ---
+  async function openMsTemplates() {
+    $("newChooser").classList.add("hidden");
+    $("msTemplates").classList.remove("hidden");
+    const grid = $("msTplGrid");
+    grid.innerHTML = '<span class="muted small">Loading…</span>';
+    const r = await api("/api/v1/multisite-templates");
+    const templates = r.ok ? await r.json() : [];
+    if (!templates.length) {
+      grid.innerHTML = '<span class="muted small">No templates found.</span>';
+    } else {
+      grid.innerHTML = "";
+      templates.forEach(t => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.style.cursor = "pointer";
+        card.style.transition = "border-color 0.15s";
+        card.onmouseenter = () => card.style.borderColor = "var(--primary)";
+        card.onmouseleave = () => card.style.borderColor = "var(--border)";
+        card.innerHTML = `<div style="font-size:2rem">${t.icon || "📋"}</div>`
+          + `<h3 style="margin:0.3rem 0 0.2rem">${t.label || t.id}</h3>`
+          + `<p class="muted small" style="margin:0 0 0.3rem">${t.description || ""}</p>`
+          + `<span class="pill">${(t.companies || []).length} companies</span>`;
+        card.onclick = () => applyMsTemplate(t);
+        grid.appendChild(card);
+      });
+    }
+    // "Build from scratch" card
+    const scratch = document.createElement("div");
+    scratch.className = "card";
+    scratch.style.cursor = "pointer";
+    scratch.innerHTML = '<div style="font-size:2rem">🔧</div>'
+      + '<h3 style="margin:0.3rem 0 0.2rem">Build from scratch</h3>'
+      + '<p class="muted small" style="margin:0">Start with an empty portal.</p>';
+    scratch.onclick = () => { $("msTemplates").classList.add("hidden"); openMsEditor("new"); };
+    grid.appendChild(scratch);
+  }
+  $("msTplCancel").onclick = () => { $("msTemplates").classList.add("hidden"); $("newChooser").classList.remove("hidden"); };
+
+  async function applyMsTemplate(t) {
+    $("msTemplates").classList.add("hidden");
+    await openMsEditor("new");
+    msPopulate({
+      workflow: t.workflow || "",
+      theme: t.theme || "portal-clean",
+      portal: t.portal || {},
+      companies: (t.companies || []).map(c => ({
+        company: { name: c.name, industry: c.industry || "general" },
+        theme: c.theme || "tech-modern",
+        audience: "adults",
+        employees: c.employees || [],
+        documents: c.documents || [],
+      })),
+    }, { name: t.label || t.portal?.title || "Multi-site Sim" });
+    $("msName").value = t.label || t.portal?.title || "";
+  }
+
 
   // --- ideation: idea/file → proposals → pick → build ---
   function openIdeate() {

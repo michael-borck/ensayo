@@ -1,0 +1,51 @@
+{
+  "id": "internship",
+  "label": "Internship Program",
+  "icon": "💼",
+  "description": "Students apply to multiple employers, interview, get placed, and complete workplace tasks.",
+  "workflow": "internship",
+  "theme": "portal-clean",
+  "portal": {
+    "title": "WorkReady Careers",
+    "tagline": "Apply. Interview. Get placed.",
+    "description": "A career portal where students experience the full job application journey across multiple employers."
+  },
+  "companies": [
+    {
+      "name": "Nexus Technologies",
+      "industry": "technology",
+      "theme": "tech-modern",
+      "employees": [
+        {"name": "Alex Nguyen", "role": "CTO", "archetype": "founder_ceo"},
+        {"name": "Priya Sharma", "role": "Engineering Lead", "archetype": "technical_specialist"}
+      ],
+      "documents": [
+        {"title": "Engineering Culture Guide", "type": "internal", "brief": "How the team works."},
+        {"title": "Internship Program Overview", "type": "policy", "brief": "Expectations and milestones."}
+      ]
+    },
+    {
+      "name": "Harbor Financial",
+      "industry": "finance",
+      "theme": "finance-traditional",
+      "employees": [
+        {"name": "James Whitfield", "role": "Managing Director", "archetype": "finance_manager"},
+        {"name": "Lisa Park", "role": "HR Manager", "archetype": "people_manager"}
+      ],
+      "documents": [
+        {"title": "Compliance Handbook", "type": "policy", "brief": "Regulatory requirements."}
+      ]
+    },
+    {
+      "name": "GreenLeaf Foundation",
+      "industry": "nfp",
+      "theme": "nfp-warm",
+      "employees": [
+        {"name": "Maria Santos", "role": "Executive Director", "archetype": "founder_ceo"}
+      ],
+      "documents": [
+        {"title": "Volunteer Policy", "type": "policy", "brief": "Codes of conduct."}
+      ]
+    }
+  ]
+}

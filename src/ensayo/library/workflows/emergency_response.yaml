@@ -1,0 +1,52 @@
+# Emergency response lifecycle: an incident commander coordinates multi-agency response.
+name: emergency_response
+description: Alert → assessment → response → recovery → debrief.
+initial_stage: alert
+
+stages:
+  - id: alert
+    label: Incident Alert
+    surfaces: [messaging]
+    on_enter:
+      - { type: notify, message: "Emergency alert received. Assess the situation immediately." }
+    transitions:
+      - { event: alert_acknowledged, to: assessment }
+
+  - id: assessment
+    label: Situation Assessment
+    surfaces: [messaging, tasks]
+    on_enter:
+      - { type: assign_tasks }
+      - { type: notify, message: "Gather intelligence from all agencies and assess the threat level." }
+    transitions:
+      - { event: assessment_complete, to: response }
+
+  - id: response
+    label: Coordinated Response
+    surfaces: [group_chat, tasks]
+    on_enter:
+      - { type: notify, message: "Coordinate the multi-agency response. Communicate clearly." }
+    transitions:
+      - { event: situation_contained, to: recovery }
+
+  - id: recovery
+    label: Recovery Operations
+    surfaces: [booking, conversation]
+    on_enter:
+      - { type: notify, message: "Book a recovery briefing and coordinate cleanup efforts." }
+    transitions:
+      - { event: recovery_complete, to: debrief }
+
+  - id: debrief
+    label: After-Action Debrief
+    surfaces: [conversation, assessment]
+    on_enter:
+      - { type: notify, message: "Review the response and document lessons learned." }
+    transitions:
+      - { event: debrief_complete, to: stood_down }
+
+  - id: stood_down
+    label: Operations Stood Down
+    terminal: true
+    on_enter:
+      - { type: notify, message: "All agencies stood down. Incident report is ready." }

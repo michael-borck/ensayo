@@ -88,3 +88,23 @@ def test_multisite_known_documents_round_trips(client, auth, monkeypatch):
     assert emp["customisation"]["known_documents"] == ["Security Policy"]
     assert emp["customisation"]["background"] == "Ada knows security."
     assert [d["title"] for d in acme["documents"]] == ["Security Policy", "Employee Handbook"]
+
+
+def test_multisite_templates_endpoint(client, auth):
+    """Template gallery endpoint returns bundled shapes with companies."""
+    r = client.get("/api/v1/multisite-templates", headers=auth)
+    assert r.status_code == 200, r.text
+    templates = r.json()
+    ids = {t["id"] for t in templates}
+    assert "internship" in ids
+    assert "medical_network" in ids
+    assert "legal_practice" in ids
+    # Each template has portal + companies + workflow
+    for t in templates:
+        assert t["label"]
+        assert t["workflow"]
+        assert t["portal"]["title"]
+        assert len(t["companies"]) >= 1
+        for c in t["companies"]:
+            assert c["name"]
+            assert c["theme"]

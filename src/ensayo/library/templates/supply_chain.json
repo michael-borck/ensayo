@@ -1,0 +1,62 @@
+{
+  "id": "supply_chain",
+  "label": "Supply Chain",
+  "icon": "🚚",
+  "description": "Students coordinate an order through the supply chain: production, shipping, customs, delivery.",
+  "workflow": "supply_chain",
+  "theme": "portal-clean",
+  "portal": {
+    "title": "GlobalLink Logistics",
+    "tagline": "End-to-end supply chain coordination",
+    "description": "A logistics network where students move an international order from manufacturer to retailer."
+  },
+  "companies": [
+    {
+      "name": "Pacific Manufacturing",
+      "industry": "manufacturing",
+      "theme": "mining-rugged",
+      "employees": [
+        {"name": "Ken Tanaka", "role": "Plant Manager", "archetype": "technical_specialist"},
+        {"name": "Linda Foster", "role": "QC Lead", "archetype": "staff"}
+      ],
+      "documents": [
+        {"title": "Quality Standards", "type": "policy", "brief": "ISO compliance requirements."},
+        {"title": "Production Schedule", "type": "internal", "brief": "Lead times and capacity."}
+      ]
+    },
+    {
+      "name": "TransGlobal Shipping",
+      "industry": "logistics",
+      "theme": "tech-modern",
+      "employees": [
+        {"name": "Carlos Mendez", "role": "Operations Director", "archetype": "founder_ceo"},
+        {"name": "Aisha Mohamed", "role": "Customs Broker", "archetype": "technical_specialist"}
+      ],
+      "documents": [
+        {"title": "Shipping Routes Guide", "type": "internal", "brief": "Vessel schedules and transit times."}
+      ]
+    },
+    {
+      "name": "City Customs Office",
+      "industry": "government",
+      "theme": "government-formal",
+      "employees": [
+        {"name": "Inspector David Lee", "role": "Customs Officer", "archetype": "staff"}
+      ],
+      "documents": [
+        {"title": "Import Regulations", "type": "policy", "brief": "Tariffs and compliance."}
+      ]
+    },
+    {
+      "name": "Metro Retail Group",
+      "industry": "retail",
+      "theme": "advisory-cool",
+      "employees": [
+        {"name": "Sophie Martin", "role": "Store Operations Manager", "archetype": "people_manager"}
+      ],
+      "documents": [
+        {"title": "Stock Receiving Procedure", "type": "internal", "brief": "Delivery acceptance."}
+      ]
+    }
+  ]
+}

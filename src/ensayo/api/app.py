@@ -426,6 +426,11 @@ def create_app() -> FastAPI:
                 out.append({"name": name, "description": ""})
         return out
 
+    @app.get("/api/v1/multisite-templates")
+    def list_ms_templates(uc: sqlite3.Row = Depends(current_uc)):
+        from ..workflow import list_multisite_templates
+        return list_multisite_templates()
+
     @app.post("/api/v1/ideate")
     def ideate_endpoint(idea: str = Form(""),
                         file: UploadFile | None = File(None),

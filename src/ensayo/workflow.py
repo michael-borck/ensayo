@@ -178,3 +178,21 @@ def load_workflow(name_or_path: str, workflows_dir: Path | None = None) -> Workf
 def list_workflows(workflows_dir: Path | None = None) -> list[str]:
     d = workflows_dir or _WORKFLOWS_DIR
     return sorted(p.stem for p in d.glob("*.yaml")) if d.exists() else []
+
+
+_TEMPLATES_DIR = Path(__file__).resolve().parent / "library" / "templates"
+
+
+def list_multisite_templates() -> list[dict]:
+    """Load all multi-site template configs from the library."""
+    import json
+    d = _TEMPLATES_DIR
+    if not d.exists():
+        return []
+    out = []
+    for p in sorted(d.glob("*.json")):
+        try:
+            out.append(json.loads(p.read_text(encoding="utf-8")))
+        except Exception:
+            pass
+    return out

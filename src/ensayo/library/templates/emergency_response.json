@@ -1,0 +1,62 @@
+{
+  "id": "emergency_response",
+  "label": "Emergency Response",
+  "icon": "🚨",
+  "description": "Students coordinate a multi-agency response: alert, assessment, response, recovery, debrief.",
+  "workflow": "emergency_response",
+  "theme": "portal-clean",
+  "portal": {
+    "title": "City Emergency Operations",
+    "tagline": "Multi-agency incident coordination",
+    "description": "An emergency operations centre where students manage a major incident across fire, police, medical, and utilities."
+  },
+  "companies": [
+    {
+      "name": "Fire & Rescue",
+      "industry": "emergency",
+      "theme": "mining-rugged",
+      "employees": [
+        {"name": "Chief William Blake", "role": "Fire Chief", "archetype": "founder_ceo"},
+        {"name": "Captain Jess Morales", "role": "Station Commander", "archetype": "staff"}
+      ],
+      "documents": [
+        {"title": "Fire Response Protocol", "type": "policy", "brief": "Incident prioritisation."},
+        {"title": "Evacuation Procedures", "type": "internal", "brief": "Building clearance."}
+      ]
+    },
+    {
+      "name": "Police Department",
+      "industry": "government",
+      "theme": "government-formal",
+      "employees": [
+        {"name": "Superintendent Alan Ford", "role": "Operations Commander", "archetype": "founder_ceo"},
+        {"name": "Sergeant Nina Volkov", "role": "Field Commander", "archetype": "staff"}
+      ],
+      "documents": [
+        {"title": "Crowd Control Guidelines", "type": "policy", "brief": "Public safety."}
+      ]
+    },
+    {
+      "name": "Ambulance Service",
+      "industry": "healthcare",
+      "theme": "tech-modern",
+      "employees": [
+        {"name": "Dr. Olivia Reed", "role": "Medical Commander", "archetype": "technical_specialist"}
+      ],
+      "documents": [
+        {"title": "Mass Casualty Triage", "type": "policy", "brief": "Patient prioritisation."}
+      ]
+    },
+    {
+      "name": "City Utilities",
+      "industry": "infrastructure",
+      "theme": "finance-traditional",
+      "employees": [
+        {"name": "Engineer Marcus Webb", "role": "Utilities Coordinator", "archetype": "technical_specialist"}
+      ],
+      "documents": [
+        {"title": "Infrastructure Shutdown Procedure", "type": "internal", "brief": "Gas, water, power."}
+      ]
+    }
+  ]
+}

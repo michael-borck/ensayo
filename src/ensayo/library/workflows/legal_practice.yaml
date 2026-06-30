@@ -1,0 +1,53 @@
+# Legal practice lifecycle: a trainee associate moves through case stages.
+name: legal_practice
+description: Intake → research → filing → hearing → resolution.
+initial_stage: intake
+
+stages:
+  - id: intake
+    label: Case Intake
+    surfaces: [messaging]
+    on_enter:
+      - { type: notify, message: "A new case has been assigned. Review the intake brief." }
+    transitions:
+      - { event: case_accepted, to: research }
+
+  - id: research
+    label: Legal Research
+    surfaces: [messaging, tasks]
+    on_enter:
+      - { type: assign_tasks }
+      - { type: notify, message: "Research precedent and build your case strategy." }
+    transitions:
+      - { event: research_complete, to: filing }
+
+  - id: filing
+    label: Filing & Documentation
+    surfaces: [booking, tasks]
+    on_enter:
+      - { type: notify, message: "Book a review session and file your documents." }
+    transitions:
+      - { event: filing_approved, to: hearing }
+      - { event: filing_rejected, to: research }
+
+  - id: hearing
+    label: Court Hearing
+    surfaces: [conversation, assessment]
+    on_enter:
+      - { type: notify, message: "Present your case. Your performance will be assessed." }
+    transitions:
+      - { event: hearing_complete, to: resolution }
+
+  - id: resolution
+    label: Case Resolution
+    surfaces: [conversation, assessment]
+    on_enter:
+      - { type: notify, message: "Review the outcome and reflect on your performance." }
+    transitions:
+      - { event: case_closed, to: closed }
+
+  - id: closed
+    label: Case Closed
+    terminal: true
+    on_enter:
+      - { type: notify, message: "Case closed. Your journey report is ready." }

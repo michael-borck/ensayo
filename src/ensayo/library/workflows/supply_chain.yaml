@@ -1,0 +1,53 @@
+# Supply chain lifecycle: a logistics coordinator moves an order through the chain.
+name: supply_chain
+description: Order → production → shipping → customs → delivery.
+initial_stage: order_received
+
+stages:
+  - id: order_received
+    label: Order Processing
+    surfaces: [messaging]
+    on_enter:
+      - { type: notify, message: "A new order has been received. Confirm details with the manufacturer." }
+    transitions:
+      - { event: order_confirmed, to: production }
+
+  - id: production
+    label: Production
+    surfaces: [messaging, tasks]
+    on_enter:
+      - { type: assign_tasks }
+      - { type: notify, message: "Oversee production and quality checks." }
+    transitions:
+      - { event: production_complete, to: shipping }
+
+  - id: shipping
+    label: Shipping & Logistics
+    surfaces: [group_chat, tasks]
+    on_enter:
+      - { type: notify, message: "Coordinate with the distributor to schedule shipping." }
+    transitions:
+      - { event: shipped, to: customs }
+
+  - id: customs
+    label: Customs Clearance
+    surfaces: [booking, conversation]
+    on_enter:
+      - { type: notify, message: "Book a customs review and prepare documentation." }
+    transitions:
+      - { event: customs_cleared, to: delivery }
+      - { event: customs_held, to: shipping }
+
+  - id: delivery
+    label: Final Delivery
+    surfaces: [conversation, assessment]
+    on_enter:
+      - { type: notify, message: "Confirm delivery with the retailer and close the chain." }
+    transitions:
+      - { event: delivery_confirmed, to: completed }
+
+  - id: completed
+    label: Order Complete
+    terminal: true
+    on_enter:
+      - { type: notify, message: "Order delivered successfully. Chain report is ready." }

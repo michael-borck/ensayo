@@ -1,0 +1,62 @@
+{
+  "id": "legal_practice",
+  "label": "Legal Practice",
+  "icon": "⚖️",
+  "description": "Trainee associates handle cases across practice areas: intake, research, filing, hearings.",
+  "workflow": "legal_practice",
+  "theme": "portal-clean",
+  "portal": {
+    "title": "Sterling & Hayes Legal",
+    "tagline": "Multi-practice law firm",
+    "description": "A law firm where trainees experience case work across litigation, corporate, criminal, and family law."
+  },
+  "companies": [
+    {
+      "name": "Litigation Division",
+      "industry": "legal",
+      "theme": "advisory-cool",
+      "employees": [
+        {"name": "Sarah Chen", "role": "Senior Partner", "archetype": "founder_ceo"},
+        {"name": "Mike Thompson", "role": "Junior Associate", "archetype": "staff"}
+      ],
+      "documents": [
+        {"title": "Civil Procedure Guide", "type": "policy", "brief": "Court filing rules."},
+        {"title": "Evidence Standards", "type": "internal", "brief": "What's admissible."}
+      ]
+    },
+    {
+      "name": "Corporate Advisory",
+      "industry": "legal",
+      "theme": "finance-traditional",
+      "employees": [
+        {"name": "David Okonkwo", "role": "Partner", "archetype": "finance_manager"},
+        {"name": "Emma Wilson", "role": "Associate", "archetype": "staff"}
+      ],
+      "documents": [
+        {"title": "M&A Due Diligence Checklist", "type": "internal", "brief": "Acquisition review process."}
+      ]
+    },
+    {
+      "name": "Criminal Defence",
+      "industry": "legal",
+      "theme": "government-formal",
+      "employees": [
+        {"name": "Robert Grey", "role": "Defence Counsel", "archetype": "founder_ceo"}
+      ],
+      "documents": [
+        {"title": "Criminal Defence Strategy Guide", "type": "internal", "brief": "Case preparation."}
+      ]
+    },
+    {
+      "name": "Family Law",
+      "industry": "legal",
+      "theme": "nfp-warm",
+      "employees": [
+        {"name": "Patricia Mills", "role": "Family Lawyer", "archetype": "people_manager"}
+      ],
+      "documents": [
+        {"title": "Family Court Procedures", "type": "policy", "brief": "Mediation and filing."}
+      ]
+    }
+  ]
+}

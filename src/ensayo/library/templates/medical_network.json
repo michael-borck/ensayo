@@ -1,0 +1,62 @@
+{
+  "id": "medical_network",
+  "label": "Medical Network",
+  "icon": "🏥",
+  "description": "Students rotate through hospital departments: triage, consultation, ward rounds, discharge.",
+  "workflow": "medical_network",
+  "theme": "portal-clean",
+  "portal": {
+    "title": "Riverside Health Network",
+    "tagline": "Multi-department hospital rotation",
+    "description": "A teaching hospital where students experience patient care across departments."
+  },
+  "companies": [
+    {
+      "name": "Emergency Department",
+      "industry": "healthcare",
+      "theme": "tech-modern",
+      "employees": [
+        {"name": "Dr. Amira Hassan", "role": "ER Consultant", "archetype": "technical_specialist"},
+        {"name": "Nurse Tom Bradley", "role": "Triage Nurse", "archetype": "staff"}
+      ],
+      "documents": [
+        {"title": "Triage Protocol", "type": "policy", "brief": "Patient prioritisation guidelines."},
+        {"title": "Emergency Codes", "type": "internal", "brief": "Code blue, code red, etc."}
+      ]
+    },
+    {
+      "name": "General Ward",
+      "industry": "healthcare",
+      "theme": "nfp-warm",
+      "employees": [
+        {"name": "Dr. Sarah Lim", "role": "Attending Physician", "archetype": "people_manager"},
+        {"name": "Nurse Jenny Kowalski", "role": "Ward Manager", "archetype": "staff"}
+      ],
+      "documents": [
+        {"title": "Ward Rounds Guide", "type": "internal", "brief": "Daily round procedures."}
+      ]
+    },
+    {
+      "name": "Pharmacy",
+      "industry": "healthcare",
+      "theme": "advisory-cool",
+      "employees": [
+        {"name": "Dr. Raj Patel", "role": "Chief Pharmacist", "archetype": "technical_specialist"}
+      ],
+      "documents": [
+        {"title": "Medication Safety Policy", "type": "policy", "brief": "Dispensing protocols."}
+      ]
+    },
+    {
+      "name": "Pathology Lab",
+      "industry": "healthcare",
+      "theme": "government-formal",
+      "employees": [
+        {"name": "Dr. Helen Cho", "role": "Lab Director", "archetype": "technical_specialist"}
+      ],
+      "documents": [
+        {"title": "Specimen Handling Guide", "type": "internal", "brief": "Lab procedures."}
+      ]
+    }
+  ]
+}
