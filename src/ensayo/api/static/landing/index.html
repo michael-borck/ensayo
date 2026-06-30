@@ -84,8 +84,11 @@
     .modal-card input { width:100%; margin-bottom:0.6rem; padding:0.6rem;
       background:var(--bg); border:1px solid var(--border); border-radius:9px; color:var(--text); font:inherit; }
     .modal-card .btn { width:100%; }
-    .modal-overlay.hidden { display:none; }  /* override .modal-overlay display:flex */
-  </style>
+    .modal-overlay.hidden { display:none; }
+    .modal-card { position:relative; }
+    .modal-close { position:absolute; top:0.5rem; right:0.6rem; background:none; border:none;
+      color:var(--muted); font-size:1.3rem; cursor:pointer; padding:0.2rem 0.4rem; line-height:1; }
+    .modal-close:hover { color:var(--text); }
 </head>
 <body>
   <header class="nav">
@@ -173,10 +176,8 @@ docker pull <b>ghcr.io/michael-borck/ensayo:latest</b></pre>
 
   <div id="authOverlay" class="modal-overlay hidden">
     <div class="modal-card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-        <h2 id="authTitle" style="margin:0;font-size:1.3rem">Sign in</h2>
-        <button class="btn ghost" id="authClose" style="padding:0.3rem 0.7rem">✕</button>
-      </div>
+      <h2 id="authTitle" style="margin:0 0 1rem;font-size:1.3rem;padding-right:1.5rem">Sign in</h2>
+      <button class="modal-close" id="authClose">✕</button>
       <div id="authLogin">
         <input id="liEmail" type="email" placeholder="Email" />
         <input id="liPw" type="password" placeholder="Password" />
