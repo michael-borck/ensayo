@@ -49,6 +49,7 @@ from .service import (
     create_booking,
     create_multisite_simulation,
     create_simulation,
+    delete_simulation,
     delete_visibility_rule,
     evaluate_visibility,
     list_bookings,
@@ -452,7 +453,15 @@ def create_app() -> FastAPI:
             raise HTTPException(404, "config file not found") from exc
         except ConfigError as exc:
             raise HTTPException(422, str(exc)) from exc
-
+    @app.delete("/api/v1/simulations/{sim_id}")
+    def delete_sim(sim_id: str, uc: sqlite3.Row = Depends(current_uc),
+                   conn: sqlite3.Connection = Depends(get_conn)):
+        sim = _owned_sim(sim_id, uc, conn)
+        try:
+            delete_simulation(conn, sim)
+        except ServiceError as exc:
+            raise HTTPException(400, str(exc)) from exc
+        return {"deleted": True}
     @app.get("/api/v1/simulations/{sim_id}/audience")
     def sim_audience(sim_id: str, uc: sqlite3.Row = Depends(current_uc),
                      conn: sqlite3.Connection = Depends(get_conn)):

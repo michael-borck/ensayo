@@ -20,7 +20,7 @@ def test_limit_blocks_fourth_and_reports_usage(client, auth, monkeypatch):
         assert r.status_code == 201, r.text
     # usage endpoint reflects the cap
     usage = client.get("/api/v1/usage", headers=auth).json()
-    assert usage == {"count": 3, "limit": 3}
+    assert usage["count"] == 3 and usage["limit"] == 3
     # the fourth is refused with a clear message
     r = _create(client, auth, "S3", "Co3")
     assert r.status_code == 400
@@ -31,7 +31,8 @@ def test_limit_is_configurable(client, auth, monkeypatch):
     monkeypatch.setenv("MAX_SIMS_PER_UC", "1")
     assert _create(client, auth, "A", "Ca").status_code == 201
     assert _create(client, auth, "B", "Cb").status_code == 400
-    assert client.get("/api/v1/usage", headers=auth).json() == {"count": 1, "limit": 1}
+    d = client.get("/api/v1/usage", headers=auth).json()
+    assert d["count"] == 1 and d["limit"] == 1
 
 
 def test_usage_requires_auth(client):

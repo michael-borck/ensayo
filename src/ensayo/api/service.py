@@ -140,7 +140,8 @@ def _enforce_sim_limit(conn: sqlite3.Connection, owner_uc_id: str) -> None:
 def sim_usage(conn: sqlite3.Connection, owner_uc_id: str) -> dict:
     n = conn.execute("SELECT COUNT(*) AS n FROM simulations WHERE owner_uc_id = ?",
                      (owner_uc_id,)).fetchone()["n"]
-    return {"count": n, "limit": _sim_limit()}
+    return {"count": n, "limit": _sim_limit(),
+            "github_enabled": bool(os.environ.get("GITHUB_TOKEN"))}
 
 
 def create_simulation(
@@ -356,6 +357,24 @@ def update_multisite_simulation(conn: sqlite3.Connection, sim: sqlite3.Row,
     out = row_to_dict(conn.execute("SELECT * FROM simulations WHERE id = ?", (sim["id"],)).fetchone())
     out["build_deferred"] = build and not can_build
     return out
+
+def delete_simulation(conn: sqlite3.Connection, sim: sqlite3.Row) -> None:
+    """Remove a simulation: its DB rows and the working-clone directory.
+
+    The clone path is confirmed to live under WORKING_CLONES_DIR before deletion
+    (path-traversal guard)."""
+    clone = Path(sim["working_clone_path"]).resolve()
+    root = working_root().resolve()
+    try:
+        clone.relative_to(root)  # raises ValueError if outside the working-root
+    except ValueError as exc:
+        raise ServiceError("refusing to delete a clone outside the working-root") from exc
+    with simulation_lock(sim["slug"]):
+        if clone.exists():
+            shutil.rmtree(clone, ignore_errors=True)
+        conn.execute("DELETE FROM simulations WHERE id = ?", (sim["id"],))
+        conn.commit()
+    audit("simulation.deleted", sim=sim["slug"], uc=sim["owner_uc_id"])
 
 # --- repo connection + publishing -----------------------------------------
 
